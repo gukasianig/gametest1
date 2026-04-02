@@ -1,24 +1,44 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class bullet : MonoBehaviour
+public class Bullet : MonoBehaviour
 {
     public float speed = 10f;
     public int damage = 10;
-    void Update()
+
+    private Transform target;
+
+    public void SetTarget(Transform t)
     {
-        transform.Translate(Vector3.forward * speed * Time.deltaTime);
+        target = t;
     }
 
-    void OnTriggerEnter(Collider other)
+    void Update()
     {
-        Health health = other.GetComponent<Health>();
-
-        if (health != null)
+        if (target == null)
         {
-            health.TakeDamage(damage);
+            Destroy(gameObject);
+            return;
         }
-        Destroy(gameObject);
+
+        // 🔥 берём центр врага
+        Collider col = target.GetComponentInChildren<Collider>();
+        Vector3 targetPos = col != null ? col.bounds.center : target.position;
+
+        Vector3 dir = (targetPos - transform.position).normalized;
+
+        transform.position += dir * speed * Time.deltaTime;
+
+        // 🔥 попадание по дистанции
+        if (Vector3.Distance(transform.position, targetPos) < 0.5f)
+        {
+            Health h = target.GetComponentInParent<Health>();
+
+            if (h != null)
+            {
+                h.TakeDamage(damage);
+            }
+
+            Destroy(gameObject);
+        }
     }
 }

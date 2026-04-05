@@ -2,16 +2,20 @@ using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    public float speed = 10f;
-    public int damage = 10;
+    public float speed = 15f;
+    public int damage = 20;
 
     private Transform target;
+    public void SetDamage(int dmg)
+    {
+        damage = dmg;
+    }
 
     public void SetTarget(Transform t)
     {
         target = t;
     }
-
+    
     void Update()
     {
         if (target == null)

@@ -1,33 +1,52 @@
 
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
+
+
+
 
 public class PlayerHealth : MonoBehaviour
 {
+    public Image hpImage;
+    public Image hpDamageImage;
+    //float damageSmooth = 0f;
+
+
     bool isDead = false;
     public int maxHP = 100;
     int currentHP;
 
-    public TextMeshProUGUI hpText;
+   
     public GameObject gameOverUI;
-
+    float smoothHP;
     void Start()
-    {
-        currentHP = maxHP;
-        UpdateUI();
+{
+    Time.timeScale = 1f;
+     currentHP = maxHP;
+    smoothHP = maxHP;
 
-        if (gameOverUI != null)
-            gameOverUI.SetActive(false);
-    }
+    if (hpImage != null)
+        hpImage.fillAmount = 1f;
+
+    if (hpDamageImage != null)
+        hpDamageImage.fillAmount = 1f;
+
+    if (gameOverUI != null)
+        gameOverUI.SetActive(false);
+}
 
     public void TakeDamage(int damage)
 {
-    Debug.Log("DAMAGE CALLED");
+    if (isDead) return;
 
     currentHP -= damage;
     currentHP = Mathf.Max(currentHP, 0);
 
     UpdateUI();
+    
+    //float t = (float)currentHP / maxHP;
+    //hpFill.color = Color.Lerp(Color.red, Color.green, t);
 
     if (currentHP <= 0)
     {
@@ -37,9 +56,35 @@ public class PlayerHealth : MonoBehaviour
 
     void UpdateUI()
     {
-        if (hpText != null)
-            hpText.text = "HP: " + currentHP;
-            Debug.Log("Updating UI");
+     if (hpImage == null || hpDamageImage == null)
+    {
+        Debug.LogError("HP UI not assigned!");
+        return;
+    }
+
+    float target = (float)currentHP / maxHP;
+
+    hpImage.color = Color.Lerp(Color.red, Color.green, target);
+    }
+    void Update()
+    {
+
+       if (hpImage == null || hpDamageImage == null) return;
+
+    float target = (float)currentHP / maxHP;
+
+    hpImage.fillAmount = Mathf.Lerp(
+        hpImage.fillAmount,
+        target,
+        Time.deltaTime * 10f
+    );
+
+    hpDamageImage.fillAmount = Mathf.Lerp(
+        hpDamageImage.fillAmount,
+        target,
+        Time.deltaTime * 3f
+    );
+        
     }
 
     void Die()

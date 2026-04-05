@@ -4,6 +4,7 @@ public class PlayerShooting : MonoBehaviour
 {
     public GameObject bulletPrefab;
     public Transform firePoint;
+    public int damage = 20;
 
     void Update()
     {
@@ -15,6 +16,12 @@ public class PlayerShooting : MonoBehaviour
 
     void Shoot()
     {
-        Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+        GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+
+    Bullet b = bullet.GetComponent<Bullet>();
+    if (b != null)
+    {
+        b.SetDamage(damage);
+    }
     }
 }

@@ -8,6 +8,7 @@ public class AutoShoter : MonoBehaviour
    public GameObject bulletPrefab;
    public float fireRate = 0.5f;
    public float range = 20f;
+   public int damage = 20;
 
    float timer;
 
@@ -76,9 +77,10 @@ public class AutoShoter : MonoBehaviour
 
     Bullet b = bullet.GetComponent<Bullet>();
     if (b != null)
-    {
-        b.SetTarget(target);
-    }
+{
+    b.SetTarget(target);
+    b.SetDamage(damage); // 👈 ВОТ ЭТО ВАЖНО
+}
 }
 }
 

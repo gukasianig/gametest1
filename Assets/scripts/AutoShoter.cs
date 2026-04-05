@@ -9,11 +9,19 @@ public class AutoShoter : MonoBehaviour
    public float fireRate = 0.5f;
    public float range = 20f;
    public int damage = 20;
+   public GameObject grenadePrefab;
+   public float grenadeCooldown = 3f;
+   float lastGrenadeTime = 0f;
+   public int grenadeDamage = 30;
+   public float grenadeRadius = 3f;
+   
+   
 
    float timer;
 
    void Update()
    {
+    
     timer += Time.deltaTime;
     Transform target = FindClosestEnemy();
     if (target != null)
@@ -37,28 +45,67 @@ public class AutoShoter : MonoBehaviour
             timer = 0f;
         }
     }
+        if (Time.time - lastGrenadeTime >= grenadeCooldown)
+        {
+            ThrowGrenade();
+            lastGrenadeTime = Time.time;
+        }
    }
 
-   Transform FindClosestEnemy()
-   {
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+    
 
-        float minDist = Mathf.Infinity;
-        Transform closest = null;
 
-        foreach (GameObject enemy in enemies)
+        void ThrowGrenade()
         {
-            float dist = Vector3.Distance(transform.position, enemy.transform.position);
+             Transform target = FindClosestEnemy();
+    if (target == null) return;
 
-            if (dist < minDist && dist <= range)
-            {
-                minDist = dist;
-                closest = enemy.transform;
-            }
+    Vector3 spawnPos = transform.position + Vector3.up * 3f;
+
+    GameObject grenade = Instantiate(grenadePrefab, spawnPos, Quaternion.identity);
+
+    Rigidbody rb = grenade.GetComponent<Rigidbody>();
+    Debug.Log(rb);
+
+    if (rb != null)
+    {
+        Vector3 direction = (target.position - spawnPos).normalized;
+
+        // делаем "дугу"
+        Vector3 throwForce = direction * 8f + Vector3.up * 5f;
+
+        rb.AddForce(throwForce, ForceMode.Impulse);
+    }
+
+    Grenade g = grenade.GetComponent<Grenade>();
+    if (g != null)
+    {
+        g.damage = grenadeDamage;
+        g.explosionRadius = grenadeRadius;
+        
+    }
         }
 
-        return closest;
+   Transform FindClosestEnemy()
+{
+    GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+
+    float minDist = Mathf.Infinity;
+    Transform closest = null;
+
+    foreach (GameObject enemy in enemies)
+    {
+        float dist = Vector3.Distance(transform.position, enemy.transform.position);
+
+        if (dist < minDist && dist <= range)
+        {
+            minDist = dist;
+            closest = enemy.transform;
+        }
     }
+
+    return closest;
+}
 
     void Shoot(Transform target)
 {

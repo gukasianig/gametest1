@@ -46,6 +46,7 @@ public class EnemySpawner : MonoBehaviour
         );
 
         GameObject enemy = Instantiate(data.enemyPrefab, spawnPos, Quaternion.identity);
+        enemy.transform.localScale = Vector3.one;
 
         EnemyAI ai = enemy.GetComponent<EnemyAI>();
         if (ai != null)

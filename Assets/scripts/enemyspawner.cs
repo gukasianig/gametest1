@@ -1,23 +1,42 @@
+using System.Collections;
 using UnityEngine;
 
 public class EnemySpawner : MonoBehaviour
 {
-    public GameObject[] enemies;   // префабы врагов
-    public Transform player;       // игрок
+    public EnemySpawnData[] enemies; // 
 
+    public Transform player;
     public float spawnDistance = 20f;
-    public float spawnRate = 2f;
+    
 
     void Start()
     {
-        InvokeRepeating(nameof(SpawnEnemy), 1f, spawnRate);
+        StartCoroutine(SpawnAll());
     }
 
-    void SpawnEnemy()
+    IEnumerator SpawnAll()
+{
+    foreach (var enemy in enemies)
     {
-        if (player == null || enemies.Length == 0) return;
+        StartCoroutine(SpawnEnemyType(enemy));
+    }
 
-        // случайное направление
+    yield break;
+}
+
+    IEnumerator SpawnEnemyType(EnemySpawnData data)
+    {
+        for (int i = 0; i < data.count; i++)
+        {
+            SpawnEnemy(data);
+            yield return new WaitForSeconds(data.spawnRate);
+        }
+    }
+
+    void SpawnEnemy(EnemySpawnData data)
+    {
+        if (player == null) return;
+
         Vector2 dir = Random.insideUnitCircle.normalized;
 
         Vector3 spawnPos = new Vector3(
@@ -26,15 +45,19 @@ public class EnemySpawner : MonoBehaviour
             player.position.z + dir.y * spawnDistance
         );
 
-        int index = Random.Range(0, enemies.Length);
+        GameObject enemy = Instantiate(data.enemyPrefab, spawnPos, Quaternion.identity);
 
-        GameObject enemy = Instantiate(enemies[index], spawnPos, Quaternion.identity);
-
-        // добавляем движение к игроку
         EnemyAI ai = enemy.GetComponent<EnemyAI>();
         if (ai != null)
         {
             ai.target = player;
+            ai.damage = data.damage;
+        }
+
+        Health hp = enemy.GetComponent<Health>();
+        if (hp != null)
+        {
+             hp.SetHealth(data.hp);
         }
     }
 }

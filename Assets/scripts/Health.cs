@@ -6,13 +6,14 @@ using TMPro;
 public class Health : MonoBehaviour
 {
     public TextMeshPro hpText;
-   public int maxHealth = 100;
-   int currentHealth;
-   
-   public bool isDead = false;
+
+    public int maxHealth = 100;
+    int currentHealth;
+
+    public bool isDead = false;
+
     void Start()
     {
-        
         currentHealth = maxHealth;
         UpdateHPText();
     }
@@ -37,9 +38,16 @@ public class Health : MonoBehaviour
             }
              
     }
+    public void SetHealth(int value)
+{
+    maxHealth = value;
+    currentHealth = value;
+    UpdateHPText();
+}
     void Die()
     {
         Debug.Log("Dead");
         Destroy(gameObject);
     }
+    
 }

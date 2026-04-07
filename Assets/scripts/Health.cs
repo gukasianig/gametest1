@@ -29,7 +29,9 @@ public class Health : MonoBehaviour
     {
         
         if (isDead) return;
+        
         currentHealth -=damage;
+
         UpdateHPText();
         Debug.Log("HP:" + currentHealth);
             if (currentHealth <= 0)

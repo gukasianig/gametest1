@@ -69,6 +69,7 @@ public class AutoShoter : MonoBehaviour
 
     if (rb != null)
     {
+        Vector3 targetPos = target.position + Vector3.up * 0.5f;
         Vector3 direction = (target.position - spawnPos).normalized;
 
         // делаем "дугу"
@@ -78,12 +79,12 @@ public class AutoShoter : MonoBehaviour
     }
 
     Grenade g = grenade.GetComponent<Grenade>();
-    if (g != null)
-    {
-        g.damage = grenadeDamage;
-        g.explosionRadius = grenadeRadius;
+    // if (g != null)
+    // {
+    //     g.damage = grenadeDamage;
+    //     g.explosionRadius = grenadeRadius;
         
-    }
+    // }
         }
 
    Transform FindClosestEnemy()

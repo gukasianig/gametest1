@@ -26,11 +26,14 @@ public class Grenade : MonoBehaviour
         );
 
         // размер = радиус
+        float size = explosionRadius * 2f;
         effect.transform.localScale = new Vector3(
-    explosionRadius,
-    explosionRadius,
-    explosionRadius
-);
+        
+            size,
+            size,
+            size
+        );
+
 
         Destroy(effect, 0.5f);
     }

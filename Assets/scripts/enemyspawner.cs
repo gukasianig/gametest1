@@ -1,18 +1,29 @@
 using System.Collections;
 using UnityEngine;
 
+
 public class EnemySpawner : MonoBehaviour
 {
     public EnemySpawnData[] enemies; // 
-
+    
+    public float timeBetweenWaves = 3f;
     public Transform player;
     public float spawnDistance = 20f;
     
 
     void Start()
     {
-        StartCoroutine(SpawnAll());
+       // StartCoroutine(SpawnAll());
     }
+
+    public IEnumerator SpawnWave(EnemySpawnData[] waveEnemies)
+    {
+        foreach (var enemy in waveEnemies)
+        {
+            yield return StartCoroutine(SpawnEnemyType(enemy));
+        }
+    }
+
 
     IEnumerator SpawnAll()
 {
@@ -52,13 +63,13 @@ public class EnemySpawner : MonoBehaviour
         if (ai != null)
         {
             ai.target = player;
-            ai.damage = data.damage;
+            //ai.damage = data.damage;
         }
 
-        Health hp = enemy.GetComponent<Health>();
-        if (hp != null)
-        {
-             hp.SetHealth(data.hp);
-        }
+        // Health hp = enemy.GetComponent<Health>();
+        // if (hp != null)
+        // {
+        //      hp.SetHealth(data.hp);
+        // }
     }
 }

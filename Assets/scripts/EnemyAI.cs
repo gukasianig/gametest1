@@ -6,7 +6,7 @@ public class EnemyAI : MonoBehaviour
     public float attackDistance = 1.5f;
     public int damage = 10;
     public float attackCooldown = 1f;
-    public int maxHP = 50;
+    //public int maxHP = 50;
     public float stopDistance = 1.5f;
     public float separationRadius = 1.2f;
     public float separationStrength = 2f;
@@ -57,7 +57,6 @@ public class EnemyAI : MonoBehaviour
     if (moveDir != Vector3.zero)
     {
         moveDir.Normalize();
-
         transform.position += moveDir * speed * Time.deltaTime;
 
         Quaternion rot = Quaternion.LookRotation(moveDir);

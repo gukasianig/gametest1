@@ -151,7 +151,6 @@ MonoBehaviour:
   attackDistance: 1.5
   damage: 10
   attackCooldown: 1
-  maxHP: 50
   stopDistance: 1.5
   separationRadius: 1.2
   separationStrength: 2

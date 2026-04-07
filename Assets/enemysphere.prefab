@@ -147,11 +147,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0adbf9aa664dc08489d2807d26f4c72e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 3
+  speed: 5
   attackDistance: 1.5
-  damage: 10
-  attackCooldown: 1
-  maxHP: 50
+  damage: 8
+  attackCooldown: 0.7
   stopDistance: 1.5
   separationRadius: 1.2
   separationStrength: 2
@@ -170,5 +169,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hpText: {fileID: 0}
-  maxHealth: 100
+  maxHealth: 30
   isDead: 0

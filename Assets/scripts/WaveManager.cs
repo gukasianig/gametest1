@@ -15,32 +15,42 @@ public class WaveManager : MonoBehaviour
 
     void Start()
     {
+        waveText.text= "test";
         StartCoroutine(RunWaves());
     }
 
-    IEnumerator RunWaves()
+   
+    IEnumerator RunWaves() //волна 
     {   
-        waveText.text = "wave 1";
+        yield return StartCoroutine(ShowWaveText("Wave 1"));
         yield return StartCoroutine(spawner.SpawnWave(wave1));
         yield return WaitForWaveClear();
 
-        waveText.text = "wave Cleared!";
 
         yield return new WaitForSeconds(timeBetweenWaves);
 
-        waveText.text = "Wave 2";
+        yield return StartCoroutine(ShowWaveText("Wave 2"));
         yield return StartCoroutine(spawner.SpawnWave(wave2));
         yield return WaitForWaveClear();
 
-        waveText.text = "wave Cleared!";
 
 
         yield return new WaitForSeconds(timeBetweenWaves);
 
-        waveText.text = "Wave 3";
+        yield return StartCoroutine(ShowWaveText("Wave 3"));
         yield return StartCoroutine(spawner.SpawnWave(wave3));
         yield return WaitForWaveClear();
-        waveText.text = "wave Cleared!";
+        
+        yield return StartCoroutine(ShowWaveText("Wave Cleared!"));
+    }
+     IEnumerator ShowWaveText(string text)
+    {
+        waveText.text = text;
+        waveText.gameObject.SetActive(true);
+
+        yield return new WaitForSeconds(3f);
+
+        waveText.gameObject.SetActive(false);
     }
 
     IEnumerator WaitForWaveClear()

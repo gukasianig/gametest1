@@ -58,25 +58,25 @@ public class AutoShoter : MonoBehaviour
         void ThrowGrenade()
         {
              Transform target = FindClosestEnemy();
-    if (target == null) return;
+            if (target == null) return;
 
-    Vector3 spawnPos = transform.position + Vector3.up * 3f;
+            Vector3 spawnPos = transform.position + Vector3.up * 3f;
 
-    GameObject grenade = Instantiate(grenadePrefab, spawnPos, Quaternion.identity);
+            GameObject grenade = Instantiate(grenadePrefab, spawnPos, Quaternion.identity);
 
-    Rigidbody rb = grenade.GetComponent<Rigidbody>();
-    Debug.Log(rb);
+            Rigidbody rb = grenade.GetComponent<Rigidbody>();
+            Debug.Log(rb);
 
-    if (rb != null)
-    {
-        Vector3 targetPos = target.position + Vector3.up * 0.5f;
-        Vector3 direction = (target.position - spawnPos).normalized;
+            if (rb != null)
+                {
+                    Vector3 targetPos = target.position + Vector3.up * 0.5f;
+                    Vector3 direction = (target.position - spawnPos).normalized;
 
         // делаем "дугу"
-        Vector3 throwForce = direction * 8f + Vector3.up * 5f;
+                    Vector3 throwForce = direction * 8f + Vector3.up * 5f;
 
-        rb.AddForce(throwForce, ForceMode.Impulse);
-    }
+                    rb.AddForce(throwForce, ForceMode.Impulse);
+                }
 
     Grenade g = grenade.GetComponent<Grenade>();
     // if (g != null)

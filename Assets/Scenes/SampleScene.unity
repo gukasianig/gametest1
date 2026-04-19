@@ -202,7 +202,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_TargetDisplay: 0
 --- !u!224 &196302423
 RectTransform:
@@ -218,6 +218,7 @@ RectTransform:
   m_Children:
   - {fileID: 550561297}
   - {fileID: 1497112661}
+  - {fileID: 1185622252}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -407,8 +408,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 1463986406}
-  offset: {x: 0, y: 16, z: -6}
+  offset: {x: 0, y: 18, z: -6}
   smoothSpeed: 5
+  zoomSpeed: 50
+  minHeight: 10
+  maxHeight: 60
 --- !u!1 &346520724
 GameObject:
   m_ObjectHideFlags: 0
@@ -670,7 +674,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 472641057}
-  - component: {fileID: 472641058}
   m_Layer: 0
   m_Name: firepoint
   m_TagString: Untagged
@@ -693,28 +696,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1463986406}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &472641058
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 472641056}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3d0a8e27b1987604b849741e047a08e8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  firePoint: {fileID: 0}
-  bulletPrefab: {fileID: 4356683562315364062, guid: 07a6d8aa78146e54e82b3abe6d13d3c7,
-    type: 3}
-  fireRate: 0.5
-  range: 20
-  damage: 20
-  grenadePrefab: {fileID: 0}
-  grenadeCooldown: 3
-  grenadeDamage: 30
-  grenadeRadius: 3
 --- !u!1 &550561296
 GameObject:
   m_ObjectHideFlags: 0
@@ -1075,7 +1056,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Wave 1
+  m_text: text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1110,7 +1091,7 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -1164,11 +1145,11 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 196302423}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 100, y: 25}
+  m_AnchoredPosition: {x: 0, y: -50}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1310019363
@@ -1465,6 +1446,71 @@ MonoBehaviour:
   grenadeCooldown: 3
   grenadeDamage: 30
   grenadeRadius: 3
+  currentWeapon:
+    weaponName: 
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 0.5
+    damage: 20
+    range: 20
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 20
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 3
+    grenadeDamage: 30
+    grenadeRadius: 3
+  weapons:
+  - weaponName: pistolet
+    WeaponType: 0
+    bulletPrefab: {fileID: 4356683562315364062, guid: 07a6d8aa78146e54e82b3abe6d13d3c7,
+      type: 3}
+    fireRate: 0.5
+    damage: 20
+    range: 0
+    pelletCount: 0
+    spreadAngle: 0
+    bulletSpeed: 20
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+  - weaponName: shotgan
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 0
+    damage: 0
+    range: 0
+    pelletCount: 0
+    spreadAngle: 0
+    bulletSpeed: 20
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+  startWeaponIndex: 0
+  baseWeapon:
+    weaponName: 
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 0.5
+    damage: 20
+    range: 20
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 20
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 3
+    grenadeDamage: 30
+    grenadeRadius: 3
 --- !u!114 &1463986409
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1682,7 +1728,6 @@ MonoBehaviour:
       type: 3}
     count: 1
     spawnRate: 2
-  waveText: {fileID: 0}
   timeBetweenWaves: 3
   player: {fileID: 1463986406}
   spawnDistance: 15
@@ -1716,7 +1761,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spawner: {fileID: 1814289244}
-  waveText: {fileID: 0}
+  waveText: {fileID: 1185622250}
   wave1:
   - enemyPrefab: {fileID: 442116053428028982, guid: a1dff1e5f841fdf429b6124474a38324,
       type: 3}
@@ -1774,4 +1819,3 @@ SceneRoots:
   - {fileID: 1814289243}
   - {fileID: 196302423}
   - {fileID: 2095695692}
-  - {fileID: 1185622252}

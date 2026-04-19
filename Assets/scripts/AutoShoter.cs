@@ -14,10 +14,24 @@ public class AutoShoter : MonoBehaviour
    float lastGrenadeTime = 0f;
    public int grenadeDamage = 30;
    public float grenadeRadius = 3f;
+   public WeaponData currentWeapon;
+   public WeaponData[] weapons;
+   public int startWeaponIndex = 0;
+   public WeaponData baseWeapon;
    
+   private int currentDamage;
+private float currentFireRate;
+private int currentPelletCount;
+private float currentSpread;
    
 
    float timer;
+
+    void Start()
+    {
+        baseWeapon = weapons[startWeaponIndex];
+        ApplyWeaponStats();
+    }
 
    void Update()
    {
@@ -39,7 +53,7 @@ public class AutoShoter : MonoBehaviour
             );
         }
 
-        if (timer >= fireRate)
+        if (timer >= currentFireRate)
         {
             Shoot(target);
             timer = 0f;
@@ -52,7 +66,13 @@ public class AutoShoter : MonoBehaviour
         }
    }
 
-    
+        void ApplyWeaponStats()
+{
+    currentDamage = baseWeapon.damage;
+    currentFireRate = baseWeapon.fireRate;
+    currentPelletCount = baseWeapon.pelletCount;
+    currentSpread = baseWeapon.spreadAngle;
+}
 
 
         void ThrowGrenade()
@@ -108,27 +128,51 @@ public class AutoShoter : MonoBehaviour
     return closest;
 }
 
+//     void Shoot(Transform target)
+// {
+//     if (firePoint == null || bulletPrefab == null) return;
+
+//     Vector3 targetPos = target.position;
+//     targetPos.y = firePoint.position.y;
+//     Vector3 dir = (targetPos - firePoint.position).normalized;
+//     //dir.y = 0;
+
+//     GameObject bullet = Instantiate(
+//         bulletPrefab,
+//         firePoint.position,
+//         Quaternion.LookRotation(dir)
+//     );
+
+//     Bullet b = bullet.GetComponent<Bullet>();
+//     if (b != null)
+// {
+//     b.SetTarget(target);
+//     b.SetDamage(damage); // 👈 ВОТ ЭТО ВАЖНО
+// }
+// }
     void Shoot(Transform target)
 {
-    if (firePoint == null || bulletPrefab == null) return;
+    for (int i = 0; i < currentPelletCount; i++)
+    {
+        float angle = Random.Range(-currentSpread, currentSpread);
 
-    Vector3 targetPos = target.position;
-    targetPos.y = firePoint.position.y;
-    Vector3 dir = (targetPos - firePoint.position).normalized;
-    //dir.y = 0;
+        Quaternion rotation = firePoint.rotation * Quaternion.Euler(0, angle, 0);
 
-    GameObject bullet = Instantiate(
-        bulletPrefab,
-        firePoint.position,
-        Quaternion.LookRotation(dir)
-    );
+        GameObject bullet = Instantiate(
+            baseWeapon.bulletPrefab,
+            firePoint.position,
+            rotation
+        );
 
-    Bullet b = bullet.GetComponent<Bullet>();
-    if (b != null)
-{
-    b.SetTarget(target);
-    b.SetDamage(damage); // 👈 ВОТ ЭТО ВАЖНО
-}
+        Bullet b = bullet.GetComponent<Bullet>();
+        if (b != null)
+        {
+            b.damage = currentDamage;
+            b.speed = baseWeapon.bulletSpeed;
+            b.lifeTime = baseWeapon.bulletLifeTime;
+        }
+        Debug.Log("SHOOT");
+    }
 }
 }
 

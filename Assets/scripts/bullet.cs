@@ -2,8 +2,15 @@ using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    public float speed = 15f;
+    
     public int damage = 20;
+    public float speed;
+    public float lifeTime;
+
+    void Start()
+    {
+        Destroy(gameObject, lifeTime);
+    }
 
     private Transform target;
     public void SetDamage(int dmg)
@@ -18,6 +25,7 @@ public class Bullet : MonoBehaviour
     
     void Update()
     {
+        transform.Translate(Vector3.forward * speed * Time.deltaTime);
         if (target == null)
         {
             Destroy(gameObject);

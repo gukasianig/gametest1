@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Bullet : MonoBehaviour
+public class Bullet : MonoBehaviour, IProjectile
 {
     
     public int damage = 20;
@@ -43,14 +43,18 @@ public class Bullet : MonoBehaviour
         // 🔥 попадание по дистанции
         if (Vector3.Distance(transform.position, targetPos) < 0.5f)
         {
-            Health h = target.GetComponentInParent<Health>();
-
-            if (h != null)
-            {
-                h.TakeDamage(damage);
-            }
-
+            OnHit(target);
             Destroy(gameObject);
+        }
+    }
+
+    public void OnHit(Transform target)
+    {
+        IDamagable h = target.GetComponentInParent<IDamagable>();
+
+        if (h != null)
+        {
+            h.TakeDamage(new Damage(damage));
         }
     }
 }

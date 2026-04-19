@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class Health : MonoBehaviour
+public class Health : MonoBehaviour, IDamagable
 {
     public TextMeshPro hpText;
 
@@ -25,12 +25,12 @@ public class Health : MonoBehaviour
         }
     }
 
-    public void TakeDamage(int damage)
+    public void TakeDamage(Damage dmg)
     {
         
         if (isDead) return;
         
-        currentHealth -=damage;
+        currentHealth -= dmg.amount;
 
         UpdateHPText();
         Debug.Log("HP:" + currentHealth);

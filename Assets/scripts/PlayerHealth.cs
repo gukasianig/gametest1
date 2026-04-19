@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 
 
-public class PlayerHealth : MonoBehaviour
+public class PlayerHealth : MonoBehaviour, IDamagable
 {
     public Image hpImage;
     public Image hpDamageImage;
@@ -36,11 +36,11 @@ public class PlayerHealth : MonoBehaviour
         gameOverUI.SetActive(false);
 }
 
-    public void TakeDamage(int damage)
+    public void TakeDamage(Damage dmg)
 {
     if (isDead) return;
 
-    currentHP -= damage;
+    currentHP -= dmg.amount;
     currentHP = Mathf.Max(currentHP, 0);
 
     UpdateUI();

@@ -67,6 +67,7 @@ public class EnemyAI : MonoBehaviour
         );
     }
 
+   
     
 
     if (distance <= attackRange)

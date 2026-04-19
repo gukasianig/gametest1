@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEditor;
 
 public class Health : MonoBehaviour, IDamagable
 {
@@ -25,12 +26,12 @@ public class Health : MonoBehaviour, IDamagable
         }
     }
 
-    public void TakeDamage(Damage dmg)
+    public void TakeDamage(int damage)
     {
-        
+         Debug.Log("TAKE DAMAGE CALLED: " + damage + "  time=" + Time.frameCount);
         if (isDead) return;
         
-        currentHealth -= dmg.amount;
+        currentHealth -= damage;
 
         UpdateHPText();
         Debug.Log("HP:" + currentHealth);

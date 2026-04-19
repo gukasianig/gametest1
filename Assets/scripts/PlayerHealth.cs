@@ -36,17 +36,14 @@ public class PlayerHealth : MonoBehaviour, IDamagable
         gameOverUI.SetActive(false);
 }
 
-    public void TakeDamage(Damage dmg)
+    public void TakeDamage(int damage)
 {
     if (isDead) return;
 
-    currentHP -= dmg.amount;
+    currentHP -= damage;
     currentHP = Mathf.Max(currentHP, 0);
 
     UpdateUI();
-    
-    //float t = (float)currentHP / maxHP;
-    //hpFill.color = Color.Lerp(Color.red, Color.green, t);
 
     if (currentHP <= 0)
     {

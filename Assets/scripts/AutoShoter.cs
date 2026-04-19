@@ -128,35 +128,19 @@ private float currentSpread;
     return closest;
 }
 
-//     void Shoot(Transform target)
-// {
-//     if (firePoint == null || bulletPrefab == null) return;
 
-//     Vector3 targetPos = target.position;
-//     targetPos.y = firePoint.position.y;
-//     Vector3 dir = (targetPos - firePoint.position).normalized;
-//     //dir.y = 0;
-
-//     GameObject bullet = Instantiate(
-//         bulletPrefab,
-//         firePoint.position,
-//         Quaternion.LookRotation(dir)
-//     );
-
-//     Bullet b = bullet.GetComponent<Bullet>();
-//     if (b != null)
-// {
-//     b.SetTarget(target);
-//     b.SetDamage(damage); // 👈 ВОТ ЭТО ВАЖНО
-// }
-// }
     void Shoot(Transform target)
 {
     for (int i = 0; i < currentPelletCount; i++)
     {
         float angle = Random.Range(-currentSpread, currentSpread);
 
-        Quaternion rotation = firePoint.rotation * Quaternion.Euler(0, angle, 0);
+       
+        Vector3 dir = (target.position - firePoint.position).normalized;
+        Quaternion baseRotation = Quaternion.LookRotation(dir);
+
+         
+        Quaternion rotation = baseRotation * Quaternion.Euler(0, angle, 0);
 
         GameObject bullet = Instantiate(
             baseWeapon.bulletPrefab,
@@ -171,6 +155,7 @@ private float currentSpread;
             b.speed = baseWeapon.bulletSpeed;
             b.lifeTime = baseWeapon.bulletLifeTime;
         }
+
         Debug.Log("SHOOT");
     }
 }

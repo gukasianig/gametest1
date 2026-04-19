@@ -12,7 +12,7 @@ public class Grenade : MonoBehaviour
 
     void Start()
     {
-        Invoke(nameof(  ), delay);
+        Invoke(nameof(Explode), delay);
     }
 
     void Explode()
@@ -47,7 +47,7 @@ public class Grenade : MonoBehaviour
             IDamagable hp = col.GetComponent<IDamagable>();
             if (hp != null)
             {
-                hp.TakeDamage(new Damage(damage));
+                hp.TakeDamage(damage);
             }
         }
     }

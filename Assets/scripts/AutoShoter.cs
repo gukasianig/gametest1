@@ -131,16 +131,34 @@ private float currentSpread;
 
     void Shoot(Transform target)
 {
+    Vector3 dir = (target.position - firePoint.position).normalized;
+    Quaternion baseRotation = Quaternion.LookRotation(dir);
+
+    if (currentPelletCount <= 1)
+    {
+        GameObject bullet = Instantiate(
+            baseWeapon.bulletPrefab,
+            firePoint.position,
+            baseRotation
+        );
+
+        Bullet b = bullet.GetComponent<Bullet>();
+        if (b != null)
+        {
+            b.damage = currentDamage;
+            b.speed = baseWeapon.bulletSpeed;
+            b.lifeTime = baseWeapon.bulletLifeTime;
+        }
+
+        return;
+    }
+
+    float step = currentSpread / (currentPelletCount - 1);
+
     for (int i = 0; i < currentPelletCount; i++)
     {
-        float angle = Random.Range(-currentSpread, currentSpread);
-
-       
-        Vector3 dir = (target.position - firePoint.position).normalized;
-        Quaternion baseRotation = Quaternion.LookRotation(dir);
-
-         
-        Quaternion rotation = baseRotation * Quaternion.Euler(0, angle, 0);
+        float angle = -currentSpread / 2f + step * i;
+        Quaternion rotation = baseRotation * Quaternion.Euler(0f, angle, 0f);
 
         GameObject bullet = Instantiate(
             baseWeapon.bulletPrefab,
@@ -155,8 +173,6 @@ private float currentSpread;
             b.speed = baseWeapon.bulletSpeed;
             b.lifeTime = baseWeapon.bulletLifeTime;
         }
-
-        Debug.Log("SHOOT");
     }
 }
 }

@@ -1249,9 +1249,10 @@ GameObject:
   - component: {fileID: 1463986403}
   - component: {fileID: 1463986402}
   - component: {fileID: 1463986401}
-  - component: {fileID: 1463986400}
   - component: {fileID: 1463986408}
   - component: {fileID: 1463986409}
+  - component: {fileID: 1463986410}
+  - component: {fileID: 1463986411}
   m_Layer: 0
   m_Name: Capsule
   m_TagString: Player
@@ -1259,21 +1260,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1463986400
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1463986399}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a37e15a985b8640499ddd9f53ca3ae27, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hpText: {fileID: 0}
-  maxHealth: 100
-  isDead: 0
 --- !u!54 &1463986401
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1428,7 +1414,7 @@ MonoBehaviour:
     type: 3}
   grenadeCooldown: 3
   grenadeDamage: 30
-  grenadeRadius: 3
+  grenadeRadius: 2
   currentWeapon:
     weaponName: 
     WeaponType: 1
@@ -1451,19 +1437,67 @@ MonoBehaviour:
     WeaponType: 0
     bulletPrefab: {fileID: 4356683562315364062, guid: 07a6d8aa78146e54e82b3abe6d13d3c7,
       type: 3}
-    fireRate: 0.5
+    fireRate: 0.4
     damage: 20
     range: 0
     pelletCount: 1
-    spreadAngle: 0
+    spreadAngle: 2
     bulletSpeed: 20
+    bulletLifeTime: 2
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+  - weaponName: SMG/Rifle
+    WeaponType: 0
+    bulletPrefab: {fileID: 4356683562315364062, guid: 07a6d8aa78146e54e82b3abe6d13d3c7,
+      type: 3}
+    fireRate: 0.1
+    damage: 6
+    range: 0
+    pelletCount: 1
+    spreadAngle: 6
+    bulletSpeed: 22
+    bulletLifeTime: 1.5
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+  - weaponName: Shotgun
+    WeaponType: 0
+    bulletPrefab: {fileID: 4356683562315364062, guid: 07a6d8aa78146e54e82b3abe6d13d3c7,
+      type: 3}
+    fireRate: 0.9
+    damage: 8
+    range: 0
+    pelletCount: 6
+    spreadAngle: 25
+    bulletSpeed: 18
+    bulletLifeTime: 1.2
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+  - weaponName: pistolet
+    WeaponType: 0
+    bulletPrefab: {fileID: 4356683562315364062, guid: 07a6d8aa78146e54e82b3abe6d13d3c7,
+      type: 3}
+    fireRate: 1.5
+    damage: 80
+    range: 0
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 40
     bulletLifeTime: 3
     userGrenade: 0
     grenadePrefab: {fileID: 0}
     grenadeCooldown: 0
     grenadeDamage: 0
     grenadeRadius: 0
-  startWeaponIndex: 0
+  startWeaponIndex: 1
   baseWeapon:
     weaponName: 
     WeaponType: 0
@@ -1481,6 +1515,8 @@ MonoBehaviour:
     grenadeCooldown: 3
     grenadeDamage: 30
     grenadeRadius: 3
+  orbitWeaponPrefab: {fileID: 8415761964827408587, guid: 34a754f28081a9c43aff5eefcbb41168,
+    type: 3}
 --- !u!114 &1463986409
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1497,6 +1533,41 @@ MonoBehaviour:
   hpDamageImage: {fileID: 738051080}
   maxHP: 100
   gameOverUI: {fileID: 1497112660}
+--- !u!114 &1463986410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1463986399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a37e15a985b8640499ddd9f53ca3ae27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hpText: {fileID: 0}
+  maxHealth: 100
+  isDead: 0
+--- !u!114 &1463986411
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1463986399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f231823b005f2647b5cc3ed914b4a2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  orbitPrefab: {fileID: 8415761964827408587, guid: 34a754f28081a9c43aff5eefcbb41168,
+    type: 3}
+  orbitCount: 0
+  orbitRadius: 2
+  orbitSpeed: 180
+  orbitDamage: 10
+  orbitMaxHits: 2
+  orbitRespawnTime: 2
 --- !u!1 &1497112660
 GameObject:
   m_ObjectHideFlags: 0

@@ -18,6 +18,8 @@ public class AutoShoter : MonoBehaviour
    public WeaponData[] weapons;
    public int startWeaponIndex = 0;
    public WeaponData baseWeapon;
+
+   public GameObject orbitWeaponPrefab;
    
    private int currentDamage;
 private float currentFireRate;
@@ -29,7 +31,8 @@ private float currentSpread;
 
     void Start()
     {
-        baseWeapon = weapons[startWeaponIndex];
+
+     baseWeapon = weapons[startWeaponIndex];
         ApplyWeaponStats();
     }
 

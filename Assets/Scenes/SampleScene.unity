@@ -1393,6 +1393,23 @@ MonoBehaviour:
     grenadeCooldown: 3
     grenadeDamage: 30
     grenadeRadius: 3
+    title: 
+    role: 
+    description: 
+    kind: 0
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
   weapons:
   - weaponName: pistolet
     WeaponType: 0
@@ -1410,6 +1427,23 @@ MonoBehaviour:
     grenadeCooldown: 0
     grenadeDamage: 0
     grenadeRadius: 0
+    title: 
+    role: 
+    description: 
+    kind: 0
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
   - weaponName: SMG/Rifle
     WeaponType: 0
     bulletPrefab: {fileID: 4356683562315364062, guid: 07a6d8aa78146e54e82b3abe6d13d3c7,
@@ -1426,6 +1460,23 @@ MonoBehaviour:
     grenadeCooldown: 0
     grenadeDamage: 0
     grenadeRadius: 0
+    title: 
+    role: 
+    description: 
+    kind: 0
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
   - weaponName: Shotgun
     WeaponType: 0
     bulletPrefab: {fileID: 4356683562315364062, guid: 07a6d8aa78146e54e82b3abe6d13d3c7,
@@ -1442,6 +1493,23 @@ MonoBehaviour:
     grenadeCooldown: 0
     grenadeDamage: 0
     grenadeRadius: 0
+    title: 
+    role: 
+    description: 
+    kind: 0
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
   - weaponName: pistolet
     WeaponType: 0
     bulletPrefab: {fileID: 4356683562315364062, guid: 07a6d8aa78146e54e82b3abe6d13d3c7,
@@ -1458,6 +1526,320 @@ MonoBehaviour:
     grenadeCooldown: 0
     grenadeDamage: 0
     grenadeRadius: 0
+    title: 
+    role: 
+    description: 
+    kind: 0
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
+  - weaponName: Saw
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 1.4
+    damage: 22
+    range: 14
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 15
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+    title: "\u041F\u0438\u043B\u0430-\u0431\u0443\u043C\u0435\u0440\u0430\u043D\u0433"
+    role: "\u0412\u041E\u0417\u0412\u0420\u0410\u0422\u041D\u042B\u0419 \u0423\u0414\u0410\u0420"
+    description: "\u0414\u0438\u0441\u043A \u0431\u044C\u0451\u0442 \u0432\u0440\u0430\u0433\u043E\u0432
+      \u0442\u0443\u0434\u0430 \u0438 \u043E\u0431\u0440\u0430\u0442\u043D\u043E"
+    kind: 1
+    targeting: 0
+    beamWidth: 1.1
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 1
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
+  - weaponName: Mines
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 1
+    damage: 40
+    range: 14
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 20
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+    title: "\u0421\u0430\u043F\u0451\u0440\u043D\u044B\u0435 \u043C\u0438\u043D\u044B"
+    role: "\u041B\u041E\u0412\u0423\u0428\u041A\u0418"
+    description: "\u041C\u0438\u043D\u044B \u043F\u043E\u0434 \u043D\u043E\u0433\u0430\u043C\u0438
+      \u043F\u043E\u0434\u0440\u044B\u0432\u0430\u044E\u0442 \u043F\u0440\u0435\u0441\u043B\u0435\u0434\u043E\u0432\u0430\u0442\u0435\u043B\u0435\u0439"
+    kind: 2
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 6
+    lifetime: 25
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
+  - weaponName: Rocket
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 1.8
+    damage: 55
+    range: 20
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 9
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+    title: "\u0420\u0430\u043A\u0435\u0442\u043D\u0438\u0446\u0430"
+    role: "\u041F\u041E \u041F\u041B\u041E\u0429\u0410\u0414\u0418"
+    description: "\u0412\u0437\u0440\u044B\u0432 \u043F\u043E \u0441\u043A\u043E\u043F\u043B\u0435\u043D\u0438\u044E
+      \u0432\u0440\u0430\u0433\u043E\u0432"
+    kind: 3
+    targeting: 2
+    beamWidth: 0.7
+    explosionRadius: 3.5
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
+  - weaponName: Arc
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 0.7
+    damage: 14
+    range: 12
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 20
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+    title: "\u042D\u043B\u0435\u043A\u0442\u0440\u043E\u0434\u0443\u0433\u0430"
+    role: "\u0426\u0415\u041F\u041D\u0410\u042F \u041C\u041E\u041B\u041D\u0418\u042F"
+    description: "\u041C\u043E\u043B\u043D\u0438\u044F \u043F\u0435\u0440\u0435\u0441\u043A\u0430\u043A\u0438\u0432\u0430\u0435\u0442
+      \u043C\u0435\u0436\u0434\u0443 \u0432\u0440\u0430\u0433\u0430\u043C\u0438"
+    kind: 4
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
+  - weaponName: Flame
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 0.15
+    damage: 4
+    range: 7
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 20
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+    title: "\u041E\u0433\u043D\u0435\u043C\u0451\u0442"
+    role: "\u0412\u0411\u041B\u0418\u0417\u0418"
+    description: "\u041A\u043E\u043D\u0443\u0441 \u043E\u0433\u043D\u044F \u0438
+      \u0433\u043E\u0440\u0435\u043D\u0438\u0435"
+    kind: 5
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 2.5
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
+  - weaponName: Ice
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 1
+    damage: 12
+    range: 16
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 14
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+    title: "\u041B\u0435\u0434\u044F\u043D\u0430\u044F \u043F\u0443\u0448\u043A\u0430"
+    role: "\u0417\u0410\u041C\u0415\u0414\u041B\u0415\u041D\u0418\u0415"
+    description: "\u0417\u0430\u043C\u0435\u0434\u043B\u044F\u0435\u0442 \u0432\u0440\u0430\u0433\u043E\u0432
+      \u0432 \u0437\u043E\u043D\u0435 \u043F\u043E\u043F\u0430\u0434\u0430\u043D\u0438\u044F"
+    kind: 6
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 2.5
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
+  - weaponName: Rail
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 1.6
+    damage: 60
+    range: 28
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 20
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+    title: "\u0420\u0435\u043B\u044C\u0441\u043E\u0432\u0430\u044F \u043F\u0443\u0448\u043A\u0430"
+    role: "\u041F\u0420\u041E\u0411\u0418\u0412\u0410\u041D\u0418\u0415"
+    description: "\u041B\u0443\u0447 \u043F\u0440\u043E\u0431\u0438\u0432\u0430\u0435\u0442
+      \u0432\u0441\u044E \u043B\u0438\u043D\u0438\u044E \u0432\u0440\u0430\u0433\u043E\u0432"
+    kind: 7
+    targeting: 1
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
+  - weaponName: Turret
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 7
+    damage: 9
+    range: 14
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 20
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+    title: "\u0422\u0443\u0440\u0435\u043B\u044C"
+    role: "\u041E\u0411\u041E\u0420\u041E\u041D\u0410"
+    description: "\u0421\u0442\u0430\u0432\u0438\u0442 \u0434\u043E \u0434\u0432\u0443\u0445
+      \u0441\u0442\u0440\u0435\u043B\u044F\u044E\u0449\u0438\u0445 \u0442\u0443\u0440\u0435\u043B\u0435\u0439"
+    kind: 8
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
+  - weaponName: Drones
+    WeaponType: 0
+    bulletPrefab: {fileID: 0}
+    fireRate: 0.5
+    damage: 9
+    range: 16
+    pelletCount: 1
+    spreadAngle: 0
+    bulletSpeed: 20
+    bulletLifeTime: 3
+    userGrenade: 0
+    grenadePrefab: {fileID: 0}
+    grenadeCooldown: 0
+    grenadeDamage: 0
+    grenadeRadius: 0
+    title: "\u0414\u0440\u043E\u043D\u044B-\u0441\u0442\u0440\u0435\u043B\u043A\u0438"
+    role: "\u0412\u0422\u041E\u0420\u041E\u0419 \u0421\u0422\u0412\u041E\u041B"
+    description: "\u0414\u0432\u0430 \u0434\u0440\u043E\u043D\u0430 \u0441\u0442\u0440\u0435\u043B\u044F\u044E\u0442
+      \u043F\u043E \u0440\u0430\u0437\u043D\u044B\u043C \u0446\u0435\u043B\u044F\u043C"
+    kind: 9
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.5
   startWeaponIndex: 1
   baseWeapon:
     weaponName: 
@@ -1476,6 +1858,23 @@ MonoBehaviour:
     grenadeCooldown: 3
     grenadeDamage: 30
     grenadeRadius: 3
+    title: 
+    role: 
+    description: 
+    kind: 0
+    targeting: 0
+    beamWidth: 0.7
+    explosionRadius: 3.2
+    chainJumps: 4
+    chainRadius: 6
+    chainFalloff: 0.75
+    maxActive: 2
+    lifetime: 18
+    effectDuration: 3
+    slowFactor: 0.5
+    burnPerSecond: 6
+    coneAngle: 55
+    placedFireRate: 0.4
   orbitWeaponPrefab: {fileID: 8415761964827408587, guid: 34a754f28081a9c43aff5eefcbb41168,
     type: 3}
 --- !u!114 &1463986409

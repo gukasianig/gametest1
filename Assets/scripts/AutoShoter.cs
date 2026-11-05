@@ -59,25 +59,36 @@ private float currentSpread;
 
         if (weapons != null && weapons.Length > 0)
             baseWeapon = weapons[Mathf.Clamp(startWeaponIndex, 0, weapons.Length - 1)];
-        if (baseWeapon == null || baseWeapon.bulletPrefab == null || firePoint == null)
+        if (baseWeapon == null || !baseWeapon.IsUsable || firePoint == null)
         {
             Debug.LogError("AutoShoter requires a weapon, bullet prefab and fire point.", this);
             enabled = false;
             return;
         }
         ApplyWeaponStats();
+        ConfigureSpecial();
+    }
+
+    private SpecialWeapons special;
+
+    private void ConfigureSpecial()
+    {
+        if (special == null) special = GetComponent<SpecialWeapons>();
+        if (special == null) special = gameObject.AddComponent<SpecialWeapons>();
+        special.Configure(this, baseWeapon);
     }
 
     public bool SelectWeapon(int index)
     {
         if (weapons == null || index < 0 || index >= weapons.Length ||
-            weapons[index] == null || weapons[index].bulletPrefab == null || firePoint == null)
+            weapons[index] == null || !weapons[index].IsUsable || firePoint == null)
             return false;
 
         startWeaponIndex = index;
         baseWeapon = weapons[index];
         currentWeapon = baseWeapon;
         ApplyWeaponStats();
+        ConfigureSpecial();
         timer = 0f;
         lastGrenadeTime = Time.time;
         enabled = true;
@@ -89,7 +100,8 @@ private float currentSpread;
 
     if (Time.timeScale == 0f) return;
     timer += Time.deltaTime;
-    Transform target = FindClosestEnemy();
+    bool isSpecial = baseWeapon != null && baseWeapon.kind != WeaponKind.Standard;
+    Transform target = isSpecial ? WeaponTargets.Pick(transform.position, range, baseWeapon.targeting) : FindClosestEnemy();
     if (movement != null)
         movement.SetAimDirection(target != null ? target.position - transform.position : Vector3.zero);
     if (target != null)
@@ -109,7 +121,8 @@ private float currentSpread;
 
         if (timer >= currentFireRate)
         {
-            Shoot(target);
+            if (isSpecial) special.Fire(currentDamage, target);
+            else Shoot(target);
             timer = 0f;
         }
     }

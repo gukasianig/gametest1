@@ -75,14 +75,17 @@ public class StartMenu : MonoBehaviour
         int count = shooter.weapons == null ? 0 : shooter.weapons.Length;
         weaponLocks = new RectTransform[Mathf.Max(count, 1)];
         weaponLockText = new Text[Mathf.Max(count, 1)];
-        int rows = Mathf.Max(2, Mathf.CeilToInt(count / 2f));
+        weaponCards = new RectTransform[Mathf.Max(count, 1)];
+        weaponPages = Mathf.Max(1, Mathf.CeilToInt(count / (float)CardsPerPage));
         for (int i = 0; i < count; i++)
         {
             WeaponData weapon = shooter.weapons[i];
-            if (weapon == null || weapon.bulletPrefab == null) continue;
-            float x = i % 2 == 0 ? 0.06f : 0.52f;
-            float top = 0.67f - (i / 2) * (0.52f / rows);
-            WeaponCard(i, weapon, new Vector2(x, top - 0.46f / rows), new Vector2(x + 0.42f, top));
+            if (weapon == null || !weapon.IsUsable) continue;
+            // Four cards (2x2) per page; the page buttons below switch between pages.
+            int slot = i % CardsPerPage;
+            float x = slot % 2 == 0 ? 0.06f : 0.52f;
+            float top = 0.67f - (slot / 2) * 0.26f;
+            WeaponCard(i, weapon, new Vector2(x, top - 0.23f), new Vector2(x + 0.42f, top));
         }
         if (count == 0)
             GameUi.Label(selection, "Нет настроенного оружия", new Vector2(0.1f, 0.3f), new Vector2(0.9f, 0.6f), 24);
@@ -92,12 +95,36 @@ public class StartMenu : MonoBehaviour
             home.gameObject.SetActive(true);
         });
         UiArtwork.Round(back.GetComponent<Image>());
+        if (weaponPages > 1)
+        {
+            Button previous = GameUi.Button(selection, "◄", new Vector2(0.17f, 0.065f), new Vector2(0.3f, 0.14f), PreviousWeaponPage);
+            UiArtwork.Round(previous.GetComponent<Image>());
+            Button next = GameUi.Button(selection, "►", new Vector2(0.7f, 0.065f), new Vector2(0.83f, 0.14f), NextWeaponPage);
+            UiArtwork.Round(next.GetComponent<Image>());
+        }
         selection.gameObject.SetActive(false);
-        RefreshWeaponLocks();
+        ShowWeaponPage(0);
         waiting = true;
         Time.timeScale = 0f;
         int restart = GameSession.ConsumeRestart();
         if (restart >= 0) BeginGame(restart);
+    }
+
+    private const int CardsPerPage = 4;
+    private RectTransform[] weaponCards;
+    private int weaponPages = 1;
+    public int WeaponPage { get; private set; }
+    public int WeaponPageCount { get { return weaponPages; } }
+
+    public void NextWeaponPage() { ShowWeaponPage(WeaponPage + 1); }
+    public void PreviousWeaponPage() { ShowWeaponPage(WeaponPage - 1); }
+
+    public void ShowWeaponPage(int page)
+    {
+        WeaponPage = ((page % weaponPages) + weaponPages) % weaponPages;
+        for (int i = 0; i < weaponCards.Length; i++)
+            if (weaponCards[i] != null) weaponCards[i].gameObject.SetActive(i / CardsPerPage == WeaponPage);
+        RefreshWeaponLocks();
     }
 
     public void ShowWeapons()
@@ -274,21 +301,28 @@ public class StartMenu : MonoBehaviour
         string[] roles = { "ТОЧНОСТЬ", "ВЫСОКИЙ ТЕМП", "БЛИЖНИЙ БОЙ", "МОЩНЫЙ ВЫСТРЕЛ" };
         Color[] accents = { new Color(0.64f, 0.79f, 0.85f), GameUi.Accent,
             new Color(0.94f, 0.65f, 0.35f), new Color(0.73f, 0.64f, 0.92f) };
-        Color accent = accents[index % accents.Length];
+        bool special = weapon.kind != WeaponKind.Standard;
+        Color accent = special ? UiArtwork.WeaponAccent(weapon.kind) : accents[index % accents.Length];
         RectTransform card = GameUi.Box(selection, "Weapon Card " + index, min, max, new Color(0.055f, 0.075f, 0.1f), true);
         UiArtwork.Round(card.GetComponent<Image>());
+        weaponCards[index] = card;
         Button button = card.gameObject.AddComponent<Button>();
         button.targetGraphic = card.GetComponent<Image>();
         button.onClick.AddListener(() => ChooseWeapon(index));
-        Image art = UiArtwork.Picture(card, UiArtwork.Weapon(index), new Vector2(0.035f, 0.21f), new Vector2(0.43f, 0.86f));
-        Text role = GameUi.Label(card, index < roles.Length ? roles[index] : "ОРУЖИЕ", new Vector2(0.46f, 0.73f),
-            new Vector2(0.97f, 0.94f), 12, accent);
+        Image art = UiArtwork.Picture(card, special ? UiArtwork.WeaponGlyph(weapon.kind) : UiArtwork.Weapon(index),
+            new Vector2(0.035f, 0.21f), new Vector2(0.43f, 0.86f));
+        if (special) art.color = accent;
+        string roleText = !string.IsNullOrEmpty(weapon.role) ? weapon.role : index < roles.Length ? roles[index] : "ОРУЖИЕ";
+        string titleText = !string.IsNullOrEmpty(weapon.title) ? weapon.title : index < titles.Length ? titles[index] : weapon.weaponName;
+        Text role = GameUi.Label(card, roleText, new Vector2(0.46f, 0.73f), new Vector2(0.97f, 0.94f), 12, accent);
         role.alignment = TextAnchor.MiddleLeft;
-        Text title = GameUi.Label(card, index < titles.Length ? titles[index] : weapon.weaponName,
+        Text title = GameUi.Label(card, titleText,
             new Vector2(0.46f, 0.49f), new Vector2(0.98f, 0.77f), 27, new Color(0.93f, 0.95f, 0.97f));
         title.fontStyle = FontStyle.Bold;
         title.alignment = TextAnchor.MiddleLeft;
-        string stats = "Урон  " + weapon.damage + "    •    " + (1f / Mathf.Max(0.03f, weapon.fireRate)).ToString("0.#") +
+        string stats = special ?
+            "Урон  " + weapon.damage + "    •    " + (1f / Mathf.Max(0.03f, weapon.fireRate)).ToString("0.#") + " /с\n" + weapon.description :
+            "Урон  " + weapon.damage + "    •    " + (1f / Mathf.Max(0.03f, weapon.fireRate)).ToString("0.#") +
             " /с\nСнарядов за выстрел  " + Mathf.Max(1, weapon.pelletCount);
         Text detail = GameUi.Label(card, stats, new Vector2(0.46f, 0.12f), new Vector2(0.98f, 0.5f),
             16, new Color(0.62f, 0.69f, 0.77f));
@@ -329,7 +363,8 @@ public class StartMenu : MonoBehaviour
             weaponLockText[i].color = affordable ? GameUi.Accent : new Color(0.62f, 0.69f, 0.77f);
         }
         if (selectionHint != null)
-            selectionHint.text = "Нажми на карточку, чтобы начать. Закрытое оружие открывается за детали (у тебя: " + MetaProgress.Currency + ").";
+            selectionHint.text = (weaponPages > 1 ? "Страница " + (WeaponPage + 1) + " из " + weaponPages + "   •   " : "") +
+                "Нажми на карточку, чтобы начать. Закрытое оружие открывается за детали (у тебя: " + MetaProgress.Currency + ").";
     }
 
     private void BeginGame(int index)

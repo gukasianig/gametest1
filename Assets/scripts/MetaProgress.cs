@@ -83,6 +83,15 @@ public static class MetaProgress
     {
         new MetaUnlock { id = "weapon:2", title = "Дробовик", cost = 150 },
         new MetaUnlock { id = "weapon:3", title = "Тяжёлая винтовка", cost = 300 },
+        new MetaUnlock { id = "weapon:4", title = "Пила-бумеранг", cost = 300 },
+        new MetaUnlock { id = "weapon:5", title = "Сапёрные мины", cost = 250 },
+        new MetaUnlock { id = "weapon:6", title = "Ракетница", cost = 400 },
+        new MetaUnlock { id = "weapon:7", title = "Электродуга", cost = 350 },
+        new MetaUnlock { id = "weapon:8", title = "Огнемёт", cost = 450 },
+        new MetaUnlock { id = "weapon:9", title = "Ледяная пушка", cost = 400 },
+        new MetaUnlock { id = "weapon:10", title = "Рельсовая пушка", cost = 500 },
+        new MetaUnlock { id = "weapon:11", title = "Турель", cost = 500 },
+        new MetaUnlock { id = "weapon:12", title = "Дроны-стрелки", cost = 550 },
     };
 
     private static MetaSave data;

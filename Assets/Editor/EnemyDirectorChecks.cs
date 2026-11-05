@@ -13,7 +13,7 @@ public static class EnemyDirectorChecks
 {
     private const string Request = "Logs/enemy-director.request";
     private const string Report = "Logs/enemy-director-results.txt";
-    private static IEnumerator routine;
+    private static CheckRunner routine;
     private static readonly System.Collections.Generic.List<string> lines = new System.Collections.Generic.List<string>();
     private static double started;
 
@@ -38,7 +38,7 @@ public static class EnemyDirectorChecks
         File.Delete(Request);
         lines.Clear();
         started = EditorApplication.timeSinceStartup;
-        routine = Checks();
+        routine = new CheckRunner(Checks());
         EditorApplication.update += Tick;
     }
 
@@ -63,10 +63,12 @@ public static class EnemyDirectorChecks
         EditorApplication.Exit(success ? 0 : 1);
     }
 
+    // Game-time wait (the game runs slower than real time without a window); a real-time cap prevents hangs.
     private static IEnumerator Wait(float seconds)
     {
-        double end = EditorApplication.timeSinceStartup + seconds;
-        while (EditorApplication.timeSinceStartup < end) yield return null;
+        float end = Time.time + seconds;
+        double cap = EditorApplication.timeSinceStartup + 120;
+        while (Time.time < end && EditorApplication.timeSinceStartup < cap) yield return null;
     }
 
     private static GameObject Place(GameObject prefab, Vector3 position, Transform target, bool lockMovement)

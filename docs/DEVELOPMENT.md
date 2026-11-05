@@ -27,6 +27,8 @@
 | SpecialEnemyChecks | `special-enemies.request` | пять новых ролей врагов |
 | CrowdMovementChecks | `crowd-movement.request` | обход толпы |
 | ProjectileOwnerChecks | `projectile-owner.request` | пули игнорируют владельца |
+| WeaponChecks | batch: `-executeMethod WeaponChecks.RunBatch` (без `-quit`; маркер `weapon-checks.request`) | 13 оружий, страницы меню, поведение девяти специальных оружий, очистка при смене |
+| NewWeaponBuilder | batch: `-executeMethod NewWeaponBuilder.RunBatch` (без `-quit`) | не проверка: добавляет специальные оружия в `AutoShoter.weapons` сцены; повторяем безопасно |
 | EnemyDirectorChecks | batch: `-executeMethod EnemyDirectorChecks.RunBatch` (без `-quit`; маркер `enemy-director.request`) | Призыватель/Снайпер, 10 типов, расписание режиссёра, элита, орда |
 | NewEnemyBuilder | batch: `-executeMethod NewEnemyBuilder.RunBatch` (без `-quit`) | не проверка: создаёт префабы Summoner/Sniper и регистрирует их в сцене; повторяем безопасно |
 | MetaProgressChecks | batch: `-executeMethod MetaProgressChecks.RunBatch` (без `-quit`; маркер `meta-progress.request`) | мета-прогрессия: награды, рекорды, покупки, сохранение/восстановление, кнопка Мастерской, бонусы в забеге, выплата |
@@ -35,6 +37,8 @@
 **Batch VerticalSliceChecks** (Unity закрыт, БЕЗ `-quit`; метод сам завершает процесс): `-executeMethod VerticalSliceChecks.RunBatch` — все проверки, 7–10 мин; `-executeMethod VerticalSliceChecks.RunSoakBatch` — только 300 с бота с диагностикой (кол-во убийств, позиция, враги в радиусе, «замершие»), ~6 мин. Результат — `Logs/vertical-slice-results.txt`. Не запускать параллельно открытому проекту и внутри пользовательского забега (тест временно меняет данные и перезагружает сцену).
 
 ## Что проверено (кратко, с границами)
+
+- **5 ноября 2026, девять оружий:** WeaponChecks PASS (поведение каждого) и EnemyDirectorChecks PASS (после исправления запускателя вложенных ожиданий — `CheckRunner`; прежние `yield return Wait(...)` в проверках на базе обычного enumerator не ждали; в VerticalSliceChecks вложенное драйвится вручную и не затронуто). Игровое время в batch без окна нельзя сравнивать с реальным: ожидания в проверках делать в игровом времени (`Time.time`). Не проверено: вид, звук, баланс, поведение против босса и в длительном бою, ручное управление с новыми оружиями.
 
 - **5 ноября 2026, новые враги и режиссёр:** EnemyDirectorChecks PASS и общий регресс VerticalSliceChecks PASS (пик живых 40, предел не превышен; регресс прошёл ещё с Щитоносцем, после его удаления повторён только EnemyDirectorChecks — удаление вернуло `Bullet` к прежней логике). Не проверено: вид врагов/объявлений/золотой элиты глазами, баланс ритма и новых врагов, уклонение игрока от снайпера. Старые Editor-проверки (SpecialEnemyChecks, EnemyRosterChecks, GroundWaveChecks) рассчитаны на прежние 8 типов/темп и не обновлялись.
 

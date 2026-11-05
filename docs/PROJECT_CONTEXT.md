@@ -21,7 +21,7 @@ Survival: волны идут на игрока, он отбивается за�
 | Механика | Файлы |
 | --- | --- |
 | Движение и камера | `PlayMovement`, `TopDownCamera` |
-| Оружие игрока | `AutoShoter` (автострельба), `WeaponData`, `bullet`, `Grenade`, `OrbitManager`/`OrbitWeapon`; `playershoting` (ручная, не основной путь) |
+| Оружие игрока | `AutoShoter` (автострельба), `WeaponData` (13 записей в сцене: 4 обычных + 9 специальных), `WeaponTargets` (цель по правилу), `SpecialWeapons` (поведение 9 видов), `bullet`, `Grenade`, `OrbitManager`/`OrbitWeapon`; `playershoting` (ручная, не основной путь) |
 | Меню и забег | `StartMenu`, `GameSession` (состояния, таймер, пауза, босс, результаты), `GameUi`, `RunStatistics` (Tab) |
 | Враги | `EnemyAI` (движение/обход толпы), `EnemyAbility` (способности ролей), `EnemyProjectile`, `Health`, `PlayerHealth`, `EnemyHealthDisplay`, `HealthBarFx` |
 | Босс | `BossController` |

@@ -5,6 +5,9 @@ public class EnemyAI : MonoBehaviour
 {
     private static readonly HashSet<EnemyAI> active = new HashSet<EnemyAI>();
     public static int ActiveCount => active.Count;
+    public static IEnumerable<EnemyAI> All => active;
+    private Health cachedHealth;
+    public Health Health => cachedHealth != null ? cachedHealth : (cachedHealth = GetComponent<Health>());
 
     public static int CountWithin(Vector3 center, float radius)
     {

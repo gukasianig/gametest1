@@ -18,8 +18,6 @@ public static class NewEnemyBuilder
 
     private static readonly Def[] Defs =
     {
-        new Def { prefab = "Enemy_Shielder", typeName = "Shielder", role = EnemyRole.Shielder, health = 160, damage = 12, experience = 12,
-            speed = 2.3f, scale = 1.2f, cost = 14, weight = 12, minWave = 7, minSeconds = 85f },
         new Def { prefab = "Enemy_Summoner", typeName = "Summoner", role = EnemyRole.Summoner, health = 110, damage = 8, experience = 14,
             speed = 2.0f, scale = 1.1f, cost = 18, weight = 9, minWave = 9, minSeconds = 120f, usesWeakAsMinion = true },
         new Def { prefab = "Enemy_Sniper", typeName = "Sniper", role = EnemyRole.Sniper, health = 55, damage = 8, experience = 12,

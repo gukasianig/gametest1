@@ -1841,12 +1841,6 @@ MonoBehaviour:
     weight: 10
     minWave: 14
     minSurvivalSeconds: 180
-  - name: Shielder
-    prefab: {fileID: 442116053428028982, guid: 02ebf95e9a0bd6f4d9d5142c2ad3778c, type: 3}
-    baseCost: 14
-    weight: 12
-    minWave: 7
-    minSurvivalSeconds: 85
   - name: Summoner
     prefab: {fileID: 442116053428028982, guid: 3e53056845291e4499a04d7d3a031dcd, type: 3}
     baseCost: 18

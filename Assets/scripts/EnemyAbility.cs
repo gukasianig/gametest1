@@ -2,7 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum EnemyRole { Shooter, Charger, Bomber, Healer, Splitter, Shielder, Summoner, Sniper }
+// Values are stored in prefabs by number; 5 was a removed role, keep the explicit numbers.
+public enum EnemyRole { Shooter, Charger, Bomber, Healer, Splitter, Summoner = 6, Sniper = 7 }
 
 [RequireComponent(typeof(EnemyAI), typeof(Health))]
 public class EnemyAbility : MonoBehaviour
@@ -10,9 +11,6 @@ public class EnemyAbility : MonoBehaviour
     public EnemyRole role;
     // Splitter: the fragment prefab. Summoner: the minion prefab.
     public GameObject splitPrefab;
-    // Shielder: bullets coming from within this half-angle of its facing do only a fraction of damage.
-    public const float ShieldHalfAngle = 75f;
-    public const float ShieldPassFraction = 0.15f;
     public const int SummonerMinionLimit = 4;
     private readonly List<Health> minions = new List<Health>();
     public int LiveMinions { get { minions.RemoveAll(m => m == null || m.isDead); return minions.Count; } }
@@ -32,22 +30,12 @@ public class EnemyAbility : MonoBehaviour
             case EnemyRole.Charger: return new Color(1f, 0.64f, 0.12f);
             case EnemyRole.Bomber: return new Color(1f, 0.2f, 0.3f);
             case EnemyRole.Healer: return new Color(0.2f, 0.95f, 0.55f);
-            case EnemyRole.Shielder: return new Color(0.55f, 0.65f, 0.75f);
             case EnemyRole.Summoner: return new Color(1f, 0.35f, 0.75f);
             case EnemyRole.Sniper: return new Color(0.95f, 0.95f, 0.3f);
             default: return new Color(0.75f, 0.4f, 1f);
         }
     }
 
-    // True when a shot from this point hits the shield side (the front half-cone).
-    public bool BlocksShot(Vector3 shotPosition)
-    {
-        if (role != EnemyRole.Shielder) return false;
-        Vector3 toShot = shotPosition - transform.position;
-        toShot.y = 0f;
-        if (toShot.sqrMagnitude < 0.0001f) return false;
-        return Vector3.Dot(transform.forward, toShot.normalized) > Mathf.Cos(ShieldHalfAngle * Mathf.Deg2Rad);
-    }
 
     private void Awake()
     {
@@ -58,7 +46,7 @@ public class EnemyAbility : MonoBehaviour
 
     private void Start()
     {
-        ai.UsesMelee = role == EnemyRole.Splitter || role == EnemyRole.Shielder;
+        ai.UsesMelee = role == EnemyRole.Splitter;
         ai.PreferredRange = role == EnemyRole.Shooter ? 9f : role == EnemyRole.Healer ? 6f :
             role == EnemyRole.Summoner ? 8f : role == EnemyRole.Sniper ? 17f : 0f;
         nextAction = Time.time + 1.5f;
@@ -87,8 +75,6 @@ public class EnemyAbility : MonoBehaviour
         }
         else if (role == EnemyRole.Bomber)
             Part(PrimitiveType.Sphere, new Vector3(0, 0.65f, 0), Vector3.one * 0.5f);
-        else if (role == EnemyRole.Shielder)
-            Part(PrimitiveType.Cube, new Vector3(0, 0.1f, 0.75f), new Vector3(1.5f, 1.2f, 0.18f));
         else if (role == EnemyRole.Summoner)
         {
             Part(PrimitiveType.Cube, new Vector3(-0.25f, 0.75f, 0), new Vector3(0.12f, 0.6f, 0.12f));

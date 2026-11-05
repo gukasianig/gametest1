@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-// Optional check for the Shielder/Summoner/Sniper roles and the wave director.
+// Optional check for the Summoner/Sniper roles, elites and the wave director.
 // Batch: -batchmode -executeMethod EnemyDirectorChecks.RunBatch (without -quit). Report: Logs/enemy-director-results.txt.
 [InitializeOnLoad]
 public static class EnemyDirectorChecks
@@ -99,42 +99,19 @@ public static class EnemyDirectorChecks
         Require(session.State == GameRunState.Playing, "Run did not start.");
 
         // 1. Registration.
-        EnemyType shielderType = Array.Find(waves.enemies, e => e.name == "Shielder");
         EnemyType summonerType = Array.Find(waves.enemies, e => e.name == "Summoner");
         EnemyType sniperType = Array.Find(waves.enemies, e => e.name == "Sniper");
-        Require(shielderType != null && summonerType != null && sniperType != null, "New enemy types are not registered.");
-        Require(shielderType.minWave == 7 && shielderType.minSurvivalSeconds == 85f && summonerType.minWave == 9 && summonerType.minSurvivalSeconds == 120f &&
+        Require(summonerType != null && sniperType != null, "New enemy types are not registered.");
+        Require(Array.Find(waves.enemies, e => e.name == "Shielder") == null, "Removed Shielder is still registered.");
+        Require(summonerType.minWave == 9 && summonerType.minSurvivalSeconds == 120f &&
             sniperType.minWave == 10 && sniperType.minSurvivalSeconds == 130f, "Unlock gates.");
-        EnemyAbility shielderAbility = shielderType.prefab.GetComponent<EnemyAbility>();
-        Require(shielderAbility.role == EnemyRole.Shielder && summonerType.prefab.GetComponent<EnemyAbility>().role == EnemyRole.Summoner &&
+        Require(summonerType.prefab.GetComponent<EnemyAbility>().role == EnemyRole.Summoner &&
             sniperType.prefab.GetComponent<EnemyAbility>().role == EnemyRole.Sniper, "Prefab roles.");
         Require(summonerType.prefab.GetComponent<EnemyAbility>().splitPrefab != null, "Summoner minion prefab missing.");
-        Require(shielderType.prefab.GetComponent<Health>().maxHealth == 160 && sniperType.prefab.GetComponent<Health>().maxHealth == 55 &&
-            summonerType.prefab.GetComponent<Health>().maxHealth == 110 && waves.enemies.Length == 11, "Stats / roster size: " + waves.enemies.Length);
-        Pass("Roster: 11 types, Shielder 7/85 s, Summoner 9/120 s, Sniper 10/130 s, roles, stats and minion prefab set.");
-
-        // 2. Shielder blocks bullets from the front only.
+        Require(sniperType.prefab.GetComponent<Health>().maxHealth == 55 &&
+            summonerType.prefab.GetComponent<Health>().maxHealth == 110 && waves.enemies.Length == 10, "Stats / roster size: " + waves.enemies.Length);
         Transform target = player.transform;
-        GameObject shielder = Place(shielderType.prefab, target.position + new Vector3(10f, 0.7f, 0f), target, true);
-        shielder.transform.rotation = Quaternion.LookRotation(Vector3.left);
-        yield return null;
-        EnemyAbility ability = shielder.GetComponent<EnemyAbility>();
-        Vector3 center = shielder.transform.position;
-        Require(ability.BlocksShot(center + shielder.transform.forward * 3f), "Front shot should be blocked.");
-        Require(!ability.BlocksShot(center - shielder.transform.forward * 3f), "Rear shot should pass.");
-        Require(!ability.BlocksShot(center + shielder.transform.right * 3f), "Side shot should pass.");
-        Health shield = shielder.GetComponent<Health>();
-        Collider shieldCollider = shielder.GetComponent<Collider>();
-        MethodInfo hit = typeof(Bullet).GetMethod("OnTriggerEnter", BindingFlags.Instance | BindingFlags.NonPublic);
-        int before = shield.CurrentHealth;
-        Fire(shooter, hit, shieldCollider, center + shielder.transform.forward * 2f, 20);
-        int front = before - shield.CurrentHealth;
-        before = shield.CurrentHealth;
-        Fire(shooter, hit, shieldCollider, center - shielder.transform.forward * 2f, 20);
-        int rear = before - shield.CurrentHealth;
-        Require(front == 3 && rear == 20, "Shield damage front/rear: " + front + "/" + rear);
-        UnityEngine.Object.Destroy(shielder);
-        Pass("Shielder: front/side/rear geometry; a 20-damage bullet does 3 from the front and 20 from behind.");
+        Pass("Roster: 10 types (no Shielder), Summoner 9/120 s, Sniper 10/130 s, roles, stats and minion prefab set.");
 
         // 3. Director schedule (pure logic).
         WaveDirector director = new WaveDirector();
@@ -255,12 +232,4 @@ public static class EnemyDirectorChecks
         Pass("Sniper: warning line, then a single 22-damage shot.");
     }
 
-    private static void Fire(AutoShoter shooter, MethodInfo hit, Collider collider, Vector3 position, int damage)
-    {
-        GameObject bullet = UnityEngine.Object.Instantiate(shooter.weapons[1].bulletPrefab, position, Quaternion.identity);
-        Bullet component = bullet.GetComponent<Bullet>();
-        component.SetOwner(shooter.transform);
-        component.damage = damage;
-        hit.Invoke(component, new object[] { collider });
-    }
 }

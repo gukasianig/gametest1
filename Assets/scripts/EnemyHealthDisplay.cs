@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // Every Health registers itself: no per-prefab UI setup is required.
+// Runs after the camera's LateUpdate so bars are never placed with last frame's camera position.
+[DefaultExecutionOrder(1000)]
 public class EnemyHealthDisplay : MonoBehaviour
 {
     private class HealthBar
@@ -67,6 +69,8 @@ public class EnemyHealthDisplay : MonoBehaviour
         float height = body != null ? body.bounds.max.y - health.transform.position.y + 0.45f : 1.5f;
         bars.Add(health, new HealthBar { root = root, fill = fill, image = image, label = label, height = height });
         Refresh(health);
+        // A new rect sits at the canvas centre (where the hero is) until the next LateUpdate: hide/place it now.
+        Place(root, health.transform.position + Vector3.up * height, Vector2.zero);
     }
 
     public void Refresh(Health health)
@@ -99,6 +103,7 @@ public class EnemyHealthDisplay : MonoBehaviour
         numbers.Add(new DamageNumber { root = root, label = label,
             position = health.transform.position + Vector3.up * height,
             drift = Random.Range(-20f, 20f) });
+        Place(root, numbers[numbers.Count - 1].position, new Vector2(0f, 25f));
     }
 
     void LateUpdate()
@@ -128,6 +133,7 @@ public class EnemyHealthDisplay : MonoBehaviour
 
     private void Place(RectTransform rect, Vector3 worldPosition, Vector2 offset)
     {
+        if (viewCamera == null) viewCamera = Camera.main;
         if (viewCamera == null) { rect.gameObject.SetActive(false); return; }
         Vector3 screen = viewCamera.WorldToScreenPoint(worldPosition);
         bool visible = screen.z > 0 && screen.x >= 0 && screen.x <= Screen.width && screen.y >= 0 && screen.y <= Screen.height;

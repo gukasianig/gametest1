@@ -14,7 +14,9 @@ public class StartMenu : MonoBehaviour
     private RectTransform home;
     private RectTransform selection;
     private RectTransform workshop;
-    private Text summary, workshopCurrency;
+    private Text summary, workshopCurrency, selectionHint;
+    private RectTransform[] weaponLocks;
+    private Text[] weaponLockText;
     private WorkshopRow[] workshopRows;
     private bool waiting;
     public bool WaitingForWeapon => waiting;
@@ -64,9 +66,11 @@ public class StartMenu : MonoBehaviour
         GameUi.Label(selection, "СНАРЯЖЕНИЕ", new Vector2(0.08f, 0.87f), new Vector2(0.92f, 0.93f), 16, GameUi.Accent);
         GameUi.Label(selection, "Выбери оружие", new Vector2(0.08f, 0.77f), new Vector2(0.92f, 0.87f), 36,
             new Color(0.92f, 0.94f, 0.96f));
-        GameUi.Label(selection, "Каждое оружие задаёт свой стиль боя. Нажми на карточку, чтобы начать.",
-            new Vector2(0.06f, 0.7f), new Vector2(0.94f, 0.77f), 16, new Color(0.57f, 0.64f, 0.72f));
+        selectionHint = GameUi.Label(selection, "", new Vector2(0.06f, 0.7f), new Vector2(0.94f, 0.77f), 16,
+            new Color(0.57f, 0.64f, 0.72f));
         int count = shooter.weapons == null ? 0 : shooter.weapons.Length;
+        weaponLocks = new RectTransform[Mathf.Max(count, 1)];
+        weaponLockText = new Text[Mathf.Max(count, 1)];
         int rows = Mathf.Max(2, Mathf.CeilToInt(count / 2f));
         for (int i = 0; i < count; i++)
         {
@@ -85,6 +89,7 @@ public class StartMenu : MonoBehaviour
         });
         UiArtwork.Round(back.GetComponent<Image>());
         selection.gameObject.SetActive(false);
+        RefreshWeaponLocks();
         waiting = true;
         Time.timeScale = 0f;
         int restart = GameSession.ConsumeRestart();
@@ -93,6 +98,7 @@ public class StartMenu : MonoBehaviour
 
     public void ShowWeapons()
     {
+        RefreshWeaponLocks();
         home.gameObject.SetActive(false);
         selection.gameObject.SetActive(true);
     }
@@ -194,7 +200,7 @@ public class StartMenu : MonoBehaviour
         UiArtwork.Round(card.GetComponent<Image>());
         Button button = card.gameObject.AddComponent<Button>();
         button.targetGraphic = card.GetComponent<Image>();
-        button.onClick.AddListener(() => BeginGame(index));
+        button.onClick.AddListener(() => ChooseWeapon(index));
         Image art = UiArtwork.Picture(card, UiArtwork.Weapon(index), new Vector2(0.035f, 0.21f), new Vector2(0.43f, 0.86f));
         Text role = GameUi.Label(card, index < roles.Length ? roles[index] : "ОРУЖИЕ", new Vector2(0.46f, 0.73f),
             new Vector2(0.97f, 0.94f), 12, accent);
@@ -212,11 +218,44 @@ public class StartMenu : MonoBehaviour
         UpgradeCardFx effects = card.gameObject.AddComponent<UpgradeCardFx>();
         effects.icon = art.transform;
         effects.Present(accent, index);
+        // Drawn last so it dims the card; it does not block clicks, so the card button still opens the purchase.
+        RectTransform shade = GameUi.Box(card, "Locked", Vector2.zero, Vector2.one, new Color(0.02f, 0.03f, 0.04f, 0.84f));
+        UiArtwork.Round(shade.GetComponent<Image>());
+        weaponLocks[index] = shade;
+        weaponLockText[index] = GameUi.Label(shade, "", new Vector2(0.1f, 0.2f), new Vector2(0.9f, 0.8f), 24);
+    }
+
+    private void ChooseWeapon(int index)
+    {
+        if (!MetaProgress.IsWeaponUnlocked(index))
+        {
+            if (MetaProgress.TryUnlock(MetaProgress.WeaponKey(index))) { RefreshWeaponLocks(); RefreshHome(); }
+            return;
+        }
+        BeginGame(index);
+    }
+
+    private void RefreshWeaponLocks()
+    {
+        for (int i = 0; i < weaponLocks.Length; i++)
+        {
+            if (weaponLocks[i] == null) continue;
+            MetaUnlock unlock = MetaProgress.FindUnlock(MetaProgress.WeaponKey(i));
+            bool locked = unlock != null && !MetaProgress.IsUnlocked(unlock.id);
+            weaponLocks[i].gameObject.SetActive(locked);
+            if (!locked) continue;
+            bool affordable = MetaProgress.Currency >= unlock.cost;
+            weaponLockText[i].text = "ЗАКРЫТО\n" + (affordable ? "Нажми, чтобы открыть за " : "Нужно ") + unlock.cost + " " +
+                MetaProgress.CurrencyName.ToLowerInvariant();
+            weaponLockText[i].color = affordable ? GameUi.Accent : new Color(0.62f, 0.69f, 0.77f);
+        }
+        if (selectionHint != null)
+            selectionHint.text = "Нажми на карточку, чтобы начать. Закрытое оружие открывается за детали (у тебя: " + MetaProgress.Currency + ").";
     }
 
     private void BeginGame(int index)
     {
-        if (!waiting || !shooter.SelectWeapon(index)) return;
+        if (!waiting || !MetaProgress.IsWeaponUnlocked(index) || !shooter.SelectWeapon(index)) return;
         waiting = false;
         GetComponent<PlayerProgression>().ApplyMetaBonuses();
         GetComponent<GameSession>().Begin(index);

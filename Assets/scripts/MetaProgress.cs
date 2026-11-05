@@ -43,6 +43,12 @@ public class MetaUpgrade
     public int Cost(int rank) { return Mathf.Max(1, Mathf.RoundToInt(baseCost * Mathf.Pow(costGrowth, rank))); }
 }
 
+public class MetaUnlock
+{
+    public string id, title;
+    public int cost;
+}
+
 public struct RunReward
 {
     public int amount;
@@ -67,6 +73,14 @@ public static class MetaProgress
             effect = UpgradeEffect.Pickup, amountPerRank = 0.1f, maxRank = 5, baseCost = 50, costGrowth = 1.4f },
         new MetaUpgrade { id = "meta_speed", title = "Лёгкие приводы", description = "Выше скорость движения",
             effect = UpgradeEffect.Movement, amountPerRank = 0.03f, maxRank = 5, baseCost = 100, costGrowth = 1.5f },
+    };
+
+    // Things locked until opened. Anything not listed here is available from the start. Costs are paid in
+    // currency today; a later unlock can instead be granted by code (an achievement) through Unlock(id).
+    public static readonly MetaUnlock[] Unlocks =
+    {
+        new MetaUnlock { id = "weapon:2", title = "Дробовик", cost = 150 },
+        new MetaUnlock { id = "weapon:3", title = "Тяжёлая винтовка", cost = 300 },
     };
 
     private static MetaSave data;
@@ -191,6 +205,28 @@ public static class MetaProgress
     }
 
     public static string WeaponKey(int weapon) { return "weapon:" + weapon; }
+
+    public static MetaUnlock FindUnlock(string id)
+    {
+        foreach (MetaUnlock unlock in Unlocks) if (unlock.id == id) return unlock;
+        return null;
+    }
+
+    public static bool IsWeaponUnlocked(int weapon)
+    {
+        MetaUnlock unlock = FindUnlock(WeaponKey(weapon));
+        return unlock == null || IsUnlocked(unlock.id);
+    }
+
+    // Spends currency to open a listed unlock; the payment and the unlock are written together.
+    public static bool TryUnlock(string id)
+    {
+        MetaUnlock unlock = FindUnlock(id);
+        if (unlock == null || IsUnlocked(id) || Currency < unlock.cost) return false;
+        Data.currency -= unlock.cost;
+        Unlock(id);
+        return true;
+    }
 
     public static MetaRecord Record(string key)
     {

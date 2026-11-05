@@ -89,7 +89,29 @@ public static class MetaProgressChecks
         Require(buy.GetComponentInChildren<Text>().text.Contains((MetaProgress.Find("meta_pickup").Cost(1)).ToString()), "Workshop label not refreshed.");
         Pass("Workshop UI: rows built, purchase through the button spends currency and refreshes the label.");
 
-        menu.SendMessage("BeginGame", 1);
+        // Locked weapons: cannot start, cannot be bought without funds, can be bought once with funds.
+        Require(MetaProgress.IsWeaponUnlocked(0) && MetaProgress.IsWeaponUnlocked(1) &&
+            !MetaProgress.IsWeaponUnlocked(2) && !MetaProgress.IsWeaponUnlocked(3), "Default weapon availability.");
+        menu.SendMessage("BeginGame", 2);
+        Require(GameSession.Instance.State == GameRunState.Menu, "Locked weapon started a run.");
+        Transform card = FindDeep(menu.transform.root, "Weapon Card 2");
+        Transform shade = FindDeep(menu.transform.root, "Locked");
+        Require(card != null && shade != null, "Weapon cards/locks were not built.");
+        int richCurrency = MetaProgress.Currency;
+        MetaProgress.Data.currency = 100;
+        card.GetComponent<Button>().onClick.Invoke();
+        Require(!MetaProgress.IsWeaponUnlocked(2) && MetaProgress.Currency == 100, "Weapon opened without enough currency.");
+        MetaProgress.Data.currency = richCurrency;
+        card.GetComponent<Button>().onClick.Invoke();
+        Require(MetaProgress.IsWeaponUnlocked(2) && MetaProgress.Currency == richCurrency - 150, "Weapon purchase failed.");
+        Require(GameSession.Instance.State == GameRunState.Menu, "Buying a weapon must not start the run.");
+        Require(!card.Find("Locked").gameObject.activeSelf, "Lock overlay not hidden after purchase.");
+        Pass("Weapon unlocks: locked card cannot start, needs funds, purchase opens it once, overlay hides.");
+
+        // Start with the freshly unlocked weapon.
+        baseDamage = shooter.weapons[2].damage;
+        menu.SendMessage("BeginGame", 2);
+        Require(GameSession.Instance.State == GameRunState.Playing, "Unlocked weapon did not start the run.");
         Require(health.maxHP == baseHealth + 30 && health.CurrentHP == health.maxHP, "Permanent health not applied: " + health.maxHP);
         Require(shooter.CurrentDamage == Mathf.Max(1, Mathf.RoundToInt(baseDamage * 1.08f)), "Permanent damage not applied: " + shooter.CurrentDamage);
         Require(Mathf.Approximately(movement.SpeedMultiplier, 1.03f), "Permanent speed not applied.");
@@ -157,13 +179,21 @@ public static class MetaProgressChecks
         MetaProgress.Unlock("map:forge");
         MetaProgress.Unlock("map:forge");
         Require(MetaProgress.IsUnlocked("map:forge") && MetaProgress.Data.unlocked.Count == 1, "Unlock list.");
+        Require(MetaProgress.IsWeaponUnlocked(0) && MetaProgress.IsWeaponUnlocked(1) && !MetaProgress.IsWeaponUnlocked(2), "Weapon defaults.");
+        MetaProgress.Data.currency = 149;
+        Require(!MetaProgress.TryUnlock("weapon:2") && !MetaProgress.IsWeaponUnlocked(2) && MetaProgress.Currency == 149, "Unlock with too little currency.");
+        MetaProgress.Data.currency = 150;
+        Require(MetaProgress.TryUnlock("weapon:2") && MetaProgress.IsWeaponUnlocked(2) && MetaProgress.Currency == 0, "Unlock purchase.");
+        Require(!MetaProgress.TryUnlock("weapon:2") && !MetaProgress.TryUnlock("weapon:99"), "Double/unknown unlock must fail.");
+        MetaProgress.Data.currency = 1000000;
         MetaProgress.Save();
         Pass("Rewards, per-weapon/global records, purchases, rank limit, unlock list.");
 
         int savedCurrency = MetaProgress.Currency;
         MetaProgress.UseFile(file);
         Require(MetaProgress.Currency == savedCurrency && MetaProgress.Rank("meta_pickup") == pickup.maxRank &&
-            MetaProgress.Record("all").bestKills == 80 && MetaProgress.IsUnlocked("map:forge"), "Save/load round trip.");
+            MetaProgress.Record("all").bestKills == 80 && MetaProgress.IsUnlocked("map:forge") &&
+            MetaProgress.IsWeaponUnlocked(2) && !MetaProgress.IsWeaponUnlocked(3), "Save/load round trip.");
         MetaProgress.RecordRun(1, false, 30f, 1, 1); // second save creates the .bak of the previous state
         Require(File.Exists(file + ".bak"), "Backup was not created.");
         File.WriteAllText(file, "{ not json");

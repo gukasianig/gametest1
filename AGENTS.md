@@ -16,6 +16,8 @@ Maintain these notes as part of each task, without waiting for a reminder or ask
 
 - For a partially completed roadmap item, keep the parent unchecked and add dated checked, struck-through subitems for finished portions with their actual verification scope; list remaining work separately. Do not hide implemented progress solely in prose or mark unverified gameplay complete.
 
+- Overall plan: `docs/MASTER_PLAN.md` (stages with ✅/🟡/⬜/👁 statuses and the "next steps" list). After meaningful work update its stage statuses and next steps together with GAME_ROADMAP.md; read only its summary table and "Ближайшие шаги" at the start of a chat.
+
 - For upgrade-related work, maintain the matching UP001-UP100 items in docs/UPGRADE_ROADMAP.md together with section D of GAME_ROADMAP.md. Read only its short next-step queue and the relevant group. Proposed upgrades stay unchecked until implemented and verified in the recorded scope; planning does not authorize implementing the entire catalog.
 
 ## Project Structure & Module Organization

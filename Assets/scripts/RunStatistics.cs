@@ -20,7 +20,6 @@ public class RunStatistics : MonoBehaviour
     private PlayerHealth health;
     private WaveManager waves;
     private float nextRefresh;
-
     private void Awake()
     {
         Instance = this;
@@ -85,17 +84,24 @@ public class RunStatistics : MonoBehaviour
         if (waves != null) text.Append("\nВолна     ").Append(waves.wave);
         if (progression != null) text.Append("\nУровень героя     ").Append(progression.Level);
         if (progression != null) text.Append("\nРадиус притяжения     ")
-            .Append(progression.AttractionRadius.ToString("0.#")).Append(" м");
+            .Append(progression.AttractionRadius.ToString("0.##")).Append(" м  (×")
+            .Append(progression.PickupRadiusMultiplier.ToString("0.###")).Append(')');
         if (health != null) text.Append("\nЗдоровье     ").Append(health.CurrentHP).Append(" / ").Append(health.maxHP);
         if (movement != null) text.Append("\nСкорость движения     ")
-            .Append((movement.speed * movement.SpeedMultiplier).ToString("0.##")).Append(" м/с");
+            .Append((movement.speed * movement.SpeedMultiplier).ToString("0.##")).Append(" м/с  (×")
+            .Append(movement.SpeedMultiplier.ToString("0.###")).Append(')');
         if (shooter != null && shooter.baseWeapon != null)
         {
             WeaponData weapon = shooter.baseWeapon;
             text.Append("\n\n<color=#65D8CA>ОРУЖИЕ: ").Append(weapon.weaponName).Append("</color>");
-            text.Append("\nУрон одной пули     ").Append(shooter.CurrentDamage);
+            float damageMultiplier = progression != null ? progression.DamageMultiplier : 1f;
+            text.Append("\nУрон одной пули     ").Append((weapon.damage * damageMultiplier).ToString("0.##"))
+                .Append("  (×").Append(damageMultiplier.ToString("0.###")).Append(", в бою округляется до ")
+                .Append(shooter.CurrentDamage).Append(')');
+            float attackMultiplier = progression != null ? progression.AttackSpeedMultiplier : 1f;
             text.Append("\nВыстрелов в секунду     ")
-                .Append((1f / Mathf.Max(0.03f, shooter.CurrentFireInterval)).ToString("0.##"));
+                .Append((1f / Mathf.Max(0.03f, shooter.CurrentFireInterval)).ToString("0.###"))
+                .Append("  (×").Append(attackMultiplier.ToString("0.###")).Append(')');
             text.Append("\nПуль за выстрел     ").Append(shooter.CurrentPelletCount);
             text.Append("\nДальность поиска цели     ").Append(shooter.range.ToString("0.#")).Append(" м");
             text.Append("\nСкорость пули     ").Append(weapon.bulletSpeed.ToString("0.#")).Append(" м/с");

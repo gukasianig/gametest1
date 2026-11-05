@@ -162,6 +162,10 @@ public class PlayerProgression : MonoBehaviour
 
     private void ShowChoices()
     {
+        // Never re-roll while cards are already on screen: Update() calls this right after
+        // ExperiencePickup.CollectNearby has opened the window in the same frame, which used to
+        // replace the offered list while the old cards stayed drawn (clicks picked another upgrade).
+        if (Choosing) return;
         RollOffers();
         if (offered.Count == 0) { PendingChoices = 0; return; }
         if (GameSession.Instance != null && !GameSession.Instance.EnterUpgrade()) return;
@@ -222,7 +226,9 @@ public class PlayerProgression : MonoBehaviour
     private string Preview(UpgradeDefinition definition)
     {
         int rank = Rank(definition.id);
-        string rankText = "Ранг " + rank + " → " + (rank + 1) + " / " + definition.maxRanks + "\n";
+        string rankText = rank == 0
+            ? "Новое улучшение  •  станет ранг 1 из " + definition.maxRanks + "\n"
+            : "Сейчас ранг " + rank + "  •  станет ранг " + (rank + 1) + " из " + definition.maxRanks + "\n";
         if (definition.effect == UpgradeEffect.MaxHealth)
             return rankText + GetComponent<PlayerHealth>().maxHP + " → " + (GetComponent<PlayerHealth>().maxHP + Mathf.RoundToInt(definition.amount)) + " HP";
         if (definition.effect == UpgradeEffect.OrbitCount)

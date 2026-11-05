@@ -31,7 +31,8 @@ public class WaveSettings
     public int AliveLimitForWave(int wave)
     {
         long limit = (long)Mathf.Max(1, initialAliveLimit) + (long)Mathf.Max(0, wave - 1) * Mathf.Max(0, aliveLimitPerWave);
-        return (int)System.Math.Min(Mathf.Max(1, maxAliveEnemies), limit);
+        int baseLimit = (int)System.Math.Min(Mathf.Max(1, maxAliveEnemies), limit);
+        return Mathf.Max(1, Mathf.CeilToInt(baseLimit * RunModifiers.AliveLimit));
     }
 
     public int AbsoluteLimitForWave(int wave)
@@ -41,8 +42,9 @@ public class WaveSettings
 
     public float SpawnIntervalForWave(int wave)
     {
-        return Mathf.Max(0.1f, minimumSpawnInterval,
+        float interval = Mathf.Max(0.1f, minimumSpawnInterval,
             initialSpawnInterval - Mathf.Max(0, wave - 1) * Mathf.Max(0f, intervalReductionPerWave));
+        return Mathf.Max(0.1f, interval * RunModifiers.SpawnInterval);
     }
     
 }

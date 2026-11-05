@@ -146,6 +146,14 @@ public class PlayerHealth : MonoBehaviour, IDamagable
         Time.timeScale = 0f;
     }
 
+    // Run-start scaling (run modifiers); keeps the hero at full health.
+    public void ScaleMaxHealth(float factor)
+    {
+        if (isDead || factor <= 0f || Mathf.Approximately(factor, 1f)) return;
+        maxHP = Mathf.Max(1, Mathf.RoundToInt(maxHP * factor));
+        currentHP = maxHP;
+    }
+
     public void IncreaseMaxHealth(int amount)
     {
         if (amount <= 0 || isDead) return;

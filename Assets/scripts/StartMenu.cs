@@ -13,8 +13,9 @@ public class StartMenu : MonoBehaviour
     private bool[] canvasStates;
     private RectTransform home;
     private RectTransform selection;
-    private RectTransform workshop;
-    private Text summary, workshopCurrency, selectionHint;
+    private RectTransform workshop, modifiersScreen;
+    private ModifierRow[] modifierRows;
+    private Text summary, workshopCurrency, selectionHint, modifiersTotal;
     private RectTransform[] weaponLocks;
     private Text[] weaponLockText;
     private WorkshopRow[] workshopRows;
@@ -54,12 +55,15 @@ public class StartMenu : MonoBehaviour
             new Color(0.92f, 0.94f, 0.96f));
         GameUi.Label(home, "10 минут выживания. Один Страж. Твоя сборка.", new Vector2(0.12f, 0.39f), new Vector2(0.88f, 0.47f),
             19, new Color(0.58f, 0.65f, 0.72f));
-        Button start = GameUi.Button(home, "Старт", new Vector2(0.2f, 0.21f), new Vector2(0.48f, 0.33f), ShowWeapons);
+        Button start = GameUi.Button(home, "Старт", new Vector2(0.07f, 0.21f), new Vector2(0.34f, 0.33f), ShowWeapons);
         UiArtwork.Round(start.GetComponent<Image>());
-        Button shop = GameUi.Button(home, "Мастерская", new Vector2(0.52f, 0.21f), new Vector2(0.8f, 0.33f), ShowWorkshop);
+        Button shop = GameUi.Button(home, "Мастерская", new Vector2(0.365f, 0.21f), new Vector2(0.635f, 0.33f), ShowWorkshop);
         UiArtwork.Round(shop.GetComponent<Image>());
-        summary = GameUi.Label(home, "", new Vector2(0.1f, 0.11f), new Vector2(0.9f, 0.19f), 17, new Color(0.58f, 0.65f, 0.72f));
+        Button conditions = GameUi.Button(home, "Условия", new Vector2(0.66f, 0.21f), new Vector2(0.93f, 0.33f), ShowModifiers);
+        UiArtwork.Round(conditions.GetComponent<Image>());
+        summary = GameUi.Label(home, "", new Vector2(0.06f, 0.07f), new Vector2(0.94f, 0.19f), 17, new Color(0.58f, 0.65f, 0.72f));
         BuildWorkshop(background);
+        BuildModifiers(background);
         RefreshHome();
 
         selection = GameUi.Box(background, "Weapon Selection", Vector2.zero, Vector2.one, Color.clear);
@@ -117,7 +121,82 @@ public class StartMenu : MonoBehaviour
         if (best != null)
             line += "   •   Лучшее время " + FormatTime(best.bestTime) + "   •   Убийств " + best.bestKills +
                 "   •   Забегов " + MetaProgress.Data.runs;
-        summary.text = line;
+        summary.text = line + "\n" + RunModifiers.Summary();
+    }
+
+    public void ShowModifiers()
+    {
+        home.gameObject.SetActive(false);
+        RefreshModifiers();
+        modifiersScreen.gameObject.SetActive(true);
+    }
+
+    private void BuildModifiers(RectTransform background)
+    {
+        modifiersScreen = GameUi.Box(background, "Modifiers", Vector2.zero, Vector2.one, Color.clear);
+        GameUi.Label(modifiersScreen, "УСЛОВИЯ СМЕНЫ", new Vector2(0.08f, 0.88f), new Vector2(0.92f, 0.94f), 16, GameUi.Accent);
+        GameUi.Label(modifiersScreen, "Усложни забег — получи больше деталей", new Vector2(0.08f, 0.79f), new Vector2(0.92f, 0.88f), 32,
+            new Color(0.92f, 0.94f, 0.96f));
+        modifiersTotal = GameUi.Label(modifiersScreen, "", new Vector2(0.08f, 0.71f), new Vector2(0.92f, 0.79f), 22, GameUi.Accent);
+        int count = RunModifiers.Catalog.Length;
+        float pitch = Mathf.Min(0.135f, 0.53f / Mathf.Max(1, count));
+        modifierRows = new ModifierRow[count];
+        for (int i = 0; i < count; i++)
+        {
+            RunModifier modifier = RunModifiers.Catalog[i];
+            float top = 0.69f - i * pitch;
+            RectTransform row = GameUi.Box(modifiersScreen, "Row " + modifier.id, new Vector2(0.06f, top - pitch + 0.015f),
+                new Vector2(0.94f, top), new Color(0.055f, 0.075f, 0.1f), true);
+            UiArtwork.Round(row.GetComponent<Image>());
+            Text title = GameUi.Label(row, "<b>" + modifier.title + "</b>\n<color=#8FA0B3>" + modifier.description + "</color>",
+                new Vector2(0.02f, 0f), new Vector2(0.62f, 1f), 20, new Color(0.93f, 0.95f, 0.97f));
+            title.alignment = TextAnchor.MiddleLeft;
+            Text bonus = GameUi.Label(row, "+" + Mathf.RoundToInt(modifier.reward * 100f) + "% к награде",
+                new Vector2(0.62f, 0f), new Vector2(0.78f, 1f), 17, new Color(0.62f, 0.69f, 0.77f));
+            string id = modifier.id;
+            Button toggle = GameUi.Button(row, "", new Vector2(0.8f, 0.15f), new Vector2(0.98f, 0.85f), () => ToggleModifier(id));
+            UiArtwork.Round(toggle.GetComponent<Image>());
+            modifierRows[i] = new ModifierRow { modifier = modifier, button = toggle, label = toggle.GetComponentInChildren<Text>() };
+        }
+        Button clear = GameUi.Button(modifiersScreen, "Сбросить", new Vector2(0.2f, 0.04f), new Vector2(0.4f, 0.115f), () =>
+        {
+            RunModifiers.Clear();
+            RefreshModifiers();
+        });
+        UiArtwork.Round(clear.GetComponent<Image>());
+        Button back = GameUi.Button(modifiersScreen, "Назад", new Vector2(0.6f, 0.04f), new Vector2(0.8f, 0.115f), () =>
+        {
+            modifiersScreen.gameObject.SetActive(false);
+            RefreshHome();
+            home.gameObject.SetActive(true);
+        });
+        UiArtwork.Round(back.GetComponent<Image>());
+        modifiersScreen.gameObject.SetActive(false);
+    }
+
+    private void ToggleModifier(string id)
+    {
+        RunModifiers.Toggle(id);
+        RefreshModifiers();
+    }
+
+    private void RefreshModifiers()
+    {
+        modifiersTotal.text = RunModifiers.ActiveCount == 0 ? "Условия обычные   •   награда ×1" :
+            "Включено: " + RunModifiers.ActiveCount + "   •   награда ×" + RunModifiers.RewardMultiplier.ToString("0.##");
+        foreach (ModifierRow row in modifierRows)
+        {
+            bool on = RunModifiers.IsActive(row.modifier.id);
+            row.label.text = on ? "Включено" : "Включить";
+            row.button.GetComponent<Image>().color = on ? new Color(0.12f, 0.45f, 0.4f) : new Color(0.08f, 0.27f, 0.31f);
+        }
+    }
+
+    private class ModifierRow
+    {
+        public RunModifier modifier;
+        public Text label;
+        public Button button;
     }
 
     public static string FormatTime(float seconds)

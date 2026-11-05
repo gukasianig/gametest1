@@ -30,6 +30,7 @@ public class MetaSave
     public List<MetaEntry> ranks = new List<MetaEntry>();
     public List<string> unlocked = new List<string>();
     public List<MetaRecord> records = new List<MetaRecord>();
+    public List<string> modifiers = new List<string>();   // run modifiers chosen in the menu (RunModifiers)
 }
 
 public class MetaUpgrade
@@ -52,6 +53,7 @@ public class MetaUnlock
 public struct RunReward
 {
     public int amount;
+    public float multiplier;
     public bool newBestTime, newBestKills;
     public float bestTime;
     public int bestKills;
@@ -125,6 +127,7 @@ public static class MetaProgress
             if (read.ranks == null) read.ranks = new List<MetaEntry>();
             if (read.unlocked == null) read.unlocked = new List<string>();
             if (read.records == null) read.records = new List<MetaRecord>();
+            if (read.modifiers == null) read.modifiers = new List<string>();
             return read;
         }
         catch (Exception) { return null; }
@@ -243,7 +246,9 @@ public static class MetaProgress
 
     public static RunReward RecordRun(int weapon, bool victory, float seconds, int kills, int level)
     {
-        RunReward result = new RunReward { amount = Reward(victory, seconds, kills, level) };
+        float multiplier = RunModifiers.RewardMultiplier;
+        RunReward result = new RunReward { multiplier = multiplier,
+            amount = Mathf.RoundToInt(Reward(victory, seconds, kills, level) * multiplier) };
         Data.currency += result.amount;
         Data.totalEarned += result.amount;
         Data.runs++;

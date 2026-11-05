@@ -108,11 +108,43 @@ public static class MetaProgressChecks
         Require(!card.Find("Locked").gameObject.activeSelf, "Lock overlay not hidden after purchase.");
         Pass("Weapon unlocks: locked card cannot start, needs funds, purchase opens it once, overlay hides.");
 
+        // Run modifiers chosen through the menu buttons.
+        menu.ShowModifiers();
+        foreach (string id in new[] { "mod_fast", "mod_thick", "mod_fragile", "mod_short" })
+        {
+            Transform modifierRow = FindDeep(menu.transform.root, "Row " + id);
+            Require(modifierRow != null, "Modifier row missing: " + id);
+            modifierRow.GetComponentInChildren<Button>().onClick.Invoke();
+            Require(RunModifiers.IsActive(id) && modifierRow.GetComponentInChildren<Button>().GetComponentInChildren<Text>().text == "Включено",
+                "Modifier not enabled through the button: " + id);
+        }
+        float multiplier = 1f + 0.15f + 0.15f + 0.25f + 0.1f;
+        Require(Mathf.Approximately(RunModifiers.RewardMultiplier, multiplier), "Reward multiplier: " + RunModifiers.RewardMultiplier);
+        Pass("Modifier screen: four modifiers enabled through buttons, reward multiplier x" + multiplier.ToString("0.##") + ".");
+
         // Start with the freshly unlocked weapon.
         baseDamage = shooter.weapons[2].damage;
         menu.SendMessage("BeginGame", 2);
         Require(GameSession.Instance.State == GameRunState.Playing, "Unlocked weapon did not start the run.");
-        Require(health.maxHP == baseHealth + 30 && health.CurrentHP == health.maxHP, "Permanent health not applied: " + health.maxHP);
+        Require(health.maxHP == Mathf.RoundToInt((baseHealth + 30) * 0.6f) && health.CurrentHP == health.maxHP,
+            "Permanent health + fragile hero not applied: " + health.maxHP);
+        Require(Mathf.Approximately(GameSession.Instance.survivalSeconds, 300f), "Short finale not applied: " + GameSession.Instance.survivalSeconds);
+        WaveManager spawner = UnityEngine.Object.FindObjectOfType<WaveManager>();
+        double enemyDeadline = EditorApplication.timeSinceStartup + 20;
+        EnemyAI firstEnemy = null;
+        while (firstEnemy == null && EditorApplication.timeSinceStartup < enemyDeadline)
+        {
+            firstEnemy = UnityEngine.Object.FindObjectOfType<EnemyAI>();
+            yield return null;
+        }
+        Require(firstEnemy != null, "No enemy spawned for modifier check.");
+        string prefabName = firstEnemy.name.Replace("(Clone)", "").Trim();
+        EnemyType enemyType = Array.Find(spawner.enemies, e => e.prefab != null && e.prefab.name == prefabName);
+        Require(enemyType != null, "Cannot match spawned enemy to its type: " + prefabName);
+        Require(Mathf.Approximately(firstEnemy.speed, enemyType.prefab.GetComponent<EnemyAI>().speed * 1.25f), "Fast enemies not applied.");
+        Require(firstEnemy.GetComponent<Health>().maxHealth >= Mathf.RoundToInt(enemyType.prefab.GetComponent<Health>().maxHealth * 1.5f), "Thick enemies not applied.");
+        Pass("Modifiers applied in a run: hero HP x0.6 over the permanent bonus, finale at 300 s, enemy speed x1.25, enemy health x1.5.");
+        Require(health.maxHP == Mathf.RoundToInt((baseHealth + 30) * 0.6f), "Permanent health not applied: " + health.maxHP);
         Require(shooter.CurrentDamage == Mathf.Max(1, Mathf.RoundToInt(baseDamage * 1.08f)), "Permanent damage not applied: " + shooter.CurrentDamage);
         Require(Mathf.Approximately(movement.SpeedMultiplier, 1.03f), "Permanent speed not applied.");
         Require(Mathf.Approximately(progression.PickupRadiusMultiplier, 1.1f), "Permanent pickup not applied.");
@@ -123,8 +155,9 @@ public static class MetaProgressChecks
         yield return null;
         MetaRecord record = MetaProgress.Record("all");
         Require(MetaProgress.Data.runs == 1 && record != null && record.runs == 1, "Run was not recorded.");
-        Require(MetaProgress.Currency > before, "No reward after run.");
-        Pass("Run end records the result and pays currency (+" + (MetaProgress.Currency - before) + ").");
+        int expected = Mathf.RoundToInt(MetaProgress.Reward(false, GameSession.Instance.Elapsed, RunStatistics.Instance.Kills, progression.Level) * multiplier);
+        Require(MetaProgress.Currency - before == expected && expected > 0, "Reward must include the modifier multiplier: " + (MetaProgress.Currency - before) + " vs " + expected);
+        Pass("Run end records the result and pays currency with the modifier multiplier (+" + (MetaProgress.Currency - before) + ").");
     }
 
     private static Transform FindDeep(Transform root, string name)
@@ -209,5 +242,27 @@ public static class MetaProgressChecks
         Require(MetaProgress.Currency == 0, "Newer save version must not be misread.");
         foreach (string suffix in new[] { "", ".bak", ".tmp", ".corrupt" }) if (File.Exists(file + suffix)) File.Delete(file + suffix);
         Pass("Persistence: round trip, atomic backup, recovery from damaged file, unreadable/newer-version handling.");
+
+        // Run modifiers: toggling, multiplier, conflicts-free combination, persistence and effects on settings.
+        MetaProgress.UseFile(file);
+        Require(RunModifiers.ActiveCount == 0 && Mathf.Approximately(RunModifiers.RewardMultiplier, 1f), "Fresh save has modifiers.");
+        Require(RunModifiers.Toggle("mod_fast") && RunModifiers.IsActive("mod_fast") && Mathf.Approximately(RunModifiers.RewardMultiplier, 1.15f), "Toggle on.");
+        Require(!RunModifiers.Toggle("mod_fast") && !RunModifiers.IsActive("mod_fast"), "Toggle off.");
+        Require(!RunModifiers.Toggle("no_such_modifier") && RunModifiers.ActiveCount == 0, "Unknown modifier must do nothing.");
+        foreach (RunModifier modifier in RunModifiers.Catalog) RunModifiers.Toggle(modifier.id);
+        Require(RunModifiers.ActiveCount == RunModifiers.Catalog.Length && Mathf.Approximately(RunModifiers.RewardMultiplier, 1.9f), "All five: x1.9.");
+        Require(Mathf.Approximately(RunModifiers.EnemySpeed, 1.25f) && Mathf.Approximately(RunModifiers.EnemyHealth, 1.5f) &&
+            Mathf.Approximately(RunModifiers.HeroHealth, 0.6f) && Mathf.Approximately(RunModifiers.SurvivalSeconds(600f), 300f) &&
+            Mathf.Approximately(RunModifiers.SurvivalSeconds(120f), 120f), "Modifier effect getters.");
+        WaveSettings waves = new WaveSettings();
+        Require(waves.AliveLimitForWave(1) == 9 && Mathf.Approximately(waves.SpawnIntervalForWave(1), 0.75f * 0.75f), "Horde effect on alive limit/interval.");
+        RunReward modified = MetaProgress.RecordRun(1, true, 600f, 300, 10);
+        Require(modified.amount == Mathf.RoundToInt(700f * 1.9f) && Mathf.Approximately(modified.multiplier, 1.9f), "Reward with multiplier: " + modified.amount);
+        MetaProgress.UseFile(file);
+        Require(RunModifiers.ActiveCount == RunModifiers.Catalog.Length, "Chosen modifiers must survive a reload.");
+        RunModifiers.Clear();
+        Require(RunModifiers.ActiveCount == 0 && Mathf.Approximately(waves.AliveLimitForWave(1), 6) && Mathf.Approximately(RunModifiers.RewardMultiplier, 1f), "Clear.");
+        foreach (string suffix in new[] { "", ".bak", ".tmp", ".corrupt" }) if (File.Exists(file + suffix)) File.Delete(file + suffix);
+        Pass("Modifiers: toggle/clear, x1.9 with all five, effect getters, horde limits, reward multiplier, persistence.");
     }
 }

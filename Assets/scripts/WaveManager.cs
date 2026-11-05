@@ -161,12 +161,13 @@ public class WaveManager : MonoBehaviour
 
         EnemyAI ai = enemy.GetComponent<EnemyAI>();
         if (ai != null && player != null) ai.target = player;
+        if (ai != null) ai.speed *= RunModifiers.EnemySpeed;
 
-        // Initialize scaled health before the first frame.
+        // Initialize scaled health before the first frame (wave growth and the run modifier).
         Health h = enemy.GetComponent<Health>();
         if (h != null)
         {
-            h.SetHealth(Mathf.RoundToInt(h.maxHealth *
+            h.SetHealth(Mathf.RoundToInt(h.maxHealth * RunModifiers.EnemyHealth *
                 (1f + Mathf.Max(0, wave - 1) * settings.healthGrowthPerWave)));
         }
         return true;

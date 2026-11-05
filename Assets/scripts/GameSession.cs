@@ -44,6 +44,7 @@ public class GameSession : MonoBehaviour
     public void Begin(int weapon)
     {
         SelectedWeapon = weapon;
+        survivalSeconds = RunModifiers.SurvivalSeconds(survivalSeconds);
         Elapsed = 0f;
         BossWarning = false;
         State = GameRunState.Playing;
@@ -152,7 +153,9 @@ public class GameSession : MonoBehaviour
             (reward.newBestTime ? "  (новый рекорд!)" : "") +
             "\nУбийства  " + kills + (reward.newBestKills ? "  (новый рекорд!)" : "") +
             "\nУровень  " + level +
-            "\n" + MetaProgress.CurrencyName + ": +" + reward.amount + "  (всего " + MetaProgress.Currency + ")" +
+            "\n" + MetaProgress.CurrencyName + ": +" + reward.amount +
+            (reward.multiplier > 1.001f ? "  (×" + reward.multiplier.ToString("0.##") + " за условия)" : "") +
+            "  (всего " + MetaProgress.Currency + ")" +
             (victory ? "\nНаграда за Стража: +200 опыта" : "\nПотрать детали в Мастерской и попробуй снова");
         result.gameObject.SetActive(true);
     }

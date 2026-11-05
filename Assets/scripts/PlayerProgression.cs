@@ -105,6 +105,7 @@ public class PlayerProgression : MonoBehaviour
             metaApplied = true;
             int health = Mathf.RoundToInt(MetaProgress.Bonus(UpgradeEffect.MaxHealth));
             if (health > 0) GetComponent<PlayerHealth>().IncreaseMaxHealth(health);
+            GetComponent<PlayerHealth>().ScaleMaxHealth(RunModifiers.HeroHealth);
         }
         ApplyStats();
     }

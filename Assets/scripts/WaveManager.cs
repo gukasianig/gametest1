@@ -70,7 +70,7 @@ public class WaveManager : MonoBehaviour
         while (budget > 0 && available.Count > 0 && spawned < settings.maxEnemiesPerWave)
         {
             // Keep a backlog from becoming an instant crowd when enemies are not killed.
-            if (EnemyAI.ActiveCount >= settings.AliveLimitForWave(wave))
+            if (!HasRoom())
             {
                 yield return new WaitForSeconds(0.5f);
                 continue;
@@ -90,6 +90,14 @@ public class WaveManager : MonoBehaviour
         }
 
         Debug.Log($"Wave {wave} | Spawned: {spawned}");
+    }
+
+    // Pressure counts enemies near the player; far stragglers do not stall waves, but a hard cap still bounds the total.
+    public bool HasRoom()
+    {
+        if (EnemyAI.ActiveCount >= settings.AbsoluteLimitForWave(wave)) return false;
+        if (player == null) return EnemyAI.ActiveCount < settings.AliveLimitForWave(wave);
+        return EnemyAI.CountWithin(player.position, settings.pressureRadius) < settings.AliveLimitForWave(wave);
     }
 
     List<EnemyType> GetAvailableEnemies()

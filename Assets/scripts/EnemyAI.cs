@@ -5,6 +5,19 @@ public class EnemyAI : MonoBehaviour
 {
     private static readonly HashSet<EnemyAI> active = new HashSet<EnemyAI>();
     public static int ActiveCount => active.Count;
+
+    public static int CountWithin(Vector3 center, float radius)
+    {
+        float limit = radius * radius;
+        int count = 0;
+        foreach (EnemyAI enemy in active)
+        {
+            Vector3 offset = enemy.transform.position - center;
+            offset.y = 0f;
+            if (offset.sqrMagnitude <= limit) count++;
+        }
+        return count;
+    }
     public float speed = 3f;
     public float attackDistance = 1.5f;
     public int damage = 10;

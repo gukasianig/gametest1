@@ -13,6 +13,10 @@ public class WaveSettings
     [Min(1)] public int initialAliveLimit = 6;
     [Min(0)] public int aliveLimitPerWave = 1;
     [Min(1)] public int maxAliveEnemies = 20;
+    // Only enemies this close to the player count towards the alive limit, so kiting cannot freeze wave pressure.
+    [Min(1f)] public float pressureRadius = 30f;
+    // Hard cap on all live enemies (near or far) as a multiple of the current alive limit.
+    [Min(1)] public int absoluteLimitMultiplier = 2;
     [Min(0.1f)] public float initialSpawnInterval = 0.75f;
     [Min(0.1f)] public float minimumSpawnInterval = 0.4f;
     [Min(0f)] public float intervalReductionPerWave = 0.015f;
@@ -28,6 +32,11 @@ public class WaveSettings
     {
         long limit = (long)Mathf.Max(1, initialAliveLimit) + (long)Mathf.Max(0, wave - 1) * Mathf.Max(0, aliveLimitPerWave);
         return (int)System.Math.Min(Mathf.Max(1, maxAliveEnemies), limit);
+    }
+
+    public int AbsoluteLimitForWave(int wave)
+    {
+        return AliveLimitForWave(wave) * Mathf.Max(1, absoluteLimitMultiplier);
     }
 
     public float SpawnIntervalForWave(int wave)

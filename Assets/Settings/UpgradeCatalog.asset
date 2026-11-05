@@ -1,0 +1,108 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a703dcf039284f07825b1d891796c0b5, type: 3}
+  m_Name: UpgradeCatalog
+  m_EditorClassIdentifier:
+  entries:
+  - id: damage
+    title: Урон пуль
+    icon: {fileID: 0}
+    symbol: DMG
+    effect: 0
+    rarity: 0
+    amount: 0.2
+    maxRanks: 20
+    minimumLevel: 1
+    weight: 10
+  - id: attack
+    title: Темп стрельбы
+    icon: {fileID: 0}
+    symbol: RPM
+    effect: 1
+    rarity: 0
+    amount: 0.15
+    maxRanks: 14
+    minimumLevel: 1
+    weight: 10
+  - id: movement
+    title: Скорость движения
+    icon: {fileID: 0}
+    symbol: SPD
+    effect: 2
+    rarity: 0
+    amount: 0.1
+    maxRanks: 10
+    minimumLevel: 1
+    weight: 10
+  - id: pickup
+    title: Радиус сбора
+    icon: {fileID: 0}
+    symbol: MAG
+    effect: 3
+    rarity: 0
+    amount: 0.25
+    maxRanks: 8
+    minimumLevel: 1
+    weight: 10
+  - id: grenade
+    title: Мощность гранат
+    icon: {fileID: 0}
+    symbol: GRN
+    effect: 4
+    rarity: 1
+    amount: 0.3
+    maxRanks: 14
+    minimumLevel: 2
+    weight: 10
+  - id: orbit
+    title: Мощность орбит
+    icon: {fileID: 0}
+    symbol: ORB
+    effect: 5
+    rarity: 1
+    amount: 0.25
+    maxRanks: 16
+    minimumLevel: 2
+    weight: 10
+  - id: blast
+    title: Радиус взрыва
+    icon: {fileID: 0}
+    symbol: AOE
+    effect: 6
+    rarity: 1
+    amount: 0.2
+    maxRanks: 8
+    minimumLevel: 2
+    weight: 10
+  - id: health
+    title: Запас здоровья
+    icon: {fileID: 0}
+    symbol: HP
+    effect: 7
+    rarity: 2
+    amount: 20
+    maxRanks: 5
+    minimumLevel: 3
+    weight: 10
+  - id: satellite
+    title: Орбитальный спутник
+    icon: {fileID: 0}
+    symbol: SAT
+    effect: 8
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 2
+    weight: 10
+  commonWeight: 70
+  rareWeight: 25
+  specialWeight: 5

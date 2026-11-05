@@ -20,33 +20,84 @@ public class AutoShoter : MonoBehaviour
    public WeaponData baseWeapon;
 
    public GameObject orbitWeaponPrefab;
-   
+
    private int currentDamage;
+    private PlayMovement movement;
+    public int CurrentDamage => currentDamage;
+    public float CurrentFireInterval => currentFireRate;
+    public int CurrentPelletCount => Mathf.Max(1, currentPelletCount);
+    public float CurrentSpread => currentPelletCount > 1 ? currentSpread : 0f;
+    private float progressionDamage = 1f;
+    private float progressionAttackSpeed = 1f;
+    private float grenadeDamageMultiplier = 1f;
+    private float grenadeRadiusMultiplier = 1f;
+    public int CurrentGrenadeDamage => Mathf.RoundToInt(grenadeDamage * grenadeDamageMultiplier);
+    public float CurrentGrenadeRadius => grenadeRadius * grenadeRadiusMultiplier;
+
+    public void SetSecondaryMultipliers(float damageMultiplier, float radiusMultiplier)
+    {
+        grenadeDamageMultiplier = Mathf.Max(1f, damageMultiplier);
+        grenadeRadiusMultiplier = Mathf.Max(1f, radiusMultiplier);
+    }
+
+    public void SetProgressionMultipliers(float damageMultiplier, float attackSpeedMultiplier)
+    {
+        progressionDamage = Mathf.Max(1f, damageMultiplier);
+        progressionAttackSpeed = Mathf.Max(1f, attackSpeedMultiplier);
+        if (baseWeapon != null) ApplyWeaponStats();
+    }
 private float currentFireRate;
 private int currentPelletCount;
 private float currentSpread;
-   
+
 
    float timer;
 
     void Start()
     {
+        movement = GetComponent<PlayMovement>();
 
-     baseWeapon = weapons[startWeaponIndex];
+        if (weapons != null && weapons.Length > 0)
+            baseWeapon = weapons[Mathf.Clamp(startWeaponIndex, 0, weapons.Length - 1)];
+        if (baseWeapon == null || baseWeapon.bulletPrefab == null || firePoint == null)
+        {
+            Debug.LogError("AutoShoter requires a weapon, bullet prefab and fire point.", this);
+            enabled = false;
+            return;
+        }
         ApplyWeaponStats();
+    }
+
+    public bool SelectWeapon(int index)
+    {
+        if (weapons == null || index < 0 || index >= weapons.Length ||
+            weapons[index] == null || weapons[index].bulletPrefab == null || firePoint == null)
+            return false;
+
+        startWeaponIndex = index;
+        baseWeapon = weapons[index];
+        currentWeapon = baseWeapon;
+        ApplyWeaponStats();
+        timer = 0f;
+        lastGrenadeTime = Time.time;
+        enabled = true;
+        return true;
     }
 
    void Update()
    {
-    
+
+    if (Time.timeScale == 0f) return;
     timer += Time.deltaTime;
     Transform target = FindClosestEnemy();
+    if (movement != null)
+        movement.SetAimDirection(target != null ? target.position - transform.position : Vector3.zero);
     if (target != null)
     {
         Vector3 dir = (target.position - transform.position);
         dir.y = 0;
 
-        if (dir != Vector3.zero)
+        if (movement == null && dir != Vector3.zero)
         {
             Quaternion targetRotation = Quaternion.LookRotation(dir);
             transform.rotation = Quaternion.Lerp(
@@ -71,8 +122,11 @@ private float currentSpread;
 
         void ApplyWeaponStats()
 {
-    currentDamage = baseWeapon.damage;
-    currentFireRate = baseWeapon.fireRate;
+    // Older scene weapon entries have no range configured (serialized as zero).
+    // Preserve the shooter's Inspector range for those entries.
+    range = baseWeapon.range > 0f ? baseWeapon.range : Mathf.Max(0.1f, range);
+    currentDamage = Mathf.Max(1, Mathf.RoundToInt(baseWeapon.damage * progressionDamage));
+    currentFireRate = Mathf.Max(0.03f, baseWeapon.fireRate / progressionAttackSpeed);
     currentPelletCount = baseWeapon.pelletCount;
     currentSpread = baseWeapon.spreadAngle;
 }
@@ -80,6 +134,7 @@ private float currentSpread;
 
         void ThrowGrenade()
         {
+             if (grenadePrefab == null) return;
              Transform target = FindClosestEnemy();
             if (target == null) return;
 
@@ -88,7 +143,7 @@ private float currentSpread;
             GameObject grenade = Instantiate(grenadePrefab, spawnPos, Quaternion.identity);
 
             Rigidbody rb = grenade.GetComponent<Rigidbody>();
-            Debug.Log(rb);
+
 
             if (rb != null)
                 {
@@ -102,12 +157,11 @@ private float currentSpread;
                 }
 
     Grenade g = grenade.GetComponent<Grenade>();
-    // if (g != null)
-    // {
-    //     g.damage = grenadeDamage;
-    //     g.explosionRadius = grenadeRadius;
-        
-    // }
+    if (g != null)
+    {
+        g.damage = CurrentGrenadeDamage;
+        g.explosionRadius = CurrentGrenadeRadius;
+    }
         }
 
    Transform FindClosestEnemy()
@@ -148,6 +202,7 @@ private float currentSpread;
         Bullet b = bullet.GetComponent<Bullet>();
         if (b != null)
         {
+            b.SetOwner(transform);
             b.damage = currentDamage;
             b.speed = baseWeapon.bulletSpeed;
             b.lifeTime = baseWeapon.bulletLifeTime;
@@ -172,6 +227,7 @@ private float currentSpread;
         Bullet b = bullet.GetComponent<Bullet>();
         if (b != null)
         {
+            b.SetOwner(transform);
             b.damage = currentDamage;
             b.speed = baseWeapon.bulletSpeed;
             b.lifeTime = baseWeapon.bulletLifeTime;
@@ -180,5 +236,5 @@ private float currentSpread;
 }
 }
 
-   
+
 

@@ -10,11 +10,6 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 606513899944296899, guid: cfe2b73893ae7f34fa2ffbd6b2b24d07,
         type: 3}
-      propertyPath: maxHP
-      value: 400
-      objectReference: {fileID: 0}
-    - target: {fileID: 606513899944296899, guid: cfe2b73893ae7f34fa2ffbd6b2b24d07,
-        type: 3}
       propertyPath: speed
       value: 1.5
       objectReference: {fileID: 0}

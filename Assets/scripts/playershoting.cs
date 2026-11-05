@@ -21,6 +21,7 @@ public class PlayerShooting : MonoBehaviour
     Bullet b = bullet.GetComponent<Bullet>();
     if (b != null)
     {
+        b.SetOwner(transform);
         b.SetDamage(damage);
     }
     }

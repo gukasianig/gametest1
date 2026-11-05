@@ -18,6 +18,9 @@ public class OrbitWeapon : MonoBehaviour
     public float respawnTime = 3f;
 
     private float angle;
+    private bool isRespawning;
+    public bool IsRespawning => isRespawning;
+    private readonly HashSet<Collider> contacts = new HashSet<Collider>();
 
     void Start()
     {
@@ -53,9 +56,14 @@ public class OrbitWeapon : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag("Enemy")) return;
+        if (isRespawning || Time.timeScale == 0f) return;
+        Health target = other.GetComponentInParent<Health>();
+        if (target == null || !target.CompareTag("Enemy") || target.isDead) return;
+        foreach (Collider contact in contacts)
+            if (contact != null && contact.GetComponentInParent<Health>() == target) { contacts.Add(other); return; }
+        contacts.Add(other);
 
-        IDamagable dmg = other.GetComponentInParent<IDamagable>();
+        IDamagable dmg = target;
 
         if (dmg != null)
         {
@@ -71,9 +79,31 @@ public class OrbitWeapon : MonoBehaviour
 
     IEnumerator DisableAndRespawn()
     {
-        gameObject.SetActive(false);
-        yield return new WaitForSeconds(respawnTime);
+        // Deactivating this GameObject would stop its respawn coroutine.
+        isRespawning = true;
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+        Collider[] colliders = GetComponentsInChildren<Collider>();
+        bool[] rendererStates = new bool[renderers.Length];
+        bool[] colliderStates = new bool[colliders.Length];
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            rendererStates[i] = renderers[i].enabled;
+            renderers[i].enabled = false;
+        }
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            colliderStates[i] = colliders[i].enabled;
+            colliders[i].enabled = false;
+        }
+        yield return new WaitForSeconds(Mathf.Max(0f, respawnTime));
         currentHits = 0;
-        gameObject.SetActive(true);
+        contacts.Clear();
+        for (int i = 0; i < renderers.Length; i++)
+            if (renderers[i] != null) renderers[i].enabled = rendererStates[i];
+        for (int i = 0; i < colliders.Length; i++)
+            if (colliders[i] != null) colliders[i].enabled = colliderStates[i];
+        isRespawning = false;
     }
+
+    void OnTriggerExit(Collider other) { contacts.Remove(other); }
 }

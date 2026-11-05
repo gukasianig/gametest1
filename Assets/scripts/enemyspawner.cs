@@ -48,13 +48,8 @@ public class EnemySpawner : MonoBehaviour
     {
         if (player == null) return;
 
-        Vector2 dir = Random.insideUnitCircle.normalized;
-
-        Vector3 spawnPos = new Vector3(
-            player.position.x + dir.x * spawnDistance,
-            0.5f,
-            player.position.z + dir.y * spawnDistance
-        );
+        if (!OffscreenSpawn.TryFindPosition(Camera.main, player, data.enemyPrefab,
+            0f, out Vector3 spawnPos)) return;
 
         GameObject enemy = Instantiate(data.enemyPrefab, spawnPos, Quaternion.identity);
         enemy.transform.localScale = Vector3.one;

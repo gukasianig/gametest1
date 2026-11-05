@@ -12,9 +12,16 @@ public class TopDownCamera : MonoBehaviour
     public float minHeight = 10f;
     public float maxHeight = 60f;
 
-    void LateUpdate()
+    void Start()
     {
         if (target == null) return;
+        transform.position = target.position + offset;
+        transform.rotation = Quaternion.LookRotation(-offset, Vector3.up);
+    }
+
+    void LateUpdate()
+    {
+        if (target == null || Time.timeScale <= 0f) return;
 
         // 🔥 ZOOM
         float scroll = Input.GetAxis("Mouse ScrollWheel");
@@ -31,9 +38,10 @@ public class TopDownCamera : MonoBehaviour
         transform.position = Vector3.Lerp(
             transform.position,
             desiredPosition,
-            smoothSpeed * Time.deltaTime
+            1f - Mathf.Exp(-Mathf.Max(0f, smoothSpeed) * Time.deltaTime)
         );
 
-        transform.LookAt(target);
+        // Keep the viewing direction independent of follow lag and movement direction.
+        transform.rotation = Quaternion.LookRotation(-offset, Vector3.up);
     }
 }

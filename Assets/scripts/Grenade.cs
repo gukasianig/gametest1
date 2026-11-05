@@ -28,7 +28,7 @@ public class Grenade : MonoBehaviour
         // размер = радиус
         float size = explosionRadius * 2f;
         effect.transform.localScale = new Vector3(
-        
+
             size,
             size,
             size
@@ -40,15 +40,13 @@ public class Grenade : MonoBehaviour
 
     Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius);
 
+    var damagedTargets = new HashSet<Health>();
     foreach (Collider col in hits)
     {
-        if (col.CompareTag("Enemy"))
+        Health hp = col.GetComponentInParent<Health>();
+        if (hp != null && hp.CompareTag("Enemy") && damagedTargets.Add(hp))
         {
-            IDamagable hp = col.GetComponent<IDamagable>();
-            if (hp != null)
-            {
-                hp.TakeDamage(damage);
-            }
+            hp.TakeDamage(damage);
         }
     }
 

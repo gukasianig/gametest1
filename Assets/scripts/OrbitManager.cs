@@ -4,6 +4,7 @@ using UnityEngine;
 public class OrbitManager : MonoBehaviour
 {
     public GameObject orbitPrefab;
+    public bool enableDebugUpgrades = false;
 
     public int orbitCount = 1;
     public float orbitRadius = 2f;
@@ -13,6 +14,14 @@ public class OrbitManager : MonoBehaviour
     public float orbitRespawnTime = 2f;
 
     private List<OrbitWeapon> orbits = new List<OrbitWeapon>();
+    private float damageMultiplier = 1f;
+    public int CurrentDamage => Mathf.RoundToInt(orbitDamage * damageMultiplier);
+
+    public void SetDamageMultiplier(float multiplier)
+    {
+        damageMultiplier = Mathf.Max(1f, multiplier);
+        foreach (OrbitWeapon orbit in orbits) if (orbit != null) orbit.damage = CurrentDamage;
+    }
 
     void Start()
     {
@@ -21,6 +30,8 @@ public class OrbitManager : MonoBehaviour
 
     void Update()
     {
+        if (!enableDebugUpgrades || Time.timeScale == 0f) return;
+
         if (Input.GetKeyDown(KeyCode.Q))
         {
             UpgradeOrbitCount(1);
@@ -54,6 +65,8 @@ public class OrbitManager : MonoBehaviour
 
         orbits.Clear();
 
+        if (orbitPrefab == null) return;
+
         for (int i = 0; i < orbitCount; i++)
         {
             GameObject obj = Instantiate(orbitPrefab, transform.position, Quaternion.identity);
@@ -64,12 +77,13 @@ public class OrbitManager : MonoBehaviour
                 ow.player = transform;
                 ow.orbitRadius = orbitRadius;
                 ow.orbitSpeed = orbitSpeed;
-                ow.damage = orbitDamage;
+                ow.damage = CurrentDamage;
                 ow.maxHits = orbitMaxHits;
                 ow.respawnTime = orbitRespawnTime;
                 ow.startAngle = (360f / orbitCount) * i;
 
                 orbits.Add(ow);
+                if (ArenaLayout.Instance != null) ArenaLayout.Instance.Tint(obj, GameUi.Accent);
             }
         }
     }
@@ -88,7 +102,7 @@ public class OrbitManager : MonoBehaviour
         {
             if (orbit != null)
             {
-                orbit.damage = orbitDamage;
+                orbit.damage = CurrentDamage;
             }
         }
     }

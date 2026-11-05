@@ -9,6 +9,25 @@ public class Bullet : MonoBehaviour, IProjectile
     bool hasHit = false;
 
     private Rigidbody rb;
+    private Transform owner;
+
+    public void SetOwner(Transform shooter)
+    {
+        owner = shooter;
+        if (owner == null) return;
+        foreach (Collider projectileCollider in GetComponentsInChildren<Collider>())
+        foreach (Collider ownerCollider in owner.GetComponentsInChildren<Collider>())
+            Physics.IgnoreCollision(projectileCollider, ownerCollider);
+    }
+
+    private bool IsFriendly(Collider other)
+    {
+        if (owner != null && (other.transform == owner || other.transform.IsChildOf(owner))) return true;
+        // Child hitboxes need the same protection as the tagged player root.
+        for (Transform node = other.transform; node != null; node = node.parent)
+            if (node.CompareTag("Player")) return true;
+        return other.GetComponentInParent<PlayerHealth>() != null;
+    }
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -33,6 +52,13 @@ public class Bullet : MonoBehaviour, IProjectile
     void OnTriggerEnter(Collider other)
 {
     if (hasHit) return;
+    if (IsFriendly(other)) return;
+    if (ArenaLayout.Instance != null && ArenaLayout.Instance.IsBlocker(other))
+    {
+        hasHit = true;
+        Destroy(gameObject);
+        return;
+    }
 
     IDamagable dmg = other.GetComponentInParent<IDamagable>();
 

@@ -64,11 +64,26 @@ public class GameSession : MonoBehaviour
         }
         if (Time.unscaledTime < uiTimer) return;
         uiTimer = Time.unscaledTime + 0.1f;
+        if (announceUntil > 0f && Time.unscaledTime >= announceUntil && !BossWarning && Boss == null)
+        {
+            announcement.text = "";
+            announceUntil = 0f;
+        }
         int seconds = Mathf.FloorToInt(Mathf.Max(0f, survivalSeconds - Elapsed));
         clock.text = Boss != null ? "Уничтожь Стража арены" :
             "До Стража  " + (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00") + "   •   Esc — пауза";
         if (Boss != null && Boss.Health != null)
             bossFill.rectTransform.anchorMax = new Vector2((float)Boss.Health.CurrentHealth / Boss.Health.maxHealth, 1f);
+    }
+
+    private float announceUntil;
+
+    // Short on-screen message (director events). The boss announcement keeps priority and is never cleared by this.
+    public void Announce(string text, float seconds)
+    {
+        if (BossWarning || announcement == null) return;
+        announcement.text = text;
+        announceUntil = Time.unscaledTime + seconds;
     }
 
     public bool EnterUpgrade()

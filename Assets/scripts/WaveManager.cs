@@ -34,6 +34,10 @@ public class WaveManager : MonoBehaviour
     public bool Suspended { get; private set; }
     public void StopSpawning() { Suspended = true; StopAllCoroutines(); }
 
+    // Rhythm of pressure and events (see WaveDirector). Turn off to get the plain wave behaviour.
+    public bool useDirector = true;
+    public WaveDirector Director { get; } = new WaveDirector();
+
     void Start()
     {
         if (settings == null || enemies == null)
@@ -45,7 +49,105 @@ public class WaveManager : MonoBehaviour
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
         if (playerObject != null) player = playerObject.transform;
         gameplayCamera = Camera.main;
+        Director.PhaseChanged += OnPhaseChanged;
         StartCoroutine(WaveLoop());
+    }
+
+    void Update()
+    {
+        if (!useDirector || Suspended) return;
+        GameSession session = GameSession.Instance;
+        if (session == null || session.State != GameRunState.Playing) return;
+        Director.Evaluate(session.Elapsed);
+    }
+
+    void OnPhaseChanged(DirectorPhase phase, int cycle)
+    {
+        if (Suspended || !useDirector) return;
+        GameSession session = GameSession.Instance;
+        if (phase == DirectorPhase.Relief)
+        {
+            if (session != null) session.Announce("Передышка", 2f);
+            return;
+        }
+        if (phase != DirectorPhase.Peak) return;
+        DirectorEvent directorEvent = WaveDirector.EventForCycle(cycle);
+        if (session != null)
+            session.Announce(directorEvent == DirectorEvent.Elite ? "ЭЛИТА НА АРЕНЕ" :
+                directorEvent == DirectorEvent.Horde ? "ОРДА!" : "ПИК ВОЛНЫ", 2.5f);
+        if (directorEvent == DirectorEvent.Elite) StartCoroutine(EliteEvent(WaveDirector.EliteCount(cycle)));
+        else if (directorEvent == DirectorEvent.Horde) StartCoroutine(HordeEvent(WaveDirector.HordeCount(cycle)));
+    }
+
+    IEnumerator EliteEvent(int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            SpawnElite();
+            yield return new WaitForSeconds(1.5f);
+        }
+    }
+
+    // A burst of the cheapest available type; the hard cap on live enemies still applies.
+    public IEnumerator HordeEvent(int count)
+    {
+        List<EnemyType> available = GetAvailableEnemies();
+        EnemyType cheapest = null;
+        foreach (EnemyType type in available) if (cheapest == null || type.baseCost < cheapest.baseCost) cheapest = type;
+        if (cheapest == null) yield break;
+        // A failed search for an off-screen position is retried, so the burst is not silently cut short.
+        int made = 0, attempts = 0;
+        while (made < count && attempts < count * 3 && EnemyAI.ActiveCount < settings.AbsoluteLimitForWave(wave))
+        {
+            attempts++;
+            if (SpawnEnemy(cheapest)) made++;
+            yield return new WaitForSeconds(0.25f);
+        }
+    }
+
+    // One clearly marked, tougher enemy (3x health, 1.3x size, 4x experience, crown). Skips support/suicide types.
+    public GameObject SpawnElite()
+    {
+        if (EnemyAI.ActiveCount >= settings.AbsoluteLimitForWave(wave)) return null;
+        List<EnemyType> pool = GetAvailableEnemies().FindAll(type =>
+        {
+            EnemyAbility ability = type.prefab.GetComponent<EnemyAbility>();
+            return ability == null || (ability.role != EnemyRole.Bomber && ability.role != EnemyRole.Healer && ability.role != EnemyRole.Summoner);
+        });
+        if (pool.Count == 0) return null;
+        EnemyType chosen = GetRandomEnemy(pool);
+        GameObject enemy = SpawnEnemyObject(chosen);
+        if (enemy == null) return null;
+        enemy.name = "Elite " + chosen.name;
+        Health health = enemy.GetComponent<Health>();
+        if (health != null)
+        {
+            health.SetHealth(health.maxHealth * 3);
+            health.experienceReward *= 4;
+        }
+        enemy.transform.localScale *= 1.3f;
+        float bottom = float.PositiveInfinity, top = float.NegativeInfinity;
+        foreach (Renderer renderer in enemy.GetComponentsInChildren<Renderer>())
+        {
+            bottom = Mathf.Min(bottom, renderer.bounds.min.y);
+            top = Mathf.Max(top, renderer.bounds.max.y);
+        }
+        if (!float.IsInfinity(bottom)) enemy.transform.position += Vector3.up * (groundHeight - bottom);
+        GameObject crown = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        crown.name = "Elite crown";
+        Destroy(crown.GetComponent<Collider>());
+        crown.transform.SetParent(enemy.transform, true);
+        crown.transform.localScale = Vector3.one * 0.4f;
+        crown.transform.position = new Vector3(enemy.transform.position.x, (float.IsInfinity(top) ? 2f : top - bottom + groundHeight) + 0.5f, enemy.transform.position.z);
+        crown.GetComponent<Renderer>().sharedMaterial = ArenaLayout.Instance != null ?
+            ArenaLayout.Instance.Material(new Color(1f, 0.82f, 0.15f)) : crown.GetComponent<Renderer>().sharedMaterial;
+        return enemy;
+    }
+
+    float EffectiveAliveLimit()
+    {
+        float multiplier = useDirector ? Director.LimitMultiplier : 1f;
+        return Mathf.Max(1, Mathf.CeilToInt(settings.AliveLimitForWave(wave) * multiplier));
     }
 
     IEnumerator WaveLoop()
@@ -86,7 +188,7 @@ public class WaveManager : MonoBehaviour
             budget -= type.baseCost;
             spawned++;
             if (budget > 0 && spawned < settings.maxEnemiesPerWave)
-                yield return new WaitForSeconds(settings.SpawnIntervalForWave(wave));
+                yield return new WaitForSeconds(settings.SpawnIntervalForWave(wave) * (useDirector ? Director.IntervalMultiplier : 1f));
         }
 
         Debug.Log($"Wave {wave} | Spawned: {spawned}");
@@ -96,8 +198,9 @@ public class WaveManager : MonoBehaviour
     public bool HasRoom()
     {
         if (EnemyAI.ActiveCount >= settings.AbsoluteLimitForWave(wave)) return false;
-        if (player == null) return EnemyAI.ActiveCount < settings.AliveLimitForWave(wave);
-        return EnemyAI.CountWithin(player.position, settings.pressureRadius) < settings.AliveLimitForWave(wave);
+        float limit = EffectiveAliveLimit();
+        if (player == null) return EnemyAI.ActiveCount < limit;
+        return EnemyAI.CountWithin(player.position, settings.pressureRadius) < limit;
     }
 
     List<EnemyType> GetAvailableEnemies()
@@ -149,11 +252,13 @@ public class WaveManager : MonoBehaviour
         return list[0];
     }
 
-    bool SpawnEnemy(EnemyType type)
+    bool SpawnEnemy(EnemyType type) { return SpawnEnemyObject(type) != null; }
+
+    GameObject SpawnEnemyObject(EnemyType type)
     {
         if (gameplayCamera == null) gameplayCamera = Camera.main;
         if (!OffscreenSpawn.TryFindPosition(gameplayCamera, player, type.prefab,
-            groundHeight, out Vector3 position)) return false;
+            groundHeight, out Vector3 position)) return null;
         GameObject enemy = Instantiate(type.prefab, position, Quaternion.identity);
         if (ArenaLayout.Instance != null && enemy.GetComponent<EnemyAbility>() == null)
             ArenaLayout.Instance.Tint(enemy, type.minWave >= 6 ? new Color(0.55f, 0.25f, 0.5f) :
@@ -170,6 +275,6 @@ public class WaveManager : MonoBehaviour
             h.SetHealth(Mathf.RoundToInt(h.maxHealth * RunModifiers.EnemyHealth *
                 (1f + Mathf.Max(0, wave - 1) * settings.healthGrowthPerWave)));
         }
-        return true;
+        return enemy;
     }
 }

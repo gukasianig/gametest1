@@ -8,7 +8,7 @@ public class EnemyProjectile : MonoBehaviour
     public float speed = 8f;
     private float age;
 
-    public static void Create(Vector3 position, Vector3 direction, Transform target, int damage)
+    public static EnemyProjectile Create(Vector3 position, Vector3 direction, Transform target, int damage)
     {
         GameObject root = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         root.name = "Hostile shot";
@@ -21,6 +21,7 @@ public class EnemyProjectile : MonoBehaviour
         shot.direction = direction.normalized;
         shot.target = target;
         shot.damage = damage;
+        return shot;
     }
 
     private void Update()

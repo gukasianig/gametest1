@@ -65,8 +65,12 @@ public class Bullet : MonoBehaviour, IProjectile
     if (other.GetComponent<Bullet>() != null) return;
     if (dmg != null)
     {
-       hasHit = true;   
-        dmg.TakeDamage(damage);
+       hasHit = true;
+        // A Shielder's front blocks most of a bullet; grenades and orbiting weapons are not affected.
+        EnemyAbility ability = other.GetComponentInParent<EnemyAbility>();
+        int applied = ability != null && ability.BlocksShot(transform.position) ?
+            Mathf.Max(1, Mathf.RoundToInt(damage * EnemyAbility.ShieldPassFraction)) : damage;
+        dmg.TakeDamage(applied);
         Destroy(gameObject);
     }
 }

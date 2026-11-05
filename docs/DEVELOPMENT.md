@@ -27,12 +27,16 @@
 | SpecialEnemyChecks | `special-enemies.request` | пять новых ролей врагов |
 | CrowdMovementChecks | `crowd-movement.request` | обход толпы |
 | ProjectileOwnerChecks | `projectile-owner.request` | пули игнорируют владельца |
+| EnemyDirectorChecks | batch: `-executeMethod EnemyDirectorChecks.RunBatch` (без `-quit`; маркер `enemy-director.request`) | Щитоносец/Призыватель/Снайпер, расписание режиссёра, элита, орда |
+| NewEnemyBuilder | batch: `-executeMethod NewEnemyBuilder.RunBatch` (без `-quit`) | не проверка: создаёт префабы Shielder/Summoner/Sniper и регистрирует их в сцене; повторяем безопасно |
 | MetaProgressChecks | batch: `-executeMethod MetaProgressChecks.RunBatch` (без `-quit`; маркер `meta-progress.request`) | мета-прогрессия: награды, рекорды, покупки, сохранение/восстановление, кнопка Мастерской, бонусы в забеге, выплата |
 | UiArtworkPreview | `ui-art-preview.request` (weapons/upgrades/health/reset) | показ карточек/HP, не визуальная приёмка |
 
 **Batch VerticalSliceChecks** (Unity закрыт, БЕЗ `-quit`; метод сам завершает процесс): `-executeMethod VerticalSliceChecks.RunBatch` — все проверки, 7–10 мин; `-executeMethod VerticalSliceChecks.RunSoakBatch` — только 300 с бота с диагностикой (кол-во убийств, позиция, враги в радиусе, «замершие»), ~6 мин. Результат — `Logs/vertical-slice-results.txt`. Не запускать параллельно открытому проекту и внутри пользовательского забега (тест временно меняет данные и перезагружает сцену).
 
 ## Что проверено (кратко, с границами)
+
+- **5 ноября 2026, новые враги и режиссёр:** EnemyDirectorChecks PASS и общий регресс VerticalSliceChecks PASS (пик живых 40, предел не превышен). Не проверено: вид врагов/объявлений/золотой элиты глазами, баланс ритма и новых врагов, поведение гранат/спутников против щита (по замыслу щит их не учитывает, тест только на пулях), уклонение игрока от снайпера. Старые Editor-проверки (SpecialEnemyChecks, EnemyRosterChecks, GroundWaveChecks) рассчитаны на прежние 8 типов/темп и не обновлялись.
 
 - **5 ноября 2026, модификаторы забега:** MetaProgressChecks PASS (кнопки условий, ×1.65, применение в забеге, награда с множителем, хранение) и общий регресс VerticalSliceChecks PASS после правок WaveManager/WaveSettings/GameSession/PlayerHealth/PlayerProgression. Орда и другие условия в длительном бою и на экране не наблюдались; в batch условия выключены (сохранение в памяти).
 

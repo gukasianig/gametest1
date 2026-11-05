@@ -1,13 +1,21 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
-public enum EnemyRole { Shooter, Charger, Bomber, Healer, Splitter }
+public enum EnemyRole { Shooter, Charger, Bomber, Healer, Splitter, Shielder, Summoner, Sniper }
 
 [RequireComponent(typeof(EnemyAI), typeof(Health))]
 public class EnemyAbility : MonoBehaviour
 {
     public EnemyRole role;
+    // Splitter: the fragment prefab. Summoner: the minion prefab.
     public GameObject splitPrefab;
+    // Shielder: bullets coming from within this half-angle of its facing do only a fraction of damage.
+    public const float ShieldHalfAngle = 75f;
+    public const float ShieldPassFraction = 0.15f;
+    public const int SummonerMinionLimit = 4;
+    private readonly List<Health> minions = new List<Health>();
+    public int LiveMinions { get { minions.RemoveAll(m => m == null || m.isDead); return minions.Count; } }
     private EnemyAI ai;
     private Health health;
     private LineRenderer warning;
@@ -24,8 +32,21 @@ public class EnemyAbility : MonoBehaviour
             case EnemyRole.Charger: return new Color(1f, 0.64f, 0.12f);
             case EnemyRole.Bomber: return new Color(1f, 0.2f, 0.3f);
             case EnemyRole.Healer: return new Color(0.2f, 0.95f, 0.55f);
+            case EnemyRole.Shielder: return new Color(0.55f, 0.65f, 0.75f);
+            case EnemyRole.Summoner: return new Color(1f, 0.35f, 0.75f);
+            case EnemyRole.Sniper: return new Color(0.95f, 0.95f, 0.3f);
             default: return new Color(0.75f, 0.4f, 1f);
         }
+    }
+
+    // True when a shot from this point hits the shield side (the front half-cone).
+    public bool BlocksShot(Vector3 shotPosition)
+    {
+        if (role != EnemyRole.Shielder) return false;
+        Vector3 toShot = shotPosition - transform.position;
+        toShot.y = 0f;
+        if (toShot.sqrMagnitude < 0.0001f) return false;
+        return Vector3.Dot(transform.forward, toShot.normalized) > Mathf.Cos(ShieldHalfAngle * Mathf.Deg2Rad);
     }
 
     private void Awake()
@@ -37,8 +58,9 @@ public class EnemyAbility : MonoBehaviour
 
     private void Start()
     {
-        ai.UsesMelee = role == EnemyRole.Splitter;
-        ai.PreferredRange = role == EnemyRole.Shooter ? 9f : role == EnemyRole.Healer ? 6f : 0f;
+        ai.UsesMelee = role == EnemyRole.Splitter || role == EnemyRole.Shielder;
+        ai.PreferredRange = role == EnemyRole.Shooter ? 9f : role == EnemyRole.Healer ? 6f :
+            role == EnemyRole.Summoner ? 8f : role == EnemyRole.Sniper ? 17f : 0f;
         nextAction = Time.time + 1.5f;
         Color color = RoleColor(role);
         if (ArenaLayout.Instance != null) ArenaLayout.Instance.Tint(gameObject, color);
@@ -65,6 +87,16 @@ public class EnemyAbility : MonoBehaviour
         }
         else if (role == EnemyRole.Bomber)
             Part(PrimitiveType.Sphere, new Vector3(0, 0.65f, 0), Vector3.one * 0.5f);
+        else if (role == EnemyRole.Shielder)
+            Part(PrimitiveType.Cube, new Vector3(0, 0.1f, 0.75f), new Vector3(1.5f, 1.2f, 0.18f));
+        else if (role == EnemyRole.Summoner)
+        {
+            Part(PrimitiveType.Cube, new Vector3(-0.25f, 0.75f, 0), new Vector3(0.12f, 0.6f, 0.12f));
+            Part(PrimitiveType.Cube, new Vector3(0.25f, 0.75f, 0), new Vector3(0.12f, 0.6f, 0.12f));
+            Part(PrimitiveType.Sphere, new Vector3(0, 0.75f, 0), Vector3.one * 0.35f);
+        }
+        else if (role == EnemyRole.Sniper)
+            Part(PrimitiveType.Cylinder, new Vector3(0, 0.25f, 1.0f), new Vector3(0.1f, 0.9f, 0.1f)).localRotation = Quaternion.Euler(90, 0, 0);
         else
         {
             Part(PrimitiveType.Sphere, new Vector3(-0.4f, 0.4f, 0), Vector3.one * 0.45f);
@@ -94,6 +126,9 @@ public class EnemyAbility : MonoBehaviour
         else if (role == EnemyRole.Charger && DistanceToTarget <= 13f) StartCoroutine(Charge());
         else if (role == EnemyRole.Bomber && DistanceToTarget <= 3.5f) StartCoroutine(Explode());
         else if (role == EnemyRole.Healer) StartCoroutine(HealAllies());
+        else if (role == EnemyRole.Summoner && DistanceToTarget <= 26f && LiveMinions < SummonerMinionLimit) StartCoroutine(Summon());
+        else if (role == EnemyRole.Sniper && DistanceToTarget <= 24f &&
+            ArenaLayout.Instance.PathClear(transform.position, ai.target.position, 0.2f)) StartCoroutine(Snipe());
     }
 
     private IEnumerator Wait(float seconds)
@@ -195,6 +230,63 @@ public class EnemyAbility : MonoBehaviour
                 ArenaLayout.Instance.PathClear(transform.position, ally.transform.position, 0f))
                 ally.GetComponent<Health>()?.Heal(12);
         EndAction(4f);
+    }
+
+    // Long thin warning, a pause, then one fast and heavy shot along the locked direction (sidestep to dodge).
+    private IEnumerator Snipe()
+    {
+        BeginAction();
+        Vector3 direction = Aim();
+        Line(transform.position + direction * 28f);
+        warning.widthMultiplier = 0.07f;
+        yield return Wait(1.2f);
+        warning.widthMultiplier = 0.12f;
+        if (ai.target != null && ArenaLayout.Instance.PathClear(transform.position, transform.position + direction * 1.2f, 0.15f))
+        {
+            EnemyProjectile shot = EnemyProjectile.Create(transform.position + direction * 1.2f, direction, ai.target, 22);
+            shot.speed = 24f;
+        }
+        EndAction(4.5f);
+    }
+
+    // Circle warning, then up to two weak minions next to the summoner; at most four alive per summoner.
+    private IEnumerator Summon()
+    {
+        BeginAction();
+        Circle(2.5f);
+        yield return Wait(0.8f);
+        WaveManager waves = FindObjectOfType<WaveManager>();
+        if (splitPrefab != null && waves != null && !waves.Suspended)
+        {
+            int cap = waves.settings.AbsoluteLimitForWave(waves.wave);
+            for (int i = 0; i < 2 && LiveMinions < SummonerMinionLimit && EnemyAI.ActiveCount < cap; i++)
+            {
+                Vector3 point = transform.position + Quaternion.Euler(0, 90f + i * 180f, 0) * transform.forward * 1.8f;
+                if (!ArenaLayout.Instance.IsWalkable(point, 0.4f)) continue;
+                Health minion = SpawnMinion(splitPrefab, point, waves.groundHeight);
+                if (minion != null) minions.Add(minion);
+            }
+        }
+        EndAction(7f);
+    }
+
+    private Health SpawnMinion(GameObject prefab, Vector3 point, float groundHeight)
+    {
+        GameObject child = Instantiate(prefab, point, Quaternion.identity);
+        child.name = "Summoned minion";
+        child.transform.localScale *= 0.55f;
+        float bottom = float.PositiveInfinity;
+        foreach (Renderer renderer in child.GetComponentsInChildren<Renderer>()) bottom = Mathf.Min(bottom, renderer.bounds.min.y);
+        child.transform.position += Vector3.up * (groundHeight - bottom);
+        EnemyAI childAI = child.GetComponent<EnemyAI>();
+        childAI.target = ai.target;
+        childAI.speed = 4.2f;
+        childAI.damage = 5;
+        Health childHealth = child.GetComponent<Health>();
+        childHealth.SetHealth(15);
+        childHealth.experienceReward = 0;
+        ArenaLayout.Instance.Tint(child, RoleColor(role));
+        return childHealth;
     }
 
     private void OnDeath(Health dead)

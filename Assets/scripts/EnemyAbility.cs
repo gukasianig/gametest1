@@ -140,11 +140,12 @@ public class EnemyAbility : MonoBehaviour
         direction.y = 0f;
         return direction.normalized;
     }
-    private void Line(Vector3 end)
+    private void Line(Vector3 end, Vector3? start = null)
     {
+        Vector3 from = start ?? transform.position;
         warning.loop = false;
         warning.positionCount = 2;
-        warning.SetPosition(0, new Vector3(transform.position.x, 0.08f, transform.position.z));
+        warning.SetPosition(0, new Vector3(from.x, 0.08f, from.z));
         warning.SetPosition(1, new Vector3(end.x, 0.08f, end.z));
         warning.enabled = true;
     }
@@ -225,13 +226,18 @@ public class EnemyAbility : MonoBehaviour
         Vector3 direction = Aim();
         // The barrel marker points along transform.forward: turn the sniper to the locked shot direction.
         if (direction.sqrMagnitude > 0.0001f) transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
-        Line(transform.position + direction * 28f);
+        // Both the aim line and the shot start at the barrel tip (marker: local z 1.0, length 0.9).
+        Vector3 muzzle = transform.TransformPoint(new Vector3(0f, 0.25f, 1.45f));
+        muzzle.y = transform.position.y;
+        Line(muzzle + direction * 28f, muzzle);
         warning.widthMultiplier = 0.07f;
         yield return Wait(1.2f);
         warning.widthMultiplier = 0.12f;
-        if (ai.target != null && ArenaLayout.Instance.PathClear(transform.position, transform.position + direction * 1.2f, 0.15f))
+        muzzle = transform.TransformPoint(new Vector3(0f, 0.25f, 1.45f));
+        muzzle.y = transform.position.y;
+        if (ai.target != null && ArenaLayout.Instance.PathClear(transform.position, muzzle + direction * 0.3f, 0.15f))
         {
-            EnemyProjectile shot = EnemyProjectile.Create(transform.position + direction * 1.2f, direction, ai.target, 22);
+            EnemyProjectile shot = EnemyProjectile.Create(muzzle + direction * 0.3f, direction, ai.target, 22);
             shot.speed = 24f;
         }
         EndAction(4.5f);

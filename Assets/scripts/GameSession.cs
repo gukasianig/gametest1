@@ -69,6 +69,8 @@ public class GameSession : MonoBehaviour
             announcement.text = "";
             announceUntil = 0f;
         }
+        // The level-up screen has its own title in the same place: hide the timer while cards are open.
+        clock.enabled = State != GameRunState.Upgrade;
         int seconds = Mathf.FloorToInt(Mathf.Max(0f, survivalSeconds - Elapsed));
         clock.text = Boss != null ? "Уничтожь Стража арены" :
             "До Стража  " + (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00") + "   •   Esc — пауза";

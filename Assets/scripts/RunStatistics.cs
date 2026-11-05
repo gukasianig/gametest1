@@ -95,9 +95,8 @@ public class RunStatistics : MonoBehaviour
             WeaponData weapon = shooter.baseWeapon;
             text.Append("\n\n<color=#65D8CA>ОРУЖИЕ: ").Append(weapon.weaponName).Append("</color>");
             float damageMultiplier = progression != null ? progression.DamageMultiplier : 1f;
-            text.Append("\nУрон одной пули     ").Append((weapon.damage * damageMultiplier).ToString("0.##"))
-                .Append("  (×").Append(damageMultiplier.ToString("0.###")).Append(", в бою округляется до ")
-                .Append(shooter.CurrentDamage).Append(')');
+            text.Append("\nУрон одной пули     ").Append(shooter.ExactDamage.ToString("0.##"))
+                .Append("  (×").Append(damageMultiplier.ToString("0.###")).Append(')');
             float attackMultiplier = progression != null ? progression.AttackSpeedMultiplier : 1f;
             text.Append("\nВыстрелов в секунду     ")
                 .Append((1f / Mathf.Max(0.03f, shooter.CurrentFireInterval)).ToString("0.###"))

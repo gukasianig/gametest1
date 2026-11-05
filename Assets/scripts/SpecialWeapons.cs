@@ -531,7 +531,7 @@ public class WeaponTurret : MonoBehaviour
         Vector3 to = target.position;
         to.y = 0.9f;
         barrel.rotation = Quaternion.LookRotation(new Vector3(to.x - from.x, 0f, to.z - from.z));
-        SpecialWeapons.Damage(target.GetComponent<Health>(), owner.Shooter.CurrentDamage);
+        SpecialWeapons.Damage(target.GetComponent<Health>(), owner.Shooter.RollDamage());
         BeamFlash.Create(from, to, new Color(1f, 0.9f, 0.4f), 0.08f, 0.06f);
     }
 }
@@ -574,7 +574,7 @@ public class WeaponDrone : MonoBehaviour
         timer = 0f;
         Vector3 to = target.position;
         to.y = 0.9f;
-        SpecialWeapons.Damage(target.GetComponent<Health>(), owner.Shooter.CurrentDamage);
+        SpecialWeapons.Damage(target.GetComponent<Health>(), owner.Shooter.RollDamage());
         BeamFlash.Create(transform.position, to, new Color(0.4f, 1f, 0.9f), 0.07f, 0.06f);
     }
 }

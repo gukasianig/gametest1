@@ -121,7 +121,7 @@ private float currentSpread;
 
         if (timer >= currentFireRate)
         {
-            if (isSpecial) special.Fire(currentDamage, target);
+            if (isSpecial) special.Fire(RollDamage(), target);
             else Shoot(target);
             timer = 0f;
         }
@@ -143,6 +143,17 @@ private float currentSpread;
     currentPelletCount = baseWeapon.pelletCount;
     currentSpread = baseWeapon.spreadAngle;
 }
+
+    // Exact damage with upgrades (for statistics) and a per-hit roll that keeps the fractional part:
+    // 7.2 deals 7 most of the time and 8 one hit in five, so the average equals the displayed value.
+    public float ExactDamage => Mathf.Max(1f, baseWeapon != null ? baseWeapon.damage * progressionDamage : currentDamage);
+
+    public int RollDamage()
+    {
+        float exact = ExactDamage;
+        int whole = Mathf.FloorToInt(exact);
+        return Mathf.Max(1, whole + (Random.value < exact - whole ? 1 : 0));
+    }
 
 
         void ThrowGrenade()
@@ -216,7 +227,7 @@ private float currentSpread;
         if (b != null)
         {
             b.SetOwner(transform);
-            b.damage = currentDamage;
+            b.damage = RollDamage();
             b.speed = baseWeapon.bulletSpeed;
             b.lifeTime = baseWeapon.bulletLifeTime;
         }
@@ -241,7 +252,7 @@ private float currentSpread;
         if (b != null)
         {
             b.SetOwner(transform);
-            b.damage = currentDamage;
+            b.damage = RollDamage();
             b.speed = baseWeapon.bulletSpeed;
             b.lifeTime = baseWeapon.bulletLifeTime;
         }

@@ -223,6 +223,8 @@ public class EnemyAbility : MonoBehaviour
     {
         BeginAction();
         Vector3 direction = Aim();
+        // The barrel marker points along transform.forward: turn the sniper to the locked shot direction.
+        if (direction.sqrMagnitude > 0.0001f) transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
         Line(transform.position + direction * 28f);
         warning.widthMultiplier = 0.07f;
         yield return Wait(1.2f);

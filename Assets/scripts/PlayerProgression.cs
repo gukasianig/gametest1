@@ -87,11 +87,26 @@ public class PlayerProgression : MonoBehaviour
 
     private float Bonus(UpgradeEffect effect)
     {
-        float sum = 0f;
+        // Permanent workshop bonuses count toward the same caps as in-run upgrades.
+        float sum = effect == UpgradeEffect.MaxHealth ? 0f : MetaProgress.Bonus(effect);
         if (catalog == null) return sum;
         foreach (UpgradeDefinition definition in catalog.entries)
             if (definition.effect == effect) sum += definition.amount * Rank(definition.id);
         return sum;
+    }
+
+    private bool metaApplied;
+
+    // Called once when a run begins: applies permanent bonuses (health directly, the rest via ApplyStats).
+    public void ApplyMetaBonuses()
+    {
+        if (!metaApplied)
+        {
+            metaApplied = true;
+            int health = Mathf.RoundToInt(MetaProgress.Bonus(UpgradeEffect.MaxHealth));
+            if (health > 0) GetComponent<PlayerHealth>().IncreaseMaxHealth(health);
+        }
+        ApplyStats();
     }
 
     private float Cap(UpgradeEffect effect)

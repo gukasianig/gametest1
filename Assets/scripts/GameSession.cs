@@ -145,10 +145,15 @@ public class GameSession : MonoBehaviour
         resultTitle.text = victory ? "АРЕНА ПРОЙДЕНА" : "ЗАБЕГ ЗАВЕРШЁН";
         resultTitle.color = victory ? GameUi.Accent : new Color(1f, 0.45f, 0.32f);
         int seconds = Mathf.FloorToInt(Elapsed);
+        int kills = stats != null ? stats.Kills : 0;
+        int level = GetComponent<PlayerProgression>().Level;
+        RunReward reward = MetaProgress.RecordRun(SelectedWeapon, victory, Elapsed, kills, level);
         resultBody.text = "Время  " + seconds / 60 + ":" + (seconds % 60).ToString("00") +
-            "\nУбийства  " + (stats != null ? stats.Kills : 0) +
-            "\nУровень  " + GetComponent<PlayerProgression>().Level +
-            (victory ? "\nНаграда за Стража: +200 опыта" : "\nПопробуй другое сочетание улучшений");
+            (reward.newBestTime ? "  (новый рекорд!)" : "") +
+            "\nУбийства  " + kills + (reward.newBestKills ? "  (новый рекорд!)" : "") +
+            "\nУровень  " + level +
+            "\n" + MetaProgress.CurrencyName + ": +" + reward.amount + "  (всего " + MetaProgress.Currency + ")" +
+            (victory ? "\nНаграда за Стража: +200 опыта" : "\nПотрать детали в Мастерской и попробуй снова");
         result.gameObject.SetActive(true);
     }
 

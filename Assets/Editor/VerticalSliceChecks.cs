@@ -38,11 +38,12 @@ public static class VerticalSliceChecks
 
     private static void Begin()
     {
-        batch = File.ReadAllText(Request).Trim() == "batch";
+        string mode = File.ReadAllText(Request).Trim();
+        batch = mode.StartsWith("batch");
         File.Delete(Request);
         started = EditorApplication.timeSinceStartup;
         report.Clear();
-        routine = Checks();
+        routine = mode == "batchsoak" ? SoakOnly() : Checks();
         EditorApplication.update += Tick;
     }
 
@@ -319,6 +320,23 @@ public static class VerticalSliceChecks
         while (soak.MoveNext()) yield return null;
     }
 
+    private static Dictionary<int, Vector3> lastPositions = new Dictionary<int, Vector3>();
+
+    // Only the 300 s soak (diagnostics): -executeMethod VerticalSliceChecks.RunSoakBatch
+    public static void RunSoakBatch()
+    {
+        File.WriteAllText(Request, "batchsoak");
+        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorApplication.isPlaying = true;
+    }
+
+    private static IEnumerator SoakOnly()
+    {
+        yield return null;
+        IEnumerator soak = Soak();
+        while (soak.MoveNext()) yield return null;
+    }
+
     private static IEnumerator Soak()
     {
         PlayerProgression progression = PlayerProgression.Instance;
@@ -397,8 +415,26 @@ public static class VerticalSliceChecks
             if (EditorApplication.timeSinceStartup - lastReport > 30)
             {
                 lastReport = EditorApplication.timeSinceStartup;
+                // Diagnostics for stalls: kills, bot position, enemies in weapon range and enemies that barely moved.
+                int inRange = 0, frozen = 0;
+                float minDistance = float.PositiveInfinity;
+                var seen = new Dictionary<int, Vector3>();
+                foreach (EnemyAI enemy in enemies)
+                {
+                    float d = Vector3.Distance(position, enemy.transform.position);
+                    minDistance = Mathf.Min(minDistance, d);
+                    if (d <= 20f) inRange++;
+                    int id = enemy.GetInstanceID();
+                    if (lastPositions.TryGetValue(id, out Vector3 before) && Vector3.Distance(before, enemy.transform.position) < 1f) frozen++;
+                    seen[id] = enemy.transform.position;
+                }
+                lastPositions = seen;
+                RunStatistics stats = RunStatistics.Instance;
                 Pass("A09 soak progress: " + session.Elapsed.ToString("0") + "s, wave " + waves.wave +
-                    ", HP " + player.GetComponent<PlayerHealth>().CurrentHP + ", level " + progression.Level + ", peak alive " + peak);
+                    ", HP " + player.GetComponent<PlayerHealth>().CurrentHP + ", level " + progression.Level + ", peak alive " + peak +
+                    " | kills " + (stats != null ? stats.Kills : -1) + ", bot (" + position.x.ToString("0") + "," + position.z.ToString("0") +
+                    "), inRange20 " + inRange + ", frozen " + frozen + ", nearest " + minDistance.ToString("0.0") + ", shooterEnabled " +
+                    player.GetComponent<AutoShoter>().enabled);
             }
             yield return null;
         }

@@ -1,5 +1,9 @@
 # Запуск, проверки и известные проблемы
 
+## Полный прогон VerticalSliceChecks — 5 ноября 2026
+
+Команда (Unity закрыт, без -quit): `Unity.exe -batchmode -projectPath "F:/test game" -executeMethod VerticalSliceChecks.RunBatch -logFile Logs/vs-batch.log`, запуск через Start-Process -PassThru и WaitForExit; заняло около 7–10 мин. Результат: exit 0, все блоки PASS (A07, B01–B04, D01–D04, A08/D03, A10, J01–J04, F01–F04, A09). Не доказано: внешний вид и читаемость босса/атак/UI, баланс (бот не человек). Наблюдение: на 180–300 с волна 26, HP 62 и уровень 10 не менялись при 20 живых врагах (9603 кадров на лимите) — возможно бот перестал убивать или враги зависли; причина не исследована. Риск 3–4 из списка ниже (пули без владельца) закрыты ранее, см. CHANGELOG.
+
 ## Каталог визуальных ассетов — 2 ноября 2026
 
 `docs/VISUAL_ASSETS.md` подготовлен по файловому поиску Assets, YAML SampleScene/префабов, коду UiArtwork, UpgradeCatalog, StartMenu, ArenaLayout, GridDrawer, EnemyAbility, BossController, ExperiencePickup, EnemyProjectile и прямым зависимостям. ArenaIcons.png просмотрен; сопоставлены 16 областей JSON и назначения 0–15. Tank разрешается как вариант Enemy_Fast по GUID; четвёртый пресет в сцене имеет старое имя pistolet, тогда как UI/иллюстрация представляют тяжёлую винтовку. Эти данные учтены без изменения игровых файлов.

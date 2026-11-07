@@ -12,6 +12,7 @@ using UnityEngine.UI;
 [InitializeOnLoad]
 public static class WeaponChecks
 {
+    public static bool CheckModules;
     private const string Request = "Logs/weapon-checks.request";
     private const string Report = "Logs/weapon-results.txt";
     private static CheckRunner routine;
@@ -156,6 +157,7 @@ public static class WeaponChecks
         Health r1 = Dummy(new Vector3(5f, 0f, 0f)), r2 = Dummy(new Vector3(10f, 0f, 0f)), r3 = Dummy(new Vector3(15f, 0f, 0f));
         yield return WaitUntilLost(() => Lost(r1) >= 60 && Lost(r2) >= 60 && Lost(r3) >= 60, 6f);
         Require(Lost(r1) >= 60 && Lost(r2) >= 60 && Lost(r3) >= 60, "Rail did not pierce all three: " + Lost(r1) + "/" + Lost(r2) + "/" + Lost(r3) + Describe(shooter));
+        ModuleReached(r1); ModuleReached(r2); ModuleReached(r3);
         Pass("Rail: one beam damaged enemies at 5, 10 and 15 m in a line.");
         ClearArena(); yield return null;
 
@@ -164,6 +166,7 @@ public static class WeaponChecks
         Health b1 = Dummy(new Vector3(8f, 0f, 0f));
         yield return WaitUntilLost(() => Lost(b1) >= 44, 8f);
         Require(Lost(b1) >= 44 && Lost(b1) % 22 == 0, "Boomerang damage: " + Lost(b1));
+        ModuleReached(b1);
         Pass("Boomerang: the saw hit an enemy in its path on both legs (" + Lost(b1) + " damage).");
         ClearArena(); yield return null;
 
@@ -173,6 +176,7 @@ public static class WeaponChecks
         m1.GetComponent<EnemyAI>().speed = 4f;
         yield return WaitUntilLost(() => Lost(m1) >= 40, 12f);
         Require(Lost(m1) >= 40, "Mine did not explode on the approaching enemy: " + Lost(m1));
+        ModuleReached(m1);
         Pass("Mines: an enemy walking to the hero detonated mines for " + Lost(m1) + " damage.");
         ClearArena(); yield return null;
 
@@ -183,6 +187,7 @@ public static class WeaponChecks
         yield return WaitUntilLost(() => Lost(c1) > 0 && Lost(c2) > 0 && Lost(c3) > 0, 8f);
         Require(Lost(c1) > 0 && Lost(c2) > 0 && Lost(c3) > 0, "Rocket splash missed the cluster: " + Lost(c1) + "/" + Lost(c2) + "/" + Lost(c3));
         Require(Lost(lone) == 0, "Rocket aimed at the lone enemy instead of the cluster.");
+        ModuleReached(c1); ModuleReached(c2); ModuleReached(c3);
         Pass("Rocket: aimed at the dense cluster, all three damaged by one blast, the nearer lone enemy untouched.");
         ClearArena(); yield return null;
 
@@ -193,6 +198,7 @@ public static class WeaponChecks
         Require(Lost(chain[0]) > Lost(chain[1]) && Lost(chain[1]) > Lost(chain[2]) && Lost(chain[2]) >= Lost(chain[3]) && Lost(chain[3]) > 0,
             "Arc falloff: " + Lost(chain[0]) + "/" + Lost(chain[1]) + "/" + Lost(chain[2]) + "/" + Lost(chain[3]));
         Pass("Arc: lightning reached all four enemies with decreasing damage (" + Lost(chain[0]) + ">" + Lost(chain[1]) + ">" + Lost(chain[2]) + ">=" + Lost(chain[3]) + ").");
+        foreach (Health part in chain) ModuleReached(part);
         ClearArena(); yield return null;
 
         // Flame: inside the cone burns, behind and to the side does not.
@@ -201,6 +207,7 @@ public static class WeaponChecks
         yield return WaitUntilLost(() => Lost(front) >= 12, 6f);
         Require(Lost(front) >= 12, "Flame did not damage the enemy in front: " + Lost(front));
         Require(front.GetComponent<BurnEffect>() != null, "Burn effect missing.");
+        ModuleReached(front);
         Require(Lost(behind) == 0 && Lost(side) == 0, "Flame hit outside the cone: " + Lost(behind) + "/" + Lost(side));
         Pass("Flame: damage and burn inside the cone only (" + Lost(front) + " dealt), nothing behind or to the side.");
         ClearArena(); yield return null;
@@ -210,12 +217,12 @@ public static class WeaponChecks
         Health ice = Dummy(new Vector3(9f, 0f, 0f));
         EnemyAI iceAI = ice.GetComponent<EnemyAI>();
         float baseSpeed = iceAI.speed;
-        yield return WaitUntilLost(() => iceAI.speed < baseSpeed - 0.01f, 8f);
-        Require(Mathf.Approximately(iceAI.speed, baseSpeed * 0.5f), "Slowed speed: " + iceAI.speed + " of " + baseSpeed);
+        yield return WaitUntilLost(() => SlowEffect.MovementFactor(iceAI) < .99f, 8f);
+        Require(Mathf.Approximately(SlowEffect.MovementFactor(iceAI), 0.5f), "Slow factor incorrect.");
         Require(Lost(ice) >= 12, "Ice did no damage.");
         shooter.enabled = false;
         yield return Wait(shooter.weapons[9].effectDuration + 1.5f);
-        Require(Mathf.Approximately(iceAI.speed, baseSpeed), "Speed was not restored: " + iceAI.speed);
+        Require(Mathf.Approximately(iceAI.speed, baseSpeed) && Mathf.Approximately(SlowEffect.MovementFactor(iceAI), 1f), "Speed was not restored: " + iceAI.speed);
         shooter.enabled = true;
         Pass("Ice: damage and half speed on hit, original speed restored after the slow ended.");
         ClearArena(); yield return null;
@@ -226,6 +233,7 @@ public static class WeaponChecks
         Health far = Dummy(new Vector3(10f, 0f, 0f));
         yield return WaitUntilLost(() => Lost(far) >= 18, 10f);
         Require(Lost(far) >= 18, "Turret did not shoot: " + Lost(far));
+        ModuleReached(far);
         yield return Wait(3f);
         Require(UnityEngine.Object.FindObjectsOfType<WeaponTurret>().Length <= 2 && UnityEngine.Object.FindObjectsOfType<WeaponTurret>().Length >= 1, "Turret count.");
         Pass("Turret: placed (max 2) and shot the enemy for " + Lost(far) + " damage.");
@@ -237,6 +245,7 @@ public static class WeaponChecks
         Require(UnityEngine.Object.FindObjectsOfType<WeaponDrone>().Length == 2, "Drone count.");
         yield return WaitUntilLost(() => Lost(drone) >= 18, 6f);
         Require(Lost(drone) >= 18, "Drones did not shoot: " + Lost(drone));
+        ModuleReached(drone);
         Select(shooter, 1);
         // Destroy is applied at the end of a frame; wait in game time so real frames have passed.
         yield return Wait(0.5f);
@@ -271,8 +280,19 @@ public static class WeaponChecks
     // Selects a weapon directly (bypasses the menu) and makes sure it fires.
     private static void Select(AutoShoter shooter, int index)
     {
+        if (CheckModules)
+        {
+            MetaProgress.Unlock(MetaProgress.WeaponKey(index));
+            WeaponElements.Buy(index, WeaponElement.Frost);
+            WeaponElements.Equip(index, WeaponElement.Frost);
+        }
         Require(shooter.SelectWeapon(index), "Cannot select weapon " + index);
         shooter.enabled = true;
+    }
+
+    private static void ModuleReached(Health health)
+    {
+        if (CheckModules) Require(SlowEffect.MovementFactor(health) < 1f, "Equipped frost module did not reach " + health.name);
     }
 
     private static IEnumerator WaitUntilLost(Func<bool> done, float seconds)

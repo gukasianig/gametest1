@@ -17,6 +17,12 @@ public class SpecialWeapons : MonoBehaviour
     public WeaponData Weapon { get { return weapon; } }
     public AutoShoter Shooter { get { return shooter; } }
 
+    public void Hit(Health health, int amount)
+    {
+        if (shooter != null && shooter.ElementAttack != null) shooter.ElementAttack.Hit(health, amount);
+        else Damage(health, amount);
+    }
+
     public static bool Running
     {
         get
@@ -102,12 +108,15 @@ public class SpecialWeapons : MonoBehaviour
     }
 
     // Damage everything within the radius and show a short expanding sphere.
-    public static void Blast(Vector3 center, float radius, int damage, Color color)
+    public static void Blast(Vector3 center, float radius, int damage, Color color, SpecialWeapons source = null)
     {
         WeaponTargets.Collect(blastBuffer);
         foreach (Health health in blastBuffer)
             if (WeaponTargets.Flat(center, health.transform.position) <= radius + WeaponTargets.BodyRadius(health) * 0.5f)
-                Damage(health, damage);
+            {
+                if (source != null) source.Hit(health, damage);
+                else Damage(health, damage);
+            }
         ExpandingSphere.Create(center, radius, color, 0.3f);
     }
 
@@ -158,7 +167,7 @@ public class SpecialWeapons : MonoBehaviour
         WeaponTargets.Collect(scratch);
         foreach (Health health in scratch)
             if (SegmentDistance(origin, end, health.transform.position) <= weapon.beamWidth + WeaponTargets.BodyRadius(health))
-                Damage(health, damage);
+                Hit(health, damage);
         BeamFlash.Create(origin, end, new Color(0.55f, 0.9f, 1f), 0.35f, 0.15f);
     }
 
@@ -172,7 +181,7 @@ public class SpecialWeapons : MonoBehaviour
         {
             Vector3 point = current.transform.position + Vector3.up * 0.2f;
             point.y = 0.9f;
-            Damage(current, Mathf.Max(1, Mathf.RoundToInt(strength)));
+            Hit(current, Mathf.Max(1, Mathf.RoundToInt(strength)));
             hit.Add(current);
             BeamFlash.Create(from, point, new Color(0.65f, 0.8f, 1f), 0.14f, 0.2f);
             from = point;
@@ -210,7 +219,7 @@ public class SpecialWeapons : MonoBehaviour
             // Wide bodies count when their edge is inside the cone.
             float slack = distance > 0.01f ? Mathf.Atan2(radius, distance) * Mathf.Rad2Deg : 180f;
             if (distance > 0.8f && Vector3.Angle(direction, offset) > half + slack) continue;
-            Damage(health, damage);
+            Hit(health, damage);
             BurnEffect.Apply(health, weapon.burnPerSecond, weapon.effectDuration);
         }
         if (flame == null) flame = Prim(PrimitiveType.Sphere, "Flame", origin, Vector3.one, new Color(1f, 0.5f, 0.1f));
@@ -296,38 +305,33 @@ public class BurnEffect : MonoBehaviour
 
 public class SlowEffect : MonoBehaviour
 {
-    private EnemyAI ai;
-    private float original, until;
-    private bool restored;
+    private float until;
+    public float Factor { get; private set; } = 1f;
+
+    public static float MovementFactor(Component target)
+    {
+        SlowEffect slow = target.GetComponent<SlowEffect>();
+        return slow != null && Time.time < slow.until ? slow.Factor : 1f;
+    }
 
     public static void Apply(Health target, float factor, float duration)
     {
-        if (target == null) return;
-        EnemyAI enemy = target.GetComponent<EnemyAI>();
-        if (enemy == null) return; // the boss is not slowed
-        SlowEffect slow = enemy.GetComponent<SlowEffect>();
-        if (slow == null)
-        {
-            slow = enemy.gameObject.AddComponent<SlowEffect>();
-            slow.ai = enemy;
-            slow.original = enemy.speed;
-            enemy.speed = slow.original * Mathf.Clamp(factor, 0.05f, 1f);
-        }
-        slow.until = Time.time + duration;
+        if (target == null || target.isDead) return;
+        bool boss = target.GetComponent<BossController>() != null;
+        if (!boss && target.GetComponent<EnemyAI>() == null) return;
+        factor = Mathf.Clamp(factor, .5f, 1f);
+        if (boss) factor = 1f - (1f - factor) * .5f;
+        SlowEffect slow = target.GetComponent<SlowEffect>();
+        if (slow == null) slow = target.gameObject.AddComponent<SlowEffect>();
+        slow.Factor = Time.time < slow.until ? Mathf.Min(slow.Factor, factor) : factor;
+        slow.until = Mathf.Max(slow.until, Time.time + Mathf.Max(0f, duration));
     }
 
     private void Update()
     {
-        if (ai == null || Time.time >= until) { Restore(); Destroy(this); }
+        if (Time.time >= until) Destroy(this);
     }
 
-    private void Restore()
-    {
-        if (ai != null && !restored) ai.speed = original;
-        restored = true;
-    }
-
-    private void OnDestroy() { Restore(); }
 }
 
 // Rockets and ice shots: a straight flying object that bursts on an enemy, a wall or after its range.
@@ -386,14 +390,15 @@ public class WeaponProjectile : MonoBehaviour
     {
         WeaponData data = owner != null ? owner.Weapon : null;
         float radius = data != null ? data.explosionRadius : 3f;
-        if (!ice) SpecialWeapons.Blast(point, radius, damage, new Color(1f, 0.55f, 0.1f));
+        if (!ice) SpecialWeapons.Blast(point, radius, damage, new Color(1f, 0.55f, 0.1f), owner);
         else
         {
             WeaponTargets.Collect(buffer);
             foreach (Health health in buffer)
                 if (WeaponTargets.Flat(point, health.transform.position) <= radius + WeaponTargets.BodyRadius(health) * 0.5f)
                 {
-                    SpecialWeapons.Damage(health, damage);
+                    if (owner != null) owner.Hit(health, damage);
+                    else SpecialWeapons.Damage(health, damage);
                     SlowEffect.Apply(health, data != null ? data.slowFactor : 0.5f, data != null ? data.effectDuration : 3f);
                 }
             ExpandingSphere.Create(point, radius, new Color(0.55f, 0.85f, 1f), 0.3f);
@@ -453,7 +458,8 @@ public class WeaponSaw : MonoBehaviour
             if (!hit.Contains(health) && WeaponTargets.Flat(transform.position, health.transform.position) <= radius + WeaponTargets.BodyRadius(health))
             {
                 hit.Add(health);
-                SpecialWeapons.Damage(health, damage);
+                if (owner != null) owner.Hit(health, damage);
+                else SpecialWeapons.Damage(health, damage);
             }
     }
 }
@@ -489,7 +495,7 @@ public class WeaponMine : MonoBehaviour
         foreach (Health health in buffer)
             if (WeaponTargets.Flat(transform.position, health.transform.position) <= 1.6f + WeaponTargets.BodyRadius(health) * 0.5f)
             {
-                SpecialWeapons.Blast(transform.position, owner.Weapon.explosionRadius, damage, new Color(1f, 0.4f, 0.1f));
+                SpecialWeapons.Blast(transform.position, owner.Weapon.explosionRadius, damage, new Color(1f, 0.4f, 0.1f), owner);
                 Destroy(gameObject);
                 return;
             }
@@ -531,7 +537,7 @@ public class WeaponTurret : MonoBehaviour
         Vector3 to = target.position;
         to.y = 0.9f;
         barrel.rotation = Quaternion.LookRotation(new Vector3(to.x - from.x, 0f, to.z - from.z));
-        SpecialWeapons.Damage(target.GetComponent<Health>(), owner.Shooter.RollDamage());
+        owner.Hit(target.GetComponent<Health>(), owner.Shooter.RollDamage());
         BeamFlash.Create(from, to, new Color(1f, 0.9f, 0.4f), 0.08f, 0.06f);
     }
 }
@@ -574,7 +580,7 @@ public class WeaponDrone : MonoBehaviour
         timer = 0f;
         Vector3 to = target.position;
         to.y = 0.9f;
-        SpecialWeapons.Damage(target.GetComponent<Health>(), owner.Shooter.RollDamage());
+        owner.Hit(target.GetComponent<Health>(), owner.Shooter.RollDamage());
         BeamFlash.Create(transform.position, to, new Color(0.4f, 1f, 0.9f), 0.07f, 0.06f);
     }
 }

@@ -19,7 +19,7 @@ public class UiArtworkImporter : AssetPostprocessor
 
     private void OnPreprocessTexture()
     {
-        if (assetPath == Path) Apply((TextureImporter)assetImporter);
+        if (assetPath == Path || assetPath.StartsWith("Assets/Resources/UI/Tree/")) Apply((TextureImporter)assetImporter);
     }
 
     private static void Apply(TextureImporter importer)

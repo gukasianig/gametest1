@@ -1,0 +1,8 @@
+HeroOperator asset checks PASS
+Triangles: 4260
+Vertices: 8152
+Bones: 16
+Materials: 8
+Height: 2.000 m
+Front +Z; soles Y=0; sockets serialized; Idle/Run sampled.
+Separate prefab only; gameplay scene untouched. No device/gameplay/performance test.

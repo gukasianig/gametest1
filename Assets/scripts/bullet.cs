@@ -10,6 +10,7 @@ public class Bullet : MonoBehaviour, IProjectile
 
     private Rigidbody rb;
     private Transform owner;
+    public WeaponElementAttack elementAttack;
 
     public void SetOwner(Transform shooter)
     {
@@ -66,7 +67,9 @@ public class Bullet : MonoBehaviour, IProjectile
     if (dmg != null)
     {
        hasHit = true;
-        dmg.TakeDamage(damage);
+        Health health = other.GetComponentInParent<Health>();
+        if (elementAttack != null && health != null && health.CompareTag("Enemy")) elementAttack.Hit(health, damage);
+        else dmg.TakeDamage(damage);
         Destroy(gameObject);
     }
 }

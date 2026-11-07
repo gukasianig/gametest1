@@ -1,0 +1,32 @@
+newmtl Graphite
+Kd 0.2039216 0.2705882 0.3058824
+Ns 40
+
+newmtl Titanium
+Kd 0.772549 0.8078431 0.7843137
+Ns 40
+
+newmtl Rubber
+Kd 0.09411765 0.1490196 0.1764706
+Ns 40
+
+newmtl Steel
+Kd 0.4431373 0.5254902 0.5450981
+Ns 40
+
+newmtl TealLight
+Kd 0.2156863 0.9019608 0.8117647
+Ns 40
+
+newmtl Scarf
+Kd 0.6627451 0.6117647 0.4627451
+Ns 40
+
+newmtl Brass
+Kd 0.7294118 0.5647059 0.3333333
+Ns 40
+
+newmtl DeepTeal
+Kd 0.09803922 0.4196078 0.4470588
+Ns 40
+

@@ -70,9 +70,11 @@ private float currentSpread;
     }
 
     private SpecialWeapons special;
+    public WeaponElementAttack ElementAttack { get; private set; }
 
     private void ConfigureSpecial()
     {
+        ElementAttack = new WeaponElementAttack(startWeaponIndex);
         if (special == null) special = GetComponent<SpecialWeapons>();
         if (special == null) special = gameObject.AddComponent<SpecialWeapons>();
         special.Configure(this, baseWeapon);
@@ -227,6 +229,7 @@ private float currentSpread;
         if (b != null)
         {
             b.SetOwner(transform);
+            b.elementAttack = ElementAttack;
             b.damage = RollDamage();
             b.speed = baseWeapon.bulletSpeed;
             b.lifeTime = baseWeapon.bulletLifeTime;
@@ -252,6 +255,7 @@ private float currentSpread;
         if (b != null)
         {
             b.SetOwner(transform);
+            b.elementAttack = ElementAttack;
             b.damage = RollDamage();
             b.speed = baseWeapon.bulletSpeed;
             b.lifeTime = baseWeapon.bulletLifeTime;

@@ -1,0 +1,63 @@
+{
+  "checkedProject": [
+    "ProjectSettings/ProjectSettings.asset: all four autorotation flags enabled",
+    "Assets/scripts/GameUi.cs: referenceResolution=1280x720",
+    "docs/CODEX_MENU_BRIEF.md: original 1920x1080 brief"
+  ],
+  "orientationPolicyChanged": false,
+  "checks": [
+    {
+      "name": "phone-portrait",
+      "width": 1080,
+      "height": 1920,
+      "maxAspectError": 2.220446049250313e-16,
+      "allObjectsInside": true,
+      "touchTargetsAtLeast44CssPixels": true
+    },
+    {
+      "name": "phone-tall",
+      "width": 1080,
+      "height": 2400,
+      "maxAspectError": 2.220446049250313e-16,
+      "allObjectsInside": true,
+      "touchTargetsAtLeast44CssPixels": true
+    },
+    {
+      "name": "phone-landscape",
+      "width": 2340,
+      "height": 1080,
+      "maxAspectError": 2.220446049250313e-16,
+      "allObjectsInside": true,
+      "touchTargetsAtLeast44CssPixels": true
+    },
+    {
+      "name": "phone-landscape-16x9",
+      "width": 1920,
+      "height": 1080,
+      "maxAspectError": 0,
+      "allObjectsInside": true,
+      "touchTargetsAtLeast44CssPixels": true
+    }
+  ],
+  "animations": [
+    {
+      "name": "animated-phone-portrait",
+      "width": 360,
+      "height": 640,
+      "frames": 90,
+      "durationMs": 6000,
+      "changedPixelsAfterOneSecond": 2352
+    },
+    {
+      "name": "animated-phone-landscape",
+      "width": 780,
+      "height": 360,
+      "frames": 90,
+      "durationMs": 6000,
+      "changedPixelsAfterOneSecond": 3070
+    }
+  ],
+  "browserTouchEventsChecked": false,
+  "realDeviceChecked": false,
+  "unityIntegration": false
+}

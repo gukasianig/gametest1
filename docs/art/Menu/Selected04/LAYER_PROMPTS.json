@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-06",
+  "tool": "built-in image_gen",
+  "reference": "../Variants/menu_concept_4_arena_exterior.png",
+  "layers": [
+    {
+      "id": "background",
+      "file": "background.png",
+      "transparent": false,
+      "prompt": "EDIT the supplied selected menu concept as a production 2D animation layer. Keep exactly the original industrial sci-fi painted style, perspective, lighting, graphite/blue metal, teal accents and warm gold. LANDSCAPE 16:9 FULL SCENE CANVAS intended 1920x1080. Preserve the original camera and object positions on the FULL CANVAS, not a new centered composition. Absolutely no writing, UI labels, rectangular buttons, watermark or frame. Create a CLEAN BACKGROUND PLATE for compositing. Remove the entire left foreground repair tent/workbench/robotic arms, the foreground armored hero, the right tall difficulty tower including its base and lever, the floating repair drone, and the central gold decorative entrance gate assembly including its crossed-weapons emblem and lit arch structure. Inpaint the removed areas with plausible continuous dusty ground, bare arena facade and cloudy sky matching the original scene. Leave the unadorned dark arena doorway in the center-right where the decorative gate was, so a gate layer can later be composited over it. Keep the distant arena building, left distant industrial towers, sky, horizon, perspective and overall composition unchanged. No new objects. The result is an empty environmental stage without the 5 removed foreground object groups. Full opaque landscape background.",
+      "sourceFile": "exec-504dc175-060a-4b42-b58d-e3b37afca8de.png"
+    },
+    {
+      "id": "hero",
+      "file": "hero.png",
+      "transparent": true,
+      "prompt": "EDIT the supplied selected menu concept as a production 2D animation layer. Keep exactly the original industrial sci-fi painted style, perspective, lighting, graphite/blue metal, teal accents and warm gold. LANDSCAPE 16:9 FULL SCENE CANVAS intended 1920x1080. Preserve the original camera and object positions on the FULL CANVAS, not a new centered composition. Absolutely no writing, UI labels, rectangular buttons, watermark or frame. Extract ONLY the foreground armored operator seen from behind with the torn olive-brown scarf/cape and teal vertical backpack strip. Keep his EXACT ORIGINAL pose and place in the lower center-left: silhouette occupies approximately x=32%..47% and y=61%..100% of the full canvas. Preserve the bottom-edge crop of the legs as in the reference. Everything else on the full landscape canvas must be genuinely transparent: no ground, shadow, environment, gate, tent, drone or console. Preserve the silhouette, materials and recognizable armor. No recentering or enlarging.",
+      "sourceFile": "exec-cb03b1c3-b654-4ca6-a34b-67e047b794b8.png"
+    },
+    {
+      "id": "gate",
+      "file": "gate.png",
+      "transparent": true,
+      "prompt": "EDIT the supplied selected menu concept as a production 2D animation layer. Keep exactly the original industrial sci-fi painted style, perspective, lighting, graphite/blue metal, teal accents and warm gold. LANDSCAPE 16:9 FULL SCENE CANVAS intended 1920x1080. Preserve the original camera and object positions on the FULL CANVAS, not a new centered composition. Absolutely no writing, UI labels, rectangular buttons, watermark or frame. Extract ONLY the entire central golden arena entrance gate assembly, including crossed-weapons round emblem, angular gold light strips, gray steel columns, entry threshold and the narrow lit ramp into the doorway. Keep EXACT ORIGINAL placement and scale: approximately x=46%..78%, y=38%..87% of the full canvas. Open doorway should retain the original visible lit arena interior as part of this layer, not become transparent there. The outer surroundings must be genuinely transparent. No hero, console, tent, drone, sky, arena exterior wall or broad ground. Maintain the arch shape from reference, not a circular replacement.",
+      "sourceFile": "exec-ec5ae893-36a0-421a-85a8-3ef93e4e38e2.png"
+    },
+    {
+      "id": "workshop",
+      "file": "workshop.png",
+      "transparent": true,
+      "prompt": "EDIT the supplied selected menu concept as a production 2D animation layer. Keep exactly the original industrial sci-fi painted style, perspective, lighting, graphite/blue metal, teal accents and warm gold. LANDSCAPE 16:9 FULL SCENE CANVAS intended 1920x1080. Preserve the original camera and object positions on the FULL CANVAS, not a new centered composition. Absolutely no writing, UI labels, rectangular buttons, watermark or frame. Extract ONLY the complete repair workshop tent on the LEFT, including brown canvas roof, gear-symbol side panel, workbench, tool shelves, repair robot arm, small supply crates and cables directly below the bench. Keep EXACT ORIGINAL place and size: approximately x=0%..36%, y=29%..94% on the full landscape canvas, cropped at the left edge as in reference. EXCLUDE the small floating mechanic drone; it will be a separate animated layer. Everything outside the workshop assembly must be genuinely transparent. No hero, arena gate, right console, distant towers, sky, broad ground or background.",
+      "sourceFile": "exec-9fcbe0b3-53c7-48ac-9bc9-5ef3069eea32.png"
+    },
+    {
+      "id": "conditions",
+      "file": "conditions.png",
+      "transparent": true,
+      "prompt": "EDIT the supplied selected menu concept as a production 2D animation layer. Keep exactly the original industrial sci-fi painted style, perspective, lighting, graphite/blue metal, teal accents and warm gold. LANDSCAPE 16:9 FULL SCENE CANVAS intended 1920x1080. Preserve the original camera and object positions on the FULL CANVAS, not a new centered composition. Absolutely no writing, UI labels, rectangular buttons, watermark or frame. Extract ONLY the complete tall difficulty/threat control tower on the RIGHT, including all THREE circular dark-metal illuminated rings with orange arrow symbols, the vertical red energy shaft, upper antenna structure, lower industrial base and red ball-ended lever. Keep EXACT ORIGINAL place and size: approximately x=74%..100%, y=11%..94% on full landscape canvas, cropped at right edge as in reference. Everything else must be genuinely transparent. No hero, gate, tent, drone, sky, distant arena facade or broad ground. Preserve three levels and their warm-to-red lighting.",
+      "sourceFile": "exec-24fde983-2bf5-4650-b3be-a0b2d31a9f5e.png"
+    },
+    {
+      "id": "drone",
+      "file": "drone.png",
+      "transparent": true,
+      "prompt": "EDIT the supplied selected menu concept as a production 2D animation layer. Keep exactly the original industrial sci-fi painted style, perspective, lighting, graphite/blue metal, teal accents and warm gold. LANDSCAPE 16:9 FULL SCENE CANVAS intended 1920x1080. Preserve the original camera and object positions on the FULL CANVAS, not a new centered composition. Absolutely no writing, UI labels, rectangular buttons, watermark or frame. Extract ONLY the small hovering mechanic drone above the left workbench. It has a rounded gray metal body, a bright teal circular eye, two slim lateral fins, a small teal downward thruster glow. Keep EXACT ORIGINAL size and position: approximately x=23%..31%, y=57%..66% on the full landscape canvas. Preserve the original silhouette. Everything else must be genuinely transparent, no workbench, tent, hero, sky, ground, environmental shadow, gate or console. Do not enlarge or recenter the drone. The very small object sits in the left half of an otherwise transparent wide canvas.",
+      "sourceFile": "exec-29843a3d-d285-4a82-8324-0119e77eea47.png"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "checks": [
+    {
+      "width": 1080,
+      "height": 1920,
+      "aspectError": 0,
+      "contactAnchorsInsideScreen": true,
+      "threeTouchZonesAtLeast44CssPixels": true
+    },
+    {
+      "width": 1080,
+      "height": 2400,
+      "aspectError": 1.1102230246251565e-16,
+      "contactAnchorsInsideScreen": true,
+      "threeTouchZonesAtLeast44CssPixels": true
+    },
+    {
+      "width": 2340,
+      "height": 1080,
+      "aspectError": 0,
+      "contactAnchorsInsideScreen": true,
+      "threeTouchZonesAtLeast44CssPixels": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "aspectError": 0,
+      "contactAnchorsInsideScreen": true,
+      "threeTouchZonesAtLeast44CssPixels": true
+    }
+  ],
+  "animations": [
+    {
+      "name": "animated-portrait",
+      "width": 360,
+      "height": 640,
+      "frames": 90,
+      "durationMs": 6000,
+      "changedPixelsAfterOneSecond": 214
+    },
+    {
+      "name": "animated-landscape",
+      "width": 780,
+      "height": 360,
+      "frames": 90,
+      "durationMs": 6000,
+      "changedPixelsAfterOneSecond": 211
+    }
+  ],
+  "geometryInOnePainting": true,
+  "actorsTransformedIndependently": false,
+  "visualGroundingRequiresImageReview": true,
+  "browserEventsChecked": false,
+  "unityIntegration": false
+}

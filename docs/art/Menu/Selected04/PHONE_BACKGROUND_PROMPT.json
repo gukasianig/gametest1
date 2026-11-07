@@ -1,0 +1,8 @@
+{
+  "date": "2026-11-06",
+  "tool": "built-in image_gen",
+  "sourceFile": "exec-9788977c-491e-4261-8802-a48917dba929.png",
+  "reference": "Layers/background.png",
+  "output": "Layers/background_portrait.png",
+  "prompt": "EDIT this clean industrial arena environment into a tall PORTRAIT PHONE MAIN MENU BACKGROUND, 9:16 intended 1080x1920, NOT a horizontal scene squeezed narrower. Recompose the perspective for a vertical smartphone. Keep the selected concept's painted industrial sci-fi style, blue-graphite arena facade, dusty warm gold lighting from upper left and cloudy dawn sky, distant industrial towers toward left edge. The unadorned arena entrance doorway is centered horizontally in the upper-middle of the portrait scene, around x=50%, y=40%, with its floor threshold near y=56%. Keep the upper 15% mostly quiet dark sky for a title, and the entire lower 40% as open continuous dusty courtyard ground for separate foreground workshop, operator and console layers that will be composited later. Arena facade spans behind the entrance but is not stretched. Large calm composition readable on a small phone. NO foreground gate decoration/arch, NO workbench or tent, NO hero, NO drone, NO difficulty tower or control console. NO text, letters, numbers, logos, watermark, UI borders, frames or buttons. The supplied image is a style/location reference, not an instruction to keep landscape framing. Preserve natural proportions of architectural details while rebuilding tall composition."
+}

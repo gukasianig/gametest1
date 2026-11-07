@@ -78,10 +78,13 @@ public static class MetaProgressChecks
         int baseDamage = shooter.weapons[1].damage;
 
         menu.ShowWorkshop();
-        Transform row = FindDeep(menu.transform.root, "Row meta_pickup");
+        Transform row = FindDeep(menu.transform.root, "Node meta_pickup");
         Require(row != null, "Workshop rows were not built.");
         // Rows live in the menu canvas, which is not under the player.
-        Button buy = row.GetComponentInChildren<Button>();
+        Button node = row.GetComponent<Button>();
+        Require(node != null, "Pickup node missing.");
+        node.onClick.Invoke();
+        Button buy = FindDeep(menu.transform.root, "Tree purchase").GetComponent<Button>();
         Require(buy != null && buy.interactable, "Pickup upgrade should be affordable.");
         int cost = MetaProgress.Find("meta_pickup").Cost(0);
         buy.onClick.Invoke();

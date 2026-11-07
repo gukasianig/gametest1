@@ -1,0 +1,126 @@
+{
+  "date": "2026-11-05",
+  "tool": "built-in image_gen",
+  "assets": [
+    {
+      "id": "el_fire",
+      "sourceFile": "exec-f739a825-2eec-4f28-ae30-9ec7a8110a64.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: Single upright faceted ruby-red crystal core seated in a compact dark graphite three-prong hexagonal metal socket with a narrow silver rim, orange-red luminous inner core and two small flame tongues hugging its upper edges. Accent red-orange.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "el_frost",
+      "sourceFile": "exec-9714c55e-3dfc-44b3-95a5-e60638eca68b.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: Single upright faceted icy cyan-blue crystal core seated in a compact dark graphite three-prong hexagonal metal socket with a narrow silver rim, blue luminous inner core with two tiny frost shards hugging its upper edges. Accent ice blue.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "el_lightning",
+      "sourceFile": "exec-faf0384d-36fd-4b8f-b680-96ffe75f1ad8.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: Single upright faceted golden-yellow crystal core seated in a compact dark graphite three-prong hexagonal metal socket with a narrow silver rim, yellow luminous inner core and one short lightning arc hugging its upper edges. Accent golden yellow.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "el_poison",
+      "sourceFile": "exec-3adea3ca-3a46-4ef8-a23c-95ac880f6105.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: Single upright faceted acid-green crystal core seated in a compact dark graphite three-prong hexagonal metal socket with a narrow silver rim, green luminous inner core and one small green liquid droplet hanging beside its upper edge. Accent lime green.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "root_workshop",
+      "sourceFile": "exec-0067e49a-fe2d-4166-b194-e0666ab4d8ec.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: One compact industrial sci-fi workshop workbench, three-quarter view, a single tiny monitor displaying a simple gear SYMBOL ONLY and a wrench resting on bench, graphite metal cabinet base, teal screen and accent strip. Clear simple unified object silhouette. No environment.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "w_saw",
+      "sourceFile": "exec-8c6a05b8-98af-438f-9ee8-929192572c3e.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: One sci-fi boomerang circular saw disc, front three-quarter view, thick graphite metal central hub with a teal core, sharp thick silver saw teeth, one short curved teal motion swoosh suggesting boomerang return. No other object.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "w_mines",
+      "sourceFile": "exec-ebb75331-66eb-4b45-9437-e36f67abcd29.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: Two small flat round sci-fi landmines grouped as one compact icon, one foreground and one partly behind, dark graphite armored plates, each has a bright teal indicator and tiny metallic trigger ring.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "w_rocket",
+      "sourceFile": "exec-1e117852-54ad-4e34-a885-d4484857e15f.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: One compact industrial sci-fi tube rocket launcher diagonally pointing upper-right, dark graphite metal with teal shoulder grip, visible red-orange rocket tip and a tiny restrained smoke curl behind. Clear weapon silhouette.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "w_arc",
+      "sourceFile": "exec-0a216682-0489-471c-8ec2-b6e40f04db71.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: One compact industrial sci-fi Tesla weapon coil with graphite armored base and teal copper-silver rings around a central mast, a single powerful pale yellow-white electrical arc connecting the top terminals. Grounded technical device, no fantasy staff.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "w_flame",
+      "sourceFile": "exec-62f5a3fe-8cef-4484-82b0-1ecf645ef442.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: One compact sci-fi flamethrower: graphite nozzle attached to a small metal fuel tank with orange indicator, short bright orange flame projecting to upper-right. Clear unified machine silhouette.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "w_ice_cannon",
+      "sourceFile": "exec-87d9429f-7c55-4527-9b9a-e72aa0135b06.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: One compact sci-fi ice cannon diagonally upper-right, graphite metal barrel with teal-blue cooling fins and frosted silver edges, ice-blue crystal at muzzle and small frost particles. Distinct weapon silhouette, no floor.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "w_rail",
+      "sourceFile": "exec-093895d2-cea9-4ba6-ba6b-a6a938435d14.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: One industrial sci-fi railgun diagonally upper-right, long twin parallel graphite rails with a brilliant narrow cyan channel between, short armored stock and teal power cell. Thick simplified readable silhouette.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "w_turret",
+      "sourceFile": "exec-37f9bac4-58b0-4ede-9ea2-3ae54584c58c.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: One compact automated sci-fi turret on three short folding tripod legs, graphite armored gun housing with a single thick barrel pointing upper-right and a teal sensor eye. Three-quarter view, unified silhouette.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "w_drones",
+      "sourceFile": "exec-58a05784-43f3-4532-88d3-5c7b4ddf1a7d.png",
+      "prompt": "Use case: stylized-concept. Asset type: standalone painted game UI icon for a sci-fi technology upgrade tree. Requested final canvas 256x256 square; single centered object/group with 12 percent transparent padding all around, genuinely TRANSPARENT background. Polished colored volumetric hand-painted 3D-look illustration, consistent thick dark outlines, dark desaturated blue-graphite metal, silver bevels, teal accents except elemental-specific glow, soft top-left key light. Exaggerated simple clean silhouette readable at 64x64. Very restrained glow entirely within padding. No rectangular background, no floor, no backdrop, no border, no frame, no labels, no text, no numbers, no watermark, no drop shadow outside object. Same family as the polished arena icons in the project. Subject: Two compact sci-fi gun drones grouped as one centered icon, graphite metal armored flying pods, teal single circular sensor lens, short side stabilizers and a short gun barrel each. One foreground lower-left and one behind upper-right. No background.",
+      "width": 256,
+      "height": 256,
+      "transparent": true
+    },
+    {
+      "id": "tree_background",
+      "sourceFile": "exec-e1ad56a8-1088-42b1-899f-614f06697862.png",
+      "prompt": "Game UI background only, 16:9 landscape 1920x1080 composition, for industrial sci-fi technology upgrade tree named Workshop. Match elegant minimalist midnight-blue constellation-map mood: deep desaturated navy/graphite, subtle sparse tiny stars and extremely faint cyan cosmic dust, very low contrast, no bright nebula. Lower 10 percent features a faint silhouette of distant abandoned industrial arena buildings and cables along bottom right, minimal warm pin lights. Top center and whole central 85 percent are calm empty dark space suitable for readable overlaid technology nodes. NO text, NO icons, NO tree nodes, NO UI panels, NO borders, NO buttons, NO connection lines, NO crystal objects, NO weapons, NO watermark. Professional polished painted game environment backdrop, restrained and unobtrusive. Whole screen is a flat reusable background asset, not a screenshot, no monitor frame.",
+      "width": 1920,
+      "height": 1080,
+      "transparent": false
+    }
+  ]
+}

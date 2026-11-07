@@ -15,10 +15,9 @@ public class StartMenu : MonoBehaviour
     private RectTransform selection;
     private RectTransform workshop, modifiersScreen;
     private ModifierRow[] modifierRows;
-    private Text summary, workshopCurrency, selectionHint, modifiersTotal;
+    private Text summary, selectionHint, modifiersTotal;
     private RectTransform[] weaponLocks;
     private Text[] weaponLockText;
-    private WorkshopRow[] workshopRows;
     private bool waiting;
     public bool WaitingForWeapon => waiting;
 
@@ -232,69 +231,26 @@ public class StartMenu : MonoBehaviour
         return total / 60 + ":" + (total % 60).ToString("00");
     }
 
+    private WorkshopTree workshopTree;
+
     private void BuildWorkshop(RectTransform background)
     {
         workshop = GameUi.Box(background, "Workshop", Vector2.zero, Vector2.one, Color.clear);
-        GameUi.Label(workshop, "МАСТЕРСКАЯ", new Vector2(0.08f, 0.88f), new Vector2(0.92f, 0.94f), 16, GameUi.Accent);
-        GameUi.Label(workshop, "Постоянные улучшения", new Vector2(0.08f, 0.79f), new Vector2(0.92f, 0.88f), 34,
-            new Color(0.92f, 0.94f, 0.96f));
-        workshopCurrency = GameUi.Label(workshop, "", new Vector2(0.08f, 0.71f), new Vector2(0.92f, 0.79f), 22, GameUi.Accent);
-        int count = MetaProgress.Catalog.Length;
-        float pitch = Mathf.Min(0.135f, 0.53f / Mathf.Max(1, count));
-        workshopRows = new WorkshopRow[count];
-        for (int i = 0; i < count; i++)
-        {
-            MetaUpgrade upgrade = MetaProgress.Catalog[i];
-            float top = 0.69f - i * pitch;
-            RectTransform row = GameUi.Box(workshop, "Row " + upgrade.id, new Vector2(0.06f, top - pitch + 0.015f),
-                new Vector2(0.94f, top), new Color(0.055f, 0.075f, 0.1f), true);
-            UiArtwork.Round(row.GetComponent<Image>());
-            Text title = GameUi.Label(row, "<b>" + upgrade.title + "</b>\n<color=#8FA0B3>" + upgrade.description + "</color>",
-                new Vector2(0.02f, 0f), new Vector2(0.5f, 1f), 20, new Color(0.93f, 0.95f, 0.97f));
-            title.alignment = TextAnchor.MiddleLeft;
-            Text state = GameUi.Label(row, "", new Vector2(0.5f, 0f), new Vector2(0.74f, 1f), 18, new Color(0.62f, 0.69f, 0.77f));
-            string id = upgrade.id;
-            Button buy = GameUi.Button(row, "", new Vector2(0.76f, 0.15f), new Vector2(0.98f, 0.85f), () => BuyUpgrade(id));
-            UiArtwork.Round(buy.GetComponent<Image>());
-            workshopRows[i] = new WorkshopRow { upgrade = upgrade, state = state, button = buy, label = buy.GetComponentInChildren<Text>() };
-        }
-        Button back = GameUi.Button(workshop, "Назад", new Vector2(0.41f, 0.04f), new Vector2(0.59f, 0.115f), () =>
+        workshopTree = workshop.gameObject.AddComponent<WorkshopTree>();
+        workshopTree.Build(shooter, () =>
         {
             workshop.gameObject.SetActive(false);
             RefreshHome();
+            RefreshWeaponLocks();
             home.gameObject.SetActive(true);
         });
-        UiArtwork.Round(back.GetComponent<Image>());
         workshop.gameObject.SetActive(false);
-    }
-
-    private void BuyUpgrade(string id)
-    {
-        MetaProgress.Buy(id);
-        RefreshWorkshop();
     }
 
     private void RefreshWorkshop()
     {
-        workshopCurrency.text = MetaProgress.CurrencyName + ": " + MetaProgress.Currency;
-        foreach (WorkshopRow row in workshopRows)
-        {
-            int rank = MetaProgress.Rank(row.upgrade.id);
-            bool maxed = rank >= row.upgrade.maxRank;
-            row.state.text = "Ранг " + rank + " / " + row.upgrade.maxRank + "\n" + MetaProgress.EffectText(row.upgrade, rank) +
-                (maxed ? "" : " → " + MetaProgress.EffectText(row.upgrade, rank + 1));
-            row.label.text = maxed ? "Максимум" : "Улучшить  " + row.upgrade.Cost(rank);
-            row.button.interactable = MetaProgress.CanBuy(row.upgrade);
-        }
+        workshopTree.Refresh();
     }
-
-    private class WorkshopRow
-    {
-        public MetaUpgrade upgrade;
-        public Text state, label;
-        public Button button;
-    }
-
     private void WeaponCard(int index, WeaponData weapon, Vector2 min, Vector2 max)
     {
         string[] titles = { "Пистолет", "Автомат", "Дробовик", "Тяжёлая винтовка" };

@@ -101,7 +101,7 @@ public class EnemyAI : MonoBehaviour
             separation += away * (1f - gap / personalSpace);
         }
         // Repulsion must not reverse pursuit, as the previous inverse-distance sum did.
-        Vector3 desired = Vector3.ClampMagnitude(direction + Vector3.ClampMagnitude(separation * separationStrength, 0.65f), 1f) * speed;
+        Vector3 desired = Vector3.ClampMagnitude(direction + Vector3.ClampMagnitude(separation * separationStrength, 0.65f), 1f) * speed * SlowEffect.MovementFactor(this);
         Vector3 chosen = AvoidCrowd(position, desired, deltaTime);
         Vector3 next = position + chosen * deltaTime;
         if (ArenaLayout.Instance != null) next = ArenaLayout.Instance.ResolveMovement(position, next, bodyRadius);

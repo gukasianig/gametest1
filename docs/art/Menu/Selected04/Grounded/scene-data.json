@@ -1,0 +1,17 @@
+{
+  "composition": "single coherent painting per orientation",
+  "layers": [
+    {
+      "id": "portrait",
+      "file": "Grounded/portrait.png",
+      "width": 941,
+      "height": 1672
+    },
+    {
+      "id": "landscape",
+      "file": "Grounded/landscape.png",
+      "width": 1774,
+      "height": 887
+    }
+  ]
+}

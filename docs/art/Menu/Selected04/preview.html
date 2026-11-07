@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Арена снаружи — анимированный концепт</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #080e14; color: #e9e4d8; font: 14px Arial, sans-serif; }
+    body { display: grid; place-items: center; }
+    main { position: relative; width: min(100vw, 56.25vh); height: 100vh; width: min(100vw, 56.25dvh); height: 100dvh; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .zone { position: absolute; border: 0; background: transparent; padding: 0; cursor: pointer; outline: 0; touch-action: manipulation; }
+    nav { position: fixed; left: max(12px, env(safe-area-inset-left)); bottom: max(10px, env(safe-area-inset-bottom)); display: flex; gap: 18px; }
+    nav button { border: 0; background: transparent; color: #b9c3c9; font: inherit; cursor: pointer; padding: 4px 0; text-shadow: 0 1px 4px #000; }
+    nav button:focus-visible { outline: 1px solid #6cebd9; outline-offset: 3px; }
+    #status { position: fixed; right: 16px; bottom: 15px; color: #9cabb4; text-shadow: 0 1px 4px #000; }
+    @media (orientation: landscape) and (pointer: coarse) { main { width: 100vw; } #status { display: none; } }
+    @media (max-width: 600px) { #status { display: none; } nav button { font-size: 12px; } }
+    body.landscape main { width: 100vw; }
+  </style>
+</head>
+<body>
+  <main aria-label="Анимированный концепт входа на арену">
+    <canvas id="scene" width="1080" height="1920"></canvas>
+    <button class="zone workshop" data-zone="workshop" aria-label="Предпросмотр мастерской"></button>
+    <button class="zone gate" data-zone="gate" aria-label="Предпросмотр входа на арену"></button>
+    <button class="zone conditions" data-zone="conditions" aria-label="Предпросмотр пульта условий"></button>
+  </main>
+  <nav aria-label="Предпросмотр"><button id="pause">Пауза</button><button id="clear">Убрать выделение</button></nav>
+  <span id="status" role="status">Загрузка…</span>
+  <script src="Grounded/scene-data.js"></script>
+  <script src="Grounded/animation.js"></script>
+  <script>
+    (async function () {
+      const data = globalThis.ArenaSceneData;
+      const images = {};
+      await Promise.all(data.layers.map(layer => new Promise((resolve, reject) => {
+        const image = new Image(); image.onload = () => { images[layer.id] = image; resolve(); };
+        image.onerror = () => reject(new Error('Не удалось загрузить ' + layer.file)); image.src = layer.file;
+      })));
+      if (new URLSearchParams(location.search).has('landscape')) document.body.classList.add('landscape');
+      const canvas = document.getElementById('scene'), area = document.querySelector('main');
+      const renderer = ArenaMenuAnimation.create(canvas, images, data);
+      let hover = null, selected = null, paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let time = 0, previous = performance.now();
+      const pause = document.getElementById('pause');
+      pause.textContent = paused ? 'Продолжить' : 'Пауза';
+      pause.onclick = () => { paused = !paused; pause.textContent = paused ? 'Продолжить' : 'Пауза'; };
+      document.getElementById('clear').onclick = () => { selected = null; };
+      function resize() {
+        const bounds = area.getBoundingClientRect(), scale = Math.min(2, devicePixelRatio || 1);
+        canvas.width = Math.max(1, Math.round(bounds.width * scale));
+        canvas.height = Math.max(1, Math.round(bounds.height * scale));
+        renderer.zones().forEach(zone => {
+          const button = document.querySelector('[data-zone="' + zone.id + '"]');
+          button.style.left = zone.x * 100 + '%'; button.style.top = zone.y * 100 + '%';
+          button.style.width = zone.w * 100 + '%'; button.style.height = zone.h * 100 + '%';
+        });
+      }
+      function hit(event) {
+        const bounds = area.getBoundingClientRect();
+        return renderer.pick((event.clientX - bounds.left) / bounds.width, (event.clientY - bounds.top) / bounds.height);
+      }
+      document.querySelectorAll('.zone').forEach(button => {
+        button.onfocus = () => { hover = button.dataset.zone; };
+        button.onblur = () => { hover = null; };
+        button.onclick = event => { selected = event.detail === 0 ? button.dataset.zone : hit(event); };
+      });
+      area.onpointermove = event => { hover = hit(event); };
+      area.onpointerleave = () => { hover = null; };
+      new ResizeObserver(resize).observe(area); resize();
+      document.getElementById('status').textContent = 'Предпросмотр телефона · нажми на предмет';
+      function frame(now) {
+        if (!paused) time += Math.min((now - previous) / 1000, .1);
+        previous = now; renderer.render(time, { hover, selected }); requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })().catch(error => { document.getElementById('status').textContent = error.message; });
+  </script>
+</body>
+</html>

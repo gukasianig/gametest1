@@ -64,7 +64,7 @@ public class BossController : MonoBehaviour
             waypoint = ArenaLayout.Instance.NextWaypoint(transform.position, target.position, 1.6f);
             nextPath = Time.time + 0.6f;
         }
-        Vector3 desired = Vector3.MoveTowards(transform.position, new Vector3(waypoint.x, 1.6f, waypoint.z), 2.2f * Time.deltaTime);
+        Vector3 desired = Vector3.MoveTowards(transform.position, new Vector3(waypoint.x, 1.6f, waypoint.z), 2.2f * SlowEffect.MovementFactor(this) * Time.deltaTime);
         transform.position = ArenaLayout.Instance.ResolveMovement(transform.position, desired, 1.6f);
     }
 

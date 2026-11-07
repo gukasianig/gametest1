@@ -60,7 +60,18 @@ public class StartMenu : MonoBehaviour
         UiArtwork.Round(shop.GetComponent<Image>());
         Button conditions = GameUi.Button(home, "Условия", new Vector2(0.66f, 0.21f), new Vector2(0.93f, 0.33f), ShowModifiers);
         UiArtwork.Round(conditions.GetComponent<Image>());
+        // Выбор арены: меняет тему сразу (арена пересобирается за меню).
+        Button arenaButton = GameUi.Button(home, "", new Vector2(0.64f, 0.865f), new Vector2(0.94f, 0.935f), () => { });
+        UiArtwork.Round(arenaButton.GetComponent<Image>());
+        Text arenaLabel = arenaButton.GetComponentInChildren<Text>();
+        System.Action refreshArena = () => { if (arenaLabel != null) arenaLabel.text = "Арена: " + ArenaThemes.Names[(int)ArenaThemes.Current]; };
+        if (arenaLabel != null) arenaLabel.fontSize = 18;
+        refreshArena();
+        arenaButton.onClick.AddListener(() => { ArenaThemes.Set(ArenaThemes.Next(ArenaThemes.Current)); ArenaThemes.Apply(); refreshArena(); });
         summary = GameUi.Label(home, "", new Vector2(0.06f, 0.07f), new Vector2(0.94f, 0.19f), 17, new Color(0.58f, 0.65f, 0.72f));
+        Text version = GameUi.Label(home, "v" + Application.version, new Vector2(0.7f, 0.04f), new Vector2(0.94f, 0.07f), 14,
+            new Color(0.45f, 0.52f, 0.58f));
+        version.alignment = TextAnchor.MiddleRight;
         BuildWorkshop(background);
         BuildModifiers(background);
         RefreshHome();
@@ -310,7 +321,7 @@ public class StartMenu : MonoBehaviour
         {
             if (weaponLocks[i] == null) continue;
             MetaUnlock unlock = MetaProgress.FindUnlock(MetaProgress.WeaponKey(i));
-            bool locked = unlock != null && !MetaProgress.IsUnlocked(unlock.id);
+            bool locked = unlock != null && !MetaProgress.IsUnlocked(unlock.id) && !MetaProgress.DevUnlockAllWeapons;
             weaponLocks[i].gameObject.SetActive(locked);
             if (!locked) continue;
             bool affordable = MetaProgress.Currency >= unlock.cost;
@@ -334,7 +345,9 @@ public class StartMenu : MonoBehaviour
             if (gameplayCanvases[i] != null) gameplayCanvases[i].enabled = canvasStates[i];
         menu.gameObject.SetActive(false);
         Time.timeScale = 1f;
-        if (ArenaLayout.Instance != null) ArenaLayout.Instance.Tint(gameObject, GameUi.Accent);
+        // Tint the placeholder only. The operator has its own armor materials.
+        if (ArenaLayout.Instance != null && !TryGetComponent<HeroLocomotion>(out _))
+            ArenaLayout.Instance.Tint(gameObject, GameUi.Accent);
     }
 
     private void OnDestroy()

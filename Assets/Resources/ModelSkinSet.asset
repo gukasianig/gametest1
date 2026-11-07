@@ -1,0 +1,408 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7dabac7e9914a448a70e6f8ac1a2d5a, type: 3}
+  m_Name: ModelSkinSet
+  m_EditorClassIdentifier: 
+  enabled: 1
+  entries:
+  - key: Weapon0
+    model: {fileID: 919132149155446097, guid: 478407ad1ec8e674cb21015a88fb5651, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Weapon1
+    model: {fileID: 919132149155446097, guid: b50c470d16a4df846ae5c51dd76f9988, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Weapon2
+    model: {fileID: 919132149155446097, guid: e4b4cc6b04b9e9346a7132cfc5191fbe, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Weapon3
+    model: {fileID: 919132149155446097, guid: 56573e2559ddca14d98e952ff4259db0, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Kind_Boomerang
+    model: {fileID: 919132149155446097, guid: 0c24f754142d20b4d95d49b409bd4835, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Kind_Mines
+    model: {fileID: 919132149155446097, guid: 9e50666e565e82b4b870a1d94425b2cc, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Kind_Rocket
+    model: {fileID: 919132149155446097, guid: db0b13ce399621e48b8dbedb582304f7, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Kind_Arc
+    model: {fileID: 919132149155446097, guid: 16943f3d98d96d747ba8788aaa437d8b, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Kind_Flame
+    model: {fileID: 919132149155446097, guid: 9fbfaeb7726b1334f8d96ceb3c087330, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Kind_Ice
+    model: {fileID: 919132149155446097, guid: 74508ae4ff4884b4897ff835e5b5a74f, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Kind_Rail
+    model: {fileID: 919132149155446097, guid: 6bbd6fbd3032bb74e92aa879b1532a10, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Kind_Turret
+    model: {fileID: 919132149155446097, guid: 3f549bf8e2d6e874b8b9fd89c478f582, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Kind_Drone
+    model: {fileID: 919132149155446097, guid: 9045d92f02855ef4c8001aad2f95e2d8, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Cargo
+    model: {fileID: 919132149155446097, guid: d57fe5693d458144cbc4debc94f58a1c, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 1
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: North generator
+    model: {fileID: 919132149155446097, guid: 475efdfb7c8e448468e6031b81f2cc38, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Eastern relay
+    model: {fileID: 919132149155446097, guid: a32244d9d897afa489d23ecf4e7ddc1c, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Control tower
+    model: {fileID: 919132149155446097, guid: beef31ee4981008409c7eb4e4c8b0345, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Cooling station
+    model: {fileID: 919132149155446097, guid: 7c472ef8113e3344cb0b8a12e4776d17, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Radar base
+    model: {fileID: 919132149155446097, guid: a32244d9d897afa489d23ecf4e7ddc1c, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Weak
+    model: {fileID: 919132149155446097, guid: 8da052562d694b3408398d38253a37f3, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Fast
+    model: {fileID: 919132149155446097, guid: 0ee1cc0c0727aa44bb87241bdd73cf2e, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_tank
+    model: {fileID: 919132149155446097, guid: 8a2a2238e95fdb14c9b646d9f33cee3d, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Shooter
+    model: {fileID: 919132149155446097, guid: c2fe3402d94a86b40b240add9c1d435e, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Charger
+    model: {fileID: 919132149155446097, guid: 5c52df3270f7ea549b4cfddd36e15263, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Bomber
+    model: {fileID: 919132149155446097, guid: b219d1f5ad011b144b18b26b7d2a2c4d, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Healer
+    model: {fileID: 919132149155446097, guid: b36fa0d966858044d834aab0382c54d9, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Splitter
+    model: {fileID: 919132149155446097, guid: 63a40024b8977c948b39887d2d1953c0, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Summoner
+    model: {fileID: 919132149155446097, guid: 17cec60d20e501c44a415be783ae292b, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Sniper
+    model: {fileID: 919132149155446097, guid: 1122cb815475f1440855203ea510cf52, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Mortar
+    model: {fileID: 919132149155446097, guid: 8f677cf5a68d7344cac6c8159a9c5283, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Teleporter
+    model: {fileID: 919132149155446097, guid: c7c8fa1d021b8a246aa27f0ea723e8b5, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Buffer
+    model: {fileID: 919132149155446097, guid: bf1a821116b7aed48be4066ab8212517, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Enemy_Armored
+    model: {fileID: 919132149155446097, guid: 9e04930d2abec9342963a87f16850bd2, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Boss
+    model: {fileID: 919132149155446097, guid: b20ddffd1a3375648a8eb8a666cdd97c, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  decor:
+  - label: barrel
+    model: {fileID: 919132149155446097, guid: 7a5556ad664cbdc49b1e23536e4d271b, type: 3}
+    targetSize: 1.2
+    count: 22
+    minRadius: 14
+    maxRadius: 100
+    cluster: 2
+  - label: barrel-open
+    model: {fileID: 919132149155446097, guid: b1da94bbabeb0f14da60aefbd07e258e, type: 3}
+    targetSize: 1.2
+    count: 8
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: box
+    model: {fileID: 919132149155446097, guid: bc8a2b98bc144574ba59a669ca25a163, type: 3}
+    targetSize: 1
+    count: 20
+    minRadius: 14
+    maxRadius: 100
+    cluster: 3
+  - label: box-open
+    model: {fileID: 919132149155446097, guid: 51df1fc70378db94baa1d8915ec44411, type: 3}
+    targetSize: 1.1
+    count: 8
+    minRadius: 14
+    maxRadius: 100
+    cluster: 2
+  - label: box-large-open
+    model: {fileID: 919132149155446097, guid: 07dd1b7e66e93b54d942ca825059d960, type: 3}
+    targetSize: 1.7
+    count: 8
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: chest
+    model: {fileID: 919132149155446097, guid: 0f055cea473946f4c86f97453fb64ed9, type: 3}
+    targetSize: 1.1
+    count: 8
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: workbench
+    model: {fileID: 919132149155446097, guid: 83e385ec93ff22f4b99d92a1fd0c05e0, type: 3}
+    targetSize: 2
+    count: 6
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: workbench-anvil
+    model: {fileID: 919132149155446097, guid: 3fd9845f1ecd5fb46987257834b3e7c7, type: 3}
+    targetSize: 1.5
+    count: 4
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: fence-fortified
+    model: {fileID: 919132149155446097, guid: 9521f5d67aafc2a40aaaaaf016949543, type: 3}
+    targetSize: 3.2
+    count: 14
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: metal-panel
+    model: {fileID: 919132149155446097, guid: 5138887bd63af364ab4604f9b4d47d44, type: 3}
+    targetSize: 2.6
+    count: 14
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: metal-panel-screws
+    model: {fileID: 919132149155446097, guid: 3d0b6c10f871d434480254e27cf39307, type: 3}
+    targetSize: 2.6
+    count: 8
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: structure-metal-wall
+    model: {fileID: 919132149155446097, guid: 992fa3016b097054c8ff104dd9b338c8, type: 3}
+    targetSize: 3.2
+    count: 8
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: cables
+    model: {fileID: 919132149155446097, guid: dbd727979e11c684885143295c6d6edb, type: 3}
+    targetSize: 2.2
+    count: 18
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: gate-lasers
+    model: {fileID: 919132149155446097, guid: 92e441d9a57051148ae4a073047451b2, type: 3}
+    targetSize: 5
+    count: 4
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: template-wall-half
+    model: {fileID: 919132149155446097, guid: 3cdc46b33ec8b334099c079a77e566a1, type: 3}
+    targetSize: 3.6
+    count: 12
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1
+  - label: template-floor-detail
+    model: {fileID: 919132149155446097, guid: 9f3986f7fc7adb144b6a2e8a4a703c4c, type: 3}
+    targetSize: 4
+    count: 16
+    minRadius: 10
+    maxRadius: 100
+    cluster: 1
+  - label: stairs
+    model: {fileID: 919132149155446097, guid: 1f6028c859681814cae2620b329e4696, type: 3}
+    targetSize: 3.2
+    count: 3
+    minRadius: 14
+    maxRadius: 100
+    cluster: 1

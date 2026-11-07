@@ -23,6 +23,7 @@ public class BossController : MonoBehaviour
         root.transform.position = position;
         root.transform.localScale = Vector3.one * 3.2f;
         ArenaLayout.Instance.Tint(root, new Color(0.8f, 0.34f, 0.12f));
+        ModelSkins.ApplyEnemy(root, "Boss");
         Rigidbody body = root.AddComponent<Rigidbody>();
         body.isKinematic = true;
         body.useGravity = false;

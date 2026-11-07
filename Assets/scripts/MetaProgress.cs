@@ -111,7 +111,11 @@ public static class MetaProgress
     }
 
     // Test hooks.
-    public static void UseMemory() { persist = false; data = new MetaSave(); }
+    // На время разработки (07.11.2026, по просьбе владельца) все оружия открыты. Вернуть закрытие: поставить false.
+    // Автопроверки (UseMemory) всегда видят обычные закрытые оружия.
+    public static bool DevUnlockAllWeapons = true;
+
+    public static void UseMemory() { persist = false; data = new MetaSave(); DevUnlockAllWeapons = false; }
     public static void UseFile(string file) { persist = true; path = file; data = Load(file); }
 
     public static MetaSave Load(string file)
@@ -226,6 +230,7 @@ public static class MetaProgress
 
     public static bool IsWeaponUnlocked(int weapon)
     {
+        if (DevUnlockAllWeapons) return true;
         MetaUnlock unlock = FindUnlock(WeaponKey(weapon));
         return unlock == null || IsUnlocked(unlock.id);
     }

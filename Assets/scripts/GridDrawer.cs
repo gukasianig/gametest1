@@ -20,33 +20,7 @@ public class GridDrawer : MonoBehaviour
             Debug.LogError("Arena ground requires the URP/Lit shader.", this);
             return;
         }
-        groundTexture = new Texture2D(512, 512, TextureFormat.RGB24, true);
-        groundTexture.name = "Arena floor grid";
-        groundTexture.wrapMode = TextureWrapMode.Repeat;
-        groundTexture.filterMode = FilterMode.Trilinear;
-        groundTexture.anisoLevel = 8;
-        Color[] pixels = new Color[512 * 512];
-        for (int y = 0; y < 512; y++)
-        {
-            for (int x = 0; x < 512; x++)
-            {
-                int tileX = x * 5 / 512;
-                int tileY = y * 5 / 512;
-                float grain = ((x * 17 + y * 31) % 23 - 11) * 0.001f;
-                float variation = ((tileX + tileY) % 2) * 0.018f;
-                Color color = new Color(0.23f + grain + variation, 0.28f + grain + variation, 0.26f + grain + variation);
-                bool seam = x * 5 % 512 < 5 || y * 5 % 512 < 5;
-                bool major = x < 3 || y < 3;
-                bool marker = (Mathf.Abs(x - 256) < 2 && Mathf.Abs(y - 256) < 12) ||
-                    (Mathf.Abs(y - 256) < 2 && Mathf.Abs(x - 256) < 12);
-                if (seam) color *= 0.78f;
-                if (major) color = new Color(0.34f, 0.39f, 0.35f);
-                if (marker) color = new Color(0.55f, 0.52f, 0.36f);
-                pixels[y * 512 + x] = color;
-            }
-        }
-        groundTexture.SetPixels(pixels);
-        groundTexture.Apply(true, true);
+        groundTexture = ArenaThemes.MakeFloor(ArenaThemes.Current);
         groundMaterial = new Material(shader);
         groundMaterial.name = "Arena ground";
         groundMaterial.SetTexture("_BaseMap", groundTexture);
@@ -61,6 +35,25 @@ public class GridDrawer : MonoBehaviour
         floor.transform.position = Vector3.zero;
         floor.transform.localScale = new Vector3(size / 10f, 1f, size / 10f);
         floor.GetComponent<MeshRenderer>().sharedMaterial = groundMaterial;
+        // Плоский MeshCollider тонкий: быстрые физические объекты могли проваливаться. Ставим толстый «пол» (верх на y=0).
+        MeshCollider thin = floor.GetComponent<MeshCollider>();
+        if (thin != null) Destroy(thin);
+        BoxCollider solidFloor = floor.AddComponent<BoxCollider>();
+        solidFloor.size = new Vector3(10f, 4f, 10f);
+        solidFloor.center = new Vector3(0f, -2f, 0f);
+        ArenaThemes.ApplyEnvironment(ArenaThemes.Current);
+        if (ArenaThemes.Current == ArenaTheme.Glacier) groundMaterial.SetFloat("_Smoothness", 0.45f);
+    }
+
+    // Смена темы: новая текстура пола, материал остаётся тем же.
+    public void Apply(ArenaTheme theme)
+    {
+        if (groundMaterial == null) return;
+        Texture2D old = groundTexture;
+        groundTexture = ArenaThemes.MakeFloor(theme);
+        groundMaterial.SetTexture("_BaseMap", groundTexture);
+        groundMaterial.SetFloat("_Smoothness", theme == ArenaTheme.Glacier ? 0.45f : 0.05f);
+        if (old != null) Destroy(old);
     }
 
     void OnDestroy()

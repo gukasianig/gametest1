@@ -11,6 +11,49 @@ public class Bullet : MonoBehaviour, IProjectile
     private Rigidbody rb;
     private Transform owner;
     public WeaponElementAttack elementAttack;
+    // Extra enemies this bullet may pass through (from the Pierce upgrade).
+    public int pierce;
+    // How many times this bullet may jump to another enemy after a hit (Ricochet upgrade); each jump keeps 80% damage.
+    public int ricochet;
+    private static readonly System.Collections.Generic.List<Health> ricochetTargets = new System.Collections.Generic.List<Health>();
+
+    // Explosive bullets (upgrade): a small blast around the hit that damages the other enemies nearby.
+    private void Explode(Health hit)
+    {
+        float radius = CombatStats.ExplosionRadius;
+        int blast = Mathf.Max(1, Mathf.RoundToInt(damage * CombatStats.ExplosionDamageShare));
+        WeaponTargets.Collect(ricochetTargets);
+        foreach (Health candidate in ricochetTargets)
+        {
+            if (candidate == null || candidate == hit || candidate.isDead) continue;
+            if (WeaponTargets.Flat(transform.position, candidate.transform.position) <= radius + WeaponTargets.BodyRadius(candidate) * 0.5f)
+                candidate.TakeDamage(blast);
+        }
+        ExpandingSphere.Create(transform.position, radius, new Color(1f, 0.6f, 0.2f), 0.2f);
+    }
+
+    private bool Redirect()
+    {
+        WeaponTargets.Collect(ricochetTargets);
+        Health best = null;
+        float bestDistance = 12f;
+        foreach (Health candidate in ricochetTargets)
+        {
+            if (candidate == null || candidate.isDead || pierced.Contains(candidate)) continue;
+            float distance = WeaponTargets.Flat(transform.position, candidate.transform.position);
+            if (distance < bestDistance) { bestDistance = distance; best = candidate; }
+        }
+        if (best == null || rb == null) return false;
+        Vector3 direction = best.transform.position - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f) return false;
+        direction.Normalize();
+        transform.rotation = Quaternion.LookRotation(direction);
+        rb.velocity = direction * speed;
+        damage = Mathf.Max(1, Mathf.RoundToInt(damage * 0.8f));
+        return true;
+    }
+    private readonly System.Collections.Generic.HashSet<Health> pierced = new System.Collections.Generic.HashSet<Health>();
 
     public void SetOwner(Transform shooter)
     {
@@ -66,10 +109,16 @@ public class Bullet : MonoBehaviour, IProjectile
     if (other.GetComponent<Bullet>() != null) return;
     if (dmg != null)
     {
-       hasHit = true;
         Health health = other.GetComponentInParent<Health>();
+        // One enemy with several colliders must not take the same bullet twice.
+        if (health != null && !pierced.Add(health)) return;
         if (elementAttack != null && health != null && health.CompareTag("Enemy")) elementAttack.Hit(health, damage);
         else dmg.TakeDamage(damage);
+        bool enemy = health != null && health.CompareTag("Enemy");
+        if (enemy && CombatStats.ExplosionRadius > 0f) Explode(health);
+        if (pierce > 0 && enemy) { pierce--; return; }
+        if (ricochet > 0 && enemy && Redirect()) { ricochet--; return; }
+        hasHit = true;
         Destroy(gameObject);
     }
 }

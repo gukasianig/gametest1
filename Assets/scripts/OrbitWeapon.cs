@@ -67,7 +67,11 @@ public class OrbitWeapon : MonoBehaviour
 
         if (dmg != null)
         {
-            dmg.TakeDamage(damage);
+            // Satellites use a share of the hero's crit chance (Critical satellites upgrade).
+            int dealt = CombatStats.Roll(damage, CombatStats.CritChance * Mathf.Min(1f, CombatStats.OrbitCritShare), out bool crit);
+            Health.NextHitCrit = crit;
+            dmg.TakeDamage(dealt);
+            Health.NextHitCrit = false;
             currentHits++;
 
             if (currentHits >= maxHits)

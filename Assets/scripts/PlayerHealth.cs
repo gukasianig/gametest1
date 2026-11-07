@@ -30,16 +30,63 @@ public class PlayerHealth : MonoBehaviour, IDamagable
         }
     }
 
+    private float invulnerableUntil;
+    public bool Invulnerable => Time.time < invulnerableUntil;
+
+    // Short protection after a dash. Extends, never shortens, an existing one.
+    public void GrantInvulnerability(float seconds)
+    {
+        invulnerableUntil = Mathf.Max(invulnerableUntil, Time.time + Mathf.Max(0f, seconds));
+    }
+
     public void TakeDamage(int damage)
     {
-        if (isDead || damage <= 0 || (GameSession.Instance != null && GameSession.Instance.State != GameRunState.Playing)) return;
+        if (isDead || damage <= 0 || Invulnerable || (GameSession.Instance != null && GameSession.Instance.State != GameRunState.Playing)) return;
+        if (CombatStats.Armor > 0f) damage = Mathf.Max(1, Mathf.RoundToInt(damage * (1f - Mathf.Min(0.6f, CombatStats.Armor))));
         currentHP = Mathf.Max(0, currentHP - damage);
         damageHold = 0.25f;
         if (currentHP == 0) Die();
     }
 
+    public int Heal(int amount)
+    {
+        if (isDead || amount <= 0) return 0;
+        int restored = Mathf.Min(amount, Mathf.Max(1, maxHP) - currentHP);
+        currentHP += restored;
+        return restored;
+    }
+
+    private float healthRemainder;
+
+    // Heals fractional amounts (regeneration, vampirism) by collecting them until a whole point is reached.
+    private void HealFraction(float amount)
+    {
+        healthRemainder += amount;
+        int whole = Mathf.FloorToInt(healthRemainder);
+        if (whole <= 0) return;
+        healthRemainder -= whole;
+        Heal(whole);
+    }
+
+    // Called for every enemy killed (Vampirism upgrade).
+    public void OnEnemyKilled()
+    {
+        if (CombatStats.VampirismPerKill > 0f && !isDead) HealFraction(CombatStats.VampirismPerKill);
+    }
+
+    // A cursed upgrade lowers the maximum without healing: the current value is only capped.
+    public void ReduceMaxHealth(float fraction)
+    {
+        if (isDead) return;
+        maxHP = Mathf.Max(1, Mathf.RoundToInt(maxHP * (1f - Mathf.Clamp01(fraction))));
+        currentHP = Mathf.Min(currentHP, maxHP);
+    }
+
     private void Update()
     {
+        if (CombatStats.RegenPerSecond > 0f && !isDead && Time.timeScale > 0f &&
+            (GameSession.Instance == null || GameSession.Instance.State == GameRunState.Playing))
+            HealFraction(CombatStats.RegenPerSecond * Time.deltaTime);
         if (hpImage == null || hpDamageImage == null) return;
         float target = (float)currentHP / Mathf.Max(1, maxHP);
         hpImage.fillAmount = Mathf.Lerp(hpImage.fillAmount, target,

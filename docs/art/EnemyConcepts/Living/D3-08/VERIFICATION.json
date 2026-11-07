@@ -1,0 +1,15 @@
+{
+  "meshParts": 7,
+  "triangles": 1760,
+  "materialSlotsPerPart": 1,
+  "boundsMetersBlenderXYZ": [
+    1.31,
+    0.808,
+    0.7751
+  ],
+  "feetZ": 0.0,
+  "blenderForward": "+Y",
+  "fbxRoundTrip": "PASS",
+  "closedMeshParts": 7,
+  "degenerateTriangles": 0
+}

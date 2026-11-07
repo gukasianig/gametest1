@@ -54,7 +54,7 @@ MonoBehaviour:
     minimumLevel: 1
     weight: 10
   - id: grenade
-    title: Мощность гранат
+    title: Гранаты
     icon: {fileID: 0}
     symbol: GRN
     effect: 4
@@ -102,6 +102,256 @@ MonoBehaviour:
     amount: 1
     maxRanks: 3
     minimumLevel: 2
+    weight: 10
+  - id: crit_chance
+    title: Критический шанс
+    icon: {fileID: 0}
+    symbol: CRT
+    effect: 9
+    rarity: 1
+    amount: 0.05
+    maxRanks: 8
+    minimumLevel: 3
+    weight: 10
+  - id: crit_power
+    title: Сила крита
+    icon: {fileID: 0}
+    symbol: CPW
+    effect: 10
+    rarity: 1
+    amount: 0.25
+    maxRanks: 6
+    minimumLevel: 4
+    weight: 10
+  - id: pierce
+    title: Пробивание
+    icon: {fileID: 0}
+    symbol: PRC
+    effect: 11
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 3
+    weight: 8
+  - id: ricochet
+    title: Рикошет
+    icon: {fileID: 0}
+    symbol: RIC
+    effect: 12
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 3
+    weight: 8
+  - id: drone_count
+    title: Больше дронов
+    icon: {fileID: 0}
+    symbol: DRN
+    effect: 13
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 2
+    weight: 10
+  - id: drone_damage
+    title: Урон дронов
+    icon: {fileID: 0}
+    symbol: DMD
+    effect: 14
+    rarity: 0
+    amount: 0.2
+    maxRanks: 8
+    minimumLevel: 1
+    weight: 10
+  - id: turret_count
+    title: Больше турелей
+    icon: {fileID: 0}
+    symbol: TUR
+    effect: 15
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 2
+    weight: 10
+  - id: turret_damage
+    title: Урон турелей
+    icon: {fileID: 0}
+    symbol: DMT
+    effect: 16
+    rarity: 0
+    amount: 0.2
+    maxRanks: 8
+    minimumLevel: 1
+    weight: 10
+  - id: armor
+    title: Броня
+    icon: {fileID: 0}
+    symbol: ARM
+    effect: 17
+    rarity: 0
+    amount: 0.05
+    maxRanks: 8
+    minimumLevel: 2
+    weight: 10
+  - id: regen
+    title: Регенерация
+    icon: {fileID: 0}
+    symbol: REG
+    effect: 18
+    rarity: 0
+    amount: 0.4
+    maxRanks: 8
+    minimumLevel: 2
+    weight: 8
+  - id: vampirism
+    title: Вампиризм
+    icon: {fileID: 0}
+    symbol: VMP
+    effect: 19
+    rarity: 1
+    amount: 0.2
+    maxRanks: 5
+    minimumLevel: 3
+    weight: 8
+  - id: dash_cooldown
+    title: Быстрый рывок
+    icon: {fileID: 0}
+    symbol: DCD
+    effect: 20
+    rarity: 0
+    amount: 0.4
+    maxRanks: 5
+    minimumLevel: 2
+    weight: 8
+  - id: dash_distance
+    title: Дальний рывок
+    icon: {fileID: 0}
+    symbol: DDS
+    effect: 21
+    rarity: 0
+    amount: 1.5
+    maxRanks: 4
+    minimumLevel: 2
+    weight: 8
+  - id: pellets
+    title: Доп. снаряды
+    icon: {fileID: 0}
+    symbol: PEL
+    effect: 22
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 3
+    weight: 8
+  - id: explosive
+    title: Взрывные пули
+    icon: {fileID: 0}
+    symbol: EXP
+    effect: 23
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 4
+    weight: 8
+  - id: elite_hunter
+    title: Охотник на элиту
+    icon: {fileID: 0}
+    symbol: ELT
+    effect: 24
+    rarity: 0
+    amount: 0.15
+    maxRanks: 5
+    minimumLevel: 3
+    weight: 8
+  - id: range
+    title: Дальность стрельбы
+    icon: {fileID: 0}
+    symbol: RNG
+    effect: 25
+    rarity: 0
+    amount: 0.1
+    maxRanks: 5
+    minimumLevel: 2
+    weight: 8
+  - id: orbit_speed
+    title: Скорость спутников
+    icon: {fileID: 0}
+    symbol: OSP
+    effect: 26
+    rarity: 0
+    amount: 0.2
+    maxRanks: 5
+    minimumLevel: 2
+    weight: 8
+  - id: orbit_crit
+    title: Критические спутники
+    icon: {fileID: 0}
+    symbol: OCR
+    effect: 27
+    rarity: 1
+    amount: 0.4
+    maxRanks: 3
+    minimumLevel: 4
+    weight: 6
+  - id: pickup_speed
+    title: Скорость притяжения
+    icon: {fileID: 0}
+    symbol: PSP
+    effect: 28
+    rarity: 0
+    amount: 0.25
+    maxRanks: 5
+    minimumLevel: 2
+    weight: 8
+  - id: luck
+    title: Удача
+    icon: {fileID: 0}
+    symbol: LCK
+    effect: 29
+    rarity: 1
+    amount: 0.25
+    maxRanks: 4
+    minimumLevel: 3
+    weight: 6
+  - id: experience
+    title: Опыт
+    icon: {fileID: 0}
+    symbol: XPG
+    effect: 30
+    rarity: 0
+    amount: 0.1
+    maxRanks: 8
+    minimumLevel: 2
+    weight: 8
+  - id: cursed_glass
+    title: Стеклянная пушка
+    icon: {fileID: 0}
+    symbol: CRS
+    effect: 31
+    rarity: 2
+    amount: 1
+    maxRanks: 1
+    minimumLevel: 5
+    weight: 10
+  - id: cursed_haste
+    title: Кровавый темп
+    icon: {fileID: 0}
+    symbol: CRS
+    effect: 32
+    rarity: 2
+    amount: 1
+    maxRanks: 1
+    minimumLevel: 5
+    weight: 10
+  - id: cursed_greed
+    title: Жадность
+    icon: {fileID: 0}
+    symbol: CRS
+    effect: 33
+    rarity: 2
+    amount: 1
+    maxRanks: 1
+    minimumLevel: 5
     weight: 10
   commonWeight: 70
   rareWeight: 25

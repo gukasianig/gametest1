@@ -107,6 +107,17 @@ public class OrbitManager : MonoBehaviour
         }
     }
 
+    private float baseOrbitSpeed = -1f;
+
+    // Upgrade: rotation speed as a share of the original (0.2 = +20%), applied to existing satellites too.
+    public void SetSpeedBonus(float bonus)
+    {
+        if (baseOrbitSpeed < 0f) baseOrbitSpeed = orbitSpeed;
+        orbitSpeed = baseOrbitSpeed * (1f + Mathf.Max(0f, bonus));
+        foreach (OrbitWeapon orbit in orbits)
+            if (orbit != null) orbit.orbitSpeed = orbitSpeed;
+    }
+
     public void UpgradeSpeed(float amount)
     {
         orbitSpeed += amount;

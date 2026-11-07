@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Values are stored in prefabs by number; 5 was a removed role, keep the explicit numbers.
-public enum EnemyRole { Shooter, Charger, Bomber, Healer, Splitter, Summoner = 6, Sniper = 7 }
+public enum EnemyRole { Shooter, Charger, Bomber, Healer, Splitter, Summoner = 6, Sniper = 7, Mortar = 8, Teleporter = 9, Buffer = 10, Armored = 11 }
 
 [RequireComponent(typeof(EnemyAI), typeof(Health))]
 public class EnemyAbility : MonoBehaviour
@@ -32,6 +32,10 @@ public class EnemyAbility : MonoBehaviour
             case EnemyRole.Healer: return new Color(0.2f, 0.95f, 0.55f);
             case EnemyRole.Summoner: return new Color(1f, 0.35f, 0.75f);
             case EnemyRole.Sniper: return new Color(0.95f, 0.95f, 0.3f);
+            case EnemyRole.Mortar: return new Color(0.6f, 0.45f, 0.25f);
+            case EnemyRole.Teleporter: return new Color(0.35f, 0.9f, 1f);
+            case EnemyRole.Buffer: return new Color(1f, 0.55f, 0.15f);
+            case EnemyRole.Armored: return new Color(0.55f, 0.6f, 0.68f);
             default: return new Color(0.75f, 0.4f, 1f);
         }
     }
@@ -48,7 +52,10 @@ public class EnemyAbility : MonoBehaviour
     {
         ai.UsesMelee = role == EnemyRole.Splitter;
         ai.PreferredRange = role == EnemyRole.Shooter ? 9f : role == EnemyRole.Healer ? 6f :
-            role == EnemyRole.Summoner ? 8f : role == EnemyRole.Sniper ? 17f : 0f;
+            role == EnemyRole.Summoner ? 8f : role == EnemyRole.Sniper ? 17f :
+            role == EnemyRole.Mortar ? 15f : role == EnemyRole.Buffer ? 7f : 0f;
+        ai.UsesMelee = role == EnemyRole.Splitter || role == EnemyRole.Teleporter || role == EnemyRole.Armored;
+        if (role == EnemyRole.Armored) health.DamageTakenFactor = 0.5f;
         nextAction = Time.time + 1.5f;
         Color color = RoleColor(role);
         if (ArenaLayout.Instance != null) ArenaLayout.Instance.Tint(gameObject, color);
@@ -83,6 +90,21 @@ public class EnemyAbility : MonoBehaviour
         }
         else if (role == EnemyRole.Sniper)
             Part(PrimitiveType.Cylinder, new Vector3(0, 0.25f, 1.0f), new Vector3(0.1f, 0.9f, 0.1f)).localRotation = Quaternion.Euler(90, 0, 0);
+        else if (role == EnemyRole.Mortar)
+            Part(PrimitiveType.Cylinder, new Vector3(0, 1.0f, 0.2f), new Vector3(0.35f, 0.5f, 0.35f)).localRotation = Quaternion.Euler(-30, 0, 0);
+        else if (role == EnemyRole.Teleporter)
+        {
+            Part(PrimitiveType.Cube, new Vector3(0, 1.1f, 0), new Vector3(0.3f, 0.3f, 0.3f)).localRotation = Quaternion.Euler(45, 45, 0);
+        }
+        else if (role == EnemyRole.Buffer)
+        {
+            Part(PrimitiveType.Cylinder, new Vector3(0, 1.0f, 0), new Vector3(0.12f, 0.8f, 0.12f));
+            Part(PrimitiveType.Sphere, new Vector3(0, 1.8f, 0), Vector3.one * 0.35f);
+        }
+        else if (role == EnemyRole.Armored)
+        {
+            Part(PrimitiveType.Cube, new Vector3(0, 0.5f, 0.6f), new Vector3(1.0f, 1.0f, 0.15f));
+        }
         else
         {
             Part(PrimitiveType.Sphere, new Vector3(-0.4f, 0.4f, 0), Vector3.one * 0.45f);
@@ -100,6 +122,8 @@ public class EnemyAbility : MonoBehaviour
         part.GetComponent<Collider>().enabled = false;
         Destroy(part.GetComponent<Collider>());
         if (ArenaLayout.Instance != null) ArenaLayout.Instance.Tint(part, Color.white);
+        // У врага с настоящей моделью роль уже видна по ней — белые «маркеры-примитивы» скрываем.
+        if (transform.Find("SkinModel") != null) part.GetComponent<Renderer>().enabled = false;
         return part.transform;
     }
 
@@ -113,8 +137,74 @@ public class EnemyAbility : MonoBehaviour
         else if (role == EnemyRole.Bomber && DistanceToTarget <= 3.5f) StartCoroutine(Explode());
         else if (role == EnemyRole.Healer) StartCoroutine(HealAllies());
         else if (role == EnemyRole.Summoner && DistanceToTarget <= 26f && LiveMinions < SummonerMinionLimit) StartCoroutine(Summon());
+        else if (role == EnemyRole.Mortar && DistanceToTarget <= 20f) StartCoroutine(Mortar());
+        else if (role == EnemyRole.Teleporter && DistanceToTarget > 6f && DistanceToTarget <= 18f) StartCoroutine(Teleport());
+        else if (role == EnemyRole.Buffer && EnemyAI.CountWithin(transform.position, BuffRadius) > 1) StartCoroutine(Buff());
         else if (role == EnemyRole.Sniper && DistanceToTarget <= 24f &&
             ArenaLayout.Instance.PathClear(transform.position, ai.target.position, 0.2f)) StartCoroutine(Snipe());
+    }
+
+    // World-space ring at an arbitrary point (mortar shell landing, teleport destination).
+    private void CircleAt(Vector3 center, float radius)
+    {
+        warning.loop = true;
+        warning.positionCount = 48;
+        for (int i = 0; i < 48; i++)
+        {
+            float angle = i * Mathf.PI * 2 / 48;
+            warning.SetPosition(i, new Vector3(center.x + Mathf.Cos(angle) * radius, 0.08f, center.z + Mathf.Sin(angle) * radius));
+        }
+        warning.enabled = true;
+    }
+
+    public const float MortarRadius = 2.6f;
+    public const int MortarDamage = 22;
+    // Lobbed shell: the ring marks where the hero stood when it was fired; leaving it in time avoids the hit.
+    private IEnumerator Mortar()
+    {
+        BeginAction();
+        Vector3 impact = ai.target.position;
+        CircleAt(impact, MortarRadius);
+        yield return Wait(1.5f);
+        warning.enabled = false;
+        if (ai.target != null && FlatDistance(impact, ai.target.position) <= MortarRadius)
+            ai.target.GetComponent<PlayerHealth>()?.TakeDamage(MortarDamage);
+        EndAction(4.5f);
+    }
+
+    // Marks a spot close to the hero, then blinks there; afterwards it attacks in melee.
+    private IEnumerator Teleport()
+    {
+        BeginAction();
+        Vector3 destination = transform.position;
+        bool found = false;
+        for (int i = 0; i < 12 && !found; i++)
+        {
+            Vector3 spot = ai.target.position + Quaternion.Euler(0, Random.Range(0f, 360f), 0) * Vector3.forward * 3.5f;
+            spot.y = transform.position.y;
+            if (ArenaLayout.Instance.IsWalkable(spot, 0.5f)) { destination = spot; found = true; }
+        }
+        if (found)
+        {
+            CircleAt(destination, 1.0f);
+            yield return Wait(0.7f);
+            warning.enabled = false;
+            if (ArenaLayout.Instance.IsWalkable(destination, 0.5f)) transform.position = destination;
+        }
+        EndAction(5f);
+    }
+
+    public const float BuffRadius = 7f;
+    public const float BuffFactor = 1.6f;
+    private IEnumerator Buff()
+    {
+        BeginAction();
+        Circle(BuffRadius);
+        yield return Wait(0.7f);
+        foreach (EnemyAI ally in FindObjectsOfType<EnemyAI>())
+            if (ally != ai && FlatDistance(transform.position, ally.transform.position) <= BuffRadius)
+                ally.Boost(BuffFactor, 4f);
+        EndAction(6f);
     }
 
     private IEnumerator Wait(float seconds)
@@ -269,6 +359,7 @@ public class EnemyAbility : MonoBehaviour
         GameObject child = Instantiate(prefab, point, Quaternion.identity);
         child.name = "Summoned minion";
         child.transform.localScale *= 0.55f;
+        ModelSkins.ApplyEnemy(child, "Enemy_Weak");   // миньон — клон базового Weak: тот же вид, но меньше
         float bottom = float.PositiveInfinity;
         foreach (Renderer renderer in child.GetComponentsInChildren<Renderer>()) bottom = Mathf.Min(bottom, renderer.bounds.min.y);
         child.transform.position += Vector3.up * (groundHeight - bottom);
@@ -296,6 +387,7 @@ public class EnemyAbility : MonoBehaviour
             GameObject child = Instantiate(splitPrefab, point, Quaternion.identity);
             child.name = "Splitter fragment";
             child.transform.localScale *= 0.55f;
+            ModelSkins.ApplyEnemy(child, "Enemy_Splitter");   // осколок выглядит как уменьшенный Splitter
             float bottom = float.PositiveInfinity;
             foreach (Renderer renderer in child.GetComponentsInChildren<Renderer>()) bottom = Mathf.Min(bottom, renderer.bounds.min.y);
             child.transform.position += Vector3.up * (waves.groundHeight - bottom);

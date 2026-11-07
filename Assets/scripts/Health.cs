@@ -12,7 +12,11 @@ public class Health : MonoBehaviour, IDamagable
     [Min(0)] public int experienceReward = 5;
     int currentHealth;
 
+    // Set by the weapon code around a single TakeDamage call so the damage number can show a critical hit.
+    public static bool NextHitCrit;
     public bool isDead = false;
+    // Armored enemies set this below 1 to take reduced damage.
+    public float DamageTakenFactor = 1f;
     public int CurrentHealth => currentHealth;
     private EnemyHealthDisplay display;
 
@@ -42,6 +46,7 @@ public class Health : MonoBehaviour, IDamagable
     public void TakeDamage(int damage)
     {
         if (isDead || damage <= 0) return;
+        if (DamageTakenFactor < 0.999f) damage = Mathf.Max(1, Mathf.RoundToInt(damage * DamageTakenFactor));
 
         int receivedDamage = Mathf.Min(currentHealth, damage);
         currentHealth -= receivedDamage;
@@ -52,7 +57,7 @@ public class Health : MonoBehaviour, IDamagable
             display = EnemyHealthDisplay.GetOrCreate();
             display.Register(this);
         }
-        if (display != null) display.ShowDamage(this, receivedDamage);
+        if (display != null) display.ShowDamage(this, receivedDamage, NextHitCrit);
 
         UpdateHPText();
             if (currentHealth <= 0)
@@ -81,7 +86,13 @@ public class Health : MonoBehaviour, IDamagable
         isDead = true;
         if (CompareTag("Enemy") && RunStatistics.Instance != null)
             RunStatistics.Instance.RecordKill();
-        if (CompareTag("Enemy")) ExperiencePickup.Spawn(transform.position, experienceReward);
+        if (CompareTag("Enemy") && CombatStats.VampirismPerKill > 0f && PlayerProgression.Instance != null)
+        {
+            PlayerHealth hero = PlayerProgression.Instance.GetComponent<PlayerHealth>();
+            if (hero != null) hero.OnEnemyKilled();
+        }
+        if (CompareTag("Enemy") && experienceReward > 0) DropPickup.TryDrop(transform.position, name.StartsWith("Elite"));
+        if (CompareTag("Enemy")) ExperiencePickup.Spawn(transform.position, Mathf.RoundToInt(experienceReward * ArenaEvents.ExperienceFactor));
         Died?.Invoke(this);
         Destroy(gameObject);
     }

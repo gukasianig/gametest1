@@ -111,7 +111,7 @@ public static class EnemyDirectorChecks
             sniperType.prefab.GetComponent<EnemyAbility>().role == EnemyRole.Sniper, "Prefab roles.");
         Require(summonerType.prefab.GetComponent<EnemyAbility>().splitPrefab != null, "Summoner minion prefab missing.");
         Require(sniperType.prefab.GetComponent<Health>().maxHealth == 55 &&
-            summonerType.prefab.GetComponent<Health>().maxHealth == 110 && waves.enemies.Length == 10, "Stats / roster size: " + waves.enemies.Length);
+            summonerType.prefab.GetComponent<Health>().maxHealth == 110 && waves.enemies.Length == 14, "Stats / roster size: " + waves.enemies.Length);
         Transform target = player.transform;
         Pass("Roster: 10 types (no Shielder), Summoner 9/120 s, Sniper 10/130 s, roles, stats and minion prefab set.");
 

@@ -33,6 +33,10 @@ public class EnemyAI : MonoBehaviour
     public bool UsesMelee { get; set; } = true;
     public bool MovementLocked { get; set; }
     public float PreferredRange { get; set; }
+    // Speed boost from a Buffer enemy: multiplier until the given game time.
+    private float boostFactor = 1f, boostUntil;
+    public void Boost(float factor, float seconds) { boostFactor = factor; boostUntil = Time.time + seconds; }
+    public bool Boosted => Time.time < boostUntil;
     private float lastAttackTime;
     private Vector3 waypoint;
     private float nextPathTime;
@@ -101,7 +105,7 @@ public class EnemyAI : MonoBehaviour
             separation += away * (1f - gap / personalSpace);
         }
         // Repulsion must not reverse pursuit, as the previous inverse-distance sum did.
-        Vector3 desired = Vector3.ClampMagnitude(direction + Vector3.ClampMagnitude(separation * separationStrength, 0.65f), 1f) * speed * SlowEffect.MovementFactor(this);
+        Vector3 desired = Vector3.ClampMagnitude(direction + Vector3.ClampMagnitude(separation * separationStrength, 0.65f), 1f) * speed * (Boosted ? boostFactor : 1f) * SlowEffect.MovementFactor(this) * ArenaEvents.EnemySpeedFactor * CombatStats.EnemySpeedCurse;
         Vector3 chosen = AvoidCrowd(position, desired, deltaTime);
         Vector3 next = position + chosen * deltaTime;
         if (ArenaLayout.Instance != null) next = ArenaLayout.Instance.ResolveMovement(position, next, bodyRadius);

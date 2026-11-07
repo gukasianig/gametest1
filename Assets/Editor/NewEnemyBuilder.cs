@@ -22,6 +22,14 @@ public static class NewEnemyBuilder
             speed = 2.0f, scale = 1.1f, cost = 18, weight = 9, minWave = 9, minSeconds = 120f, usesWeakAsMinion = true },
         new Def { prefab = "Enemy_Sniper", typeName = "Sniper", role = EnemyRole.Sniper, health = 55, damage = 8, experience = 12,
             speed = 2.4f, scale = 1f, cost = 12, weight = 12, minWave = 10, minSeconds = 130f },
+        new Def { prefab = "Enemy_Mortar", typeName = "Mortar", role = EnemyRole.Mortar, health = 70, damage = 6, experience = 13,
+            speed = 2.2f, scale = 1f, cost = 14, weight = 10, minWave = 8, minSeconds = 100f },
+        new Def { prefab = "Enemy_Teleporter", typeName = "Teleporter", role = EnemyRole.Teleporter, health = 60, damage = 12, experience = 11,
+            speed = 3.4f, scale = 0.95f, cost = 10, weight = 10, minWave = 6, minSeconds = 80f },
+        new Def { prefab = "Enemy_Buffer", typeName = "Buffer", role = EnemyRole.Buffer, health = 90, damage = 6, experience = 14,
+            speed = 2.3f, scale = 1.05f, cost = 16, weight = 8, minWave = 7, minSeconds = 110f },
+        new Def { prefab = "Enemy_Armored", typeName = "Armored", role = EnemyRole.Armored, health = 180, damage = 16, experience = 16,
+            speed = 2.0f, scale = 1.25f, cost = 20, weight = 8, minWave = 8, minSeconds = 120f },
     };
 
     public static void RunBatch()

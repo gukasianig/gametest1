@@ -31,6 +31,7 @@ public class GameSession : MonoBehaviour
         if (Application.targetFrameRate < 0) Application.targetFrameRate = 60;
         waves = FindObjectOfType<WaveManager>();
         if (ArenaLayout.Instance == null) new GameObject("Industrial Arena").AddComponent<ArenaLayout>();
+        if (GetComponent<ArenaEvents>() == null) gameObject.AddComponent<ArenaEvents>();
         BuildUI();
     }
 

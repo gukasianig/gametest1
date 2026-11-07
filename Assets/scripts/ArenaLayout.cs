@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ArenaLayout : MonoBehaviour
+public partial class ArenaLayout : MonoBehaviour
 {
     public static ArenaLayout Instance { get; private set; }
-    public float halfSize = 72f;
+    public float halfSize = 110f;
     private readonly List<Bounds> obstacles = new List<Bounds>();
     private readonly HashSet<Collider> blockers = new HashSet<Collider>();
     private readonly Dictionary<Color, Material> materials = new Dictionary<Color, Material>();
@@ -13,6 +13,22 @@ public class ArenaLayout : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        Build();
+    }
+
+    private void Build()
+    {
+        ArenaTheme theme = ArenaThemes.Current;
+        if (theme == ArenaTheme.Factory) { BuildFactory(); if (!ArenaProps.Apply(this, true)) ArenaDecor.Populate(this); }
+        else { ArenaProps.Apply(this, false); BuildThemed(theme); }
+    }
+
+    // Пересборка под выбранную тему (вызывается из ArenaThemes.Apply, пока забег не идёт).
+    public void Rebuild()
+    {
+        for (int i = transform.childCount - 1; i >= 0; i--) { transform.GetChild(i).gameObject.SetActive(false); Destroy(transform.GetChild(i).gameObject); }
+        obstacles.Clear();
+        blockers.Clear();
         Build();
     }
 
@@ -28,7 +44,9 @@ public class ArenaLayout : MonoBehaviour
 
     public void Tint(GameObject actor, Color color)
     {
-        foreach (Renderer renderer in actor.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial = Material(color);
+        // Модели-«скины» (SkinModel) сохраняют свои текстуры: перекрашиваются только исходные примитивы.
+        foreach (Renderer renderer in actor.GetComponentsInChildren<Renderer>())
+            if (!ModelSkins.IsSkinPart(renderer.transform)) renderer.sharedMaterial = Material(color);
     }
 
     private GameObject Prop(string name, PrimitiveType primitive, Vector3 position, Vector3 size, Color color, bool solid)
@@ -40,20 +58,21 @@ public class ArenaLayout : MonoBehaviour
         prop.transform.localScale = size;
         prop.GetComponent<Renderer>().sharedMaterial = Material(color);
         Collider collider = prop.GetComponent<Collider>();
-        if (!solid) { collider.enabled = false; Destroy(collider); }
+        if (!solid) { collider.enabled = false; if (Application.isPlaying) Destroy(collider); else DestroyImmediate(collider); }
         else blockers.Add(collider);
         return prop;
     }
 
     private void Cover(string name, Vector3 centre, Vector3 size, Color color)
     {
-        Prop(name, PrimitiveType.Cube, centre, size, color, true);
+        GameObject block = Prop(name, PrimitiveType.Cube, centre, size, color, true);
+        ModelSkins.ApplyProp(block, name);
         obstacles.Add(new Bounds(centre, size));
         Prop("Safety stripe", PrimitiveType.Cube, centre + Vector3.up * (size.y * 0.5f + 0.025f),
             new Vector3(size.x, 0.05f, size.z * 0.3f), new Color(0.85f, 0.63f, 0.18f), false);
     }
 
-    private void Build()
+    private void BuildFactory()
     {
         Color steel = new Color(0.13f, 0.2f, 0.22f);
         Prop("North perimeter", PrimitiveType.Cube, new Vector3(0, 1.5f, halfSize), new Vector3(halfSize * 2, 3, 1), steel, true);
@@ -76,8 +95,10 @@ public class ArenaLayout : MonoBehaviour
         Prop("Relay antenna", PrimitiveType.Cylinder, new Vector3(48, 6, 0), new Vector3(0.25f, 3, 0.25f), steel, false);
         Prop("Landing pad", PrimitiveType.Cylinder, new Vector3(0, 0.02f, 0), new Vector3(7, 0.015f, 7),
             new Color(0.18f, 0.31f, 0.3f), false);
+        BuildOuterZone(steel);
+        int markers = Mathf.Max(1, Mathf.FloorToInt((halfSize - 12f) / 18f));
         for (int side = -1; side <= 1; side += 2)
-        for (int i = -3; i <= 3; i++)
+        for (int i = -markers; i <= markers; i++)
         {
             Prop("Perimeter marker", PrimitiveType.Cube, new Vector3(i * 18, 0.03f, side * (halfSize - 2)),
                 new Vector3(4, 0.05f, 0.35f), new Color(0.8f, 0.57f, 0.15f), false);
@@ -86,7 +107,47 @@ public class ArenaLayout : MonoBehaviour
         }
     }
 
+    // The extended ring of the arena (beyond the original +-72): more cover and four corner landmarks.
+    private void BuildOuterZone(Color steel)
+    {
+        Cover("Cargo E", new Vector3(62, 1, -58), new Vector3(6, 2, 3), steel);
+        Cover("Cargo F", new Vector3(-66, 1, 60), new Vector3(3, 2, 6), steel);
+        Cover("Cargo G", new Vector3(88, 1, 36), new Vector3(3, 2, 6), steel);
+        Cover("Cargo H", new Vector3(-86, 1, -42), new Vector3(6, 2, 3), steel);
+        Cover("Cargo I", new Vector3(24, 1, -88), new Vector3(6, 2, 3), steel);
+        Cover("Cargo J", new Vector3(-28, 1, 90), new Vector3(3, 2, 6), steel);
+        Cover("Cargo K", new Vector3(50, 1, 70), new Vector3(6, 2, 3), steel);
+        Cover("Cargo L", new Vector3(-52, 1, -72), new Vector3(3, 2, 6), steel);
+
+        Cover("Control tower", new Vector3(86, 3, 86), new Vector3(8, 6, 8), new Color(0.24f, 0.35f, 0.51f));
+        Prop("Tower antenna", PrimitiveType.Cylinder, new Vector3(86, 9, 86), new Vector3(0.3f, 3f, 0.3f), steel, false);
+        Cover("Cooling station", new Vector3(-86, 2, -86), new Vector3(9, 4, 6), new Color(0.18f, 0.43f, 0.39f));
+        for (int i = -1; i <= 1; i++)
+            Prop("Station fin", PrimitiveType.Cube, new Vector3(-86 + i * 2.8f, 4.7f, -86), new Vector3(0.7f, 1.4f, 3), steel, false);
+        Cover("Pump foundation", new Vector3(86, 0.3f, -86), new Vector3(8, 0.6f, 8), steel);
+        for (int i = -1; i <= 1; i += 2)
+            Prop("Pump tank", PrimitiveType.Cylinder, new Vector3(86 + i * 2, 2.3f, -86), new Vector3(2.7f, 2, 2.7f),
+                new Color(0.63f, 0.39f, 0.18f), false);
+        Cover("Radar base", new Vector3(-86, 1.5f, 86), new Vector3(6, 3, 6), new Color(0.35f, 0.3f, 0.2f));
+        Prop("Radar dish", PrimitiveType.Cylinder, new Vector3(-86, 4.2f, 86), new Vector3(4f, 0.3f, 4f), steel, false);
+    }
+
     public bool IsBlocker(Collider collider) { return blockers.Contains(collider); }
+
+    // Препятствие из редактируемого декора (ArenaProp.solid): коробка по границам модели.
+    public void RegisterSolid(Bounds bounds)
+    {
+        var go = new GameObject("Solid prop");
+        go.transform.SetParent(transform, false);
+        go.transform.position = bounds.center;
+        var box = go.AddComponent<BoxCollider>();
+        box.size = bounds.size;
+        blockers.Add(box);
+        obstacles.Add(bounds);
+    }
+
+    // Только для редактора: собрать препятствия Завода без запуска игры (нужно для расстановки декора).
+    public void EditorCollectFactoryObstacles() { obstacles.Clear(); blockers.Clear(); BuildFactory(); }
 
     public bool IsWalkable(Vector3 point, float radius)
     {
@@ -188,5 +249,6 @@ public class ArenaLayout : MonoBehaviour
     {
         if (Instance == this) Instance = null;
         foreach (Material material in materials.Values) if (material != null) Destroy(material);
+        foreach (Material material in fxMaterials.Values) if (material != null) Destroy(material);
     }
 }

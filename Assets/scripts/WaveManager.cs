@@ -112,7 +112,7 @@ public class WaveManager : MonoBehaviour
         List<EnemyType> pool = GetAvailableEnemies().FindAll(type =>
         {
             EnemyAbility ability = type.prefab.GetComponent<EnemyAbility>();
-            return ability == null || (ability.role != EnemyRole.Bomber && ability.role != EnemyRole.Healer && ability.role != EnemyRole.Summoner);
+            return ability == null || (ability.role != EnemyRole.Bomber && ability.role != EnemyRole.Healer && ability.role != EnemyRole.Summoner && ability.role != EnemyRole.Buffer);
         });
         if (pool.Count == 0) return null;
         EnemyType chosen = GetRandomEnemy(pool);
@@ -254,15 +254,48 @@ public class WaveManager : MonoBehaviour
 
     bool SpawnEnemy(EnemyType type) { return SpawnEnemyObject(type) != null; }
 
+    // Ambush event: the cheap enemy types appear at the given points (already checked as walkable by the caller).
+    // Respects the hard cap on live enemies; returns how many were created.
+    public int SpawnAt(IList<Vector3> points)
+    {
+        List<EnemyType> available = GetAvailableEnemies();
+        available.RemoveAll(type => type.baseCost > 6);
+        if (available.Count == 0) available = GetAvailableEnemies();
+        if (available.Count == 0) return 0;
+        int made = 0;
+        foreach (Vector3 point in points)
+        {
+            if (EnemyAI.ActiveCount >= settings.AbsoluteLimitForWave(wave)) break;
+            EnemyType type = GetRandomEnemy(available);
+            if (SpawnEnemyAtPosition(type, new Vector3(point.x, HeightFor(type.prefab), point.z)) != null) made++;
+        }
+        return made;
+    }
+
+    // Same rule as OffscreenSpawn: the prefab's lowest point sits on the ground.
+    float HeightFor(GameObject prefab)
+    {
+        float bottom = float.PositiveInfinity;
+        foreach (Renderer renderer in prefab.GetComponentsInChildren<Renderer>()) bottom = Mathf.Min(bottom, renderer.bounds.min.y);
+        return groundHeight + (float.IsPositiveInfinity(bottom) ? 0.5f : prefab.transform.position.y - bottom);
+    }
+
     GameObject SpawnEnemyObject(EnemyType type)
     {
         if (gameplayCamera == null) gameplayCamera = Camera.main;
         if (!OffscreenSpawn.TryFindPosition(gameplayCamera, player, type.prefab,
             groundHeight, out Vector3 position)) return null;
+        return SpawnEnemyAtPosition(type, position);
+    }
+
+    GameObject SpawnEnemyAtPosition(EnemyType type, Vector3 position)
+    {
         GameObject enemy = Instantiate(type.prefab, position, Quaternion.identity);
         if (ArenaLayout.Instance != null && enemy.GetComponent<EnemyAbility>() == null)
             ArenaLayout.Instance.Tint(enemy, type.minWave >= 6 ? new Color(0.55f, 0.25f, 0.5f) :
                 type.minWave >= 3 ? new Color(0.95f, 0.48f, 0.13f) : new Color(0.7f, 0.22f, 0.22f));
+
+        ModelSkins.ApplyEnemy(enemy, type.prefab.name);
 
         EnemyAI ai = enemy.GetComponent<EnemyAI>();
         if (ai != null && player != null) ai.target = player;
@@ -272,7 +305,7 @@ public class WaveManager : MonoBehaviour
         Health h = enemy.GetComponent<Health>();
         if (h != null)
         {
-            h.SetHealth(Mathf.RoundToInt(h.maxHealth * RunModifiers.EnemyHealth *
+            h.SetHealth(Mathf.RoundToInt(h.maxHealth * RunModifiers.EnemyHealth * CombatStats.EnemyHealthCurse *
                 (1f + Mathf.Max(0, wave - 1) * settings.healthGrowthPerWave)));
         }
         return enemy;

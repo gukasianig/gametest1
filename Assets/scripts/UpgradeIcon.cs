@@ -79,6 +79,132 @@ public class UpgradeIcon : MaskableGraphic
                     new Vector2(-0.55f, 0), new Vector2(-0.15f, 0.15f));
                 Dot(new Vector2(0.52f, 0.48f), 0.17f);
                 break;
+            case UpgradeEffect.CritChance:
+                Arc(Vector2.zero, 0.55f, 0, 360, 0.07f);
+                Line(new Vector2(-0.95f, 0f), new Vector2(-0.3f, 0f), 0.08f);
+                Line(new Vector2(0.3f, 0f), new Vector2(0.95f, 0f), 0.08f);
+                Line(new Vector2(0f, -0.95f), new Vector2(0f, -0.3f), 0.08f);
+                Line(new Vector2(0f, 0.3f), new Vector2(0f, 0.95f), 0.08f);
+                Dot(Vector2.zero, 0.13f);
+                break;
+            case UpgradeEffect.CritPower:
+                Fill(new Vector2(0.15f, 0.9f), new Vector2(-0.4f, -0.1f), new Vector2(0.12f, -0.1f));
+                Fill(new Vector2(-0.12f, 0.1f), new Vector2(0.4f, 0.1f), new Vector2(-0.15f, -0.9f));
+                break;
+            case UpgradeEffect.Ricochet:
+                Line(new Vector2(-0.9f, -0.6f), new Vector2(-0.2f, 0.55f), 0.1f);
+                Line(new Vector2(-0.2f, 0.55f), new Vector2(0.3f, -0.45f), 0.1f);
+                Line(new Vector2(0.3f, -0.45f), new Vector2(0.85f, 0.55f), 0.1f);
+                Dot(new Vector2(-0.2f, 0.55f), 0.14f);
+                Dot(new Vector2(0.3f, -0.45f), 0.14f);
+                break;
+            case UpgradeEffect.DroneCount:
+            case UpgradeEffect.DroneDamage:
+                Dot(new Vector2(-0.55f, 0.35f), 0.22f);
+                Dot(new Vector2(0.55f, 0.35f), 0.22f);
+                Line(new Vector2(-0.8f, 0.6f), new Vector2(-0.3f, 0.6f), 0.07f);
+                Line(new Vector2(0.3f, 0.6f), new Vector2(0.8f, 0.6f), 0.07f);
+                if (effect == UpgradeEffect.DroneCount) Dot(new Vector2(0f, -0.4f), 0.22f);
+                else Fill(new Vector2(0f, 0.1f), new Vector2(-0.45f, -0.9f), new Vector2(0.45f, -0.9f));
+                break;
+            case UpgradeEffect.TurretCount:
+            case UpgradeEffect.TurretDamage:
+                Rect(-0.55f, -0.8f, 0.55f, -0.35f);
+                Dot(new Vector2(0f, -0.1f), 0.3f);
+                Line(new Vector2(0f, -0.1f), new Vector2(0.8f, 0.55f), 0.2f);
+                if (effect == UpgradeEffect.TurretDamage) Fill(new Vector2(-0.75f, 0.5f), new Vector2(-0.3f, 0.25f), new Vector2(-0.4f, 0.8f));
+                else Dot(new Vector2(-0.65f, 0.55f), 0.2f);
+                break;
+            case UpgradeEffect.Armor:
+                Fill(new Vector2(-0.6f, 0.75f), new Vector2(0.6f, 0.75f), new Vector2(0.6f, -0.05f), new Vector2(0f, -0.9f), new Vector2(-0.6f, -0.05f));
+                Line(new Vector2(0f, 0.5f), new Vector2(0f, -0.45f), 0.08f, new Color(0.03f, 0.08f, 0.1f));
+                break;
+            case UpgradeEffect.Regeneration:
+                Rect(-0.17f, -0.75f, 0.17f, 0.75f);
+                Rect(-0.75f, -0.17f, 0.75f, 0.17f);
+                break;
+            case UpgradeEffect.Vampirism:
+                Dot(new Vector2(0f, -0.25f), 0.5f);
+                Fill(new Vector2(-0.46f, -0.05f), new Vector2(0.46f, -0.05f), new Vector2(0f, 0.9f));
+                break;
+            case UpgradeEffect.DashCooldown:
+                Arc(Vector2.zero, 0.65f, 0, 360, 0.08f);
+                Line(Vector2.zero, new Vector2(0f, 0.45f), 0.08f);
+                Line(Vector2.zero, new Vector2(0.3f, -0.2f), 0.08f);
+                break;
+            case UpgradeEffect.DashDistance:
+                Line(new Vector2(-0.9f, 0f), new Vector2(0.2f, 0f), 0.1f);
+                Fill(new Vector2(0.1f, 0.5f), new Vector2(0.7f, 0f), new Vector2(0.1f, -0.5f));
+                Fill(new Vector2(0.5f, 0.5f), new Vector2(1.0f, 0f), new Vector2(0.5f, -0.5f));
+                break;
+            case UpgradeEffect.ExtraPellets:
+                Dot(new Vector2(-0.55f, 0.5f), 0.16f);
+                Dot(new Vector2(0f, 0.6f), 0.16f);
+                Dot(new Vector2(0.55f, 0.5f), 0.16f);
+                Line(new Vector2(0f, -0.8f), new Vector2(-0.45f, 0.3f), 0.06f);
+                Line(new Vector2(0f, -0.8f), new Vector2(0f, 0.4f), 0.06f);
+                Line(new Vector2(0f, -0.8f), new Vector2(0.45f, 0.3f), 0.06f);
+                break;
+            case UpgradeEffect.ExplosiveBullets:
+                Dot(Vector2.zero, 0.3f);
+                for (int i = 0; i < 8; i++)
+                {
+                    float a = i * Mathf.PI / 4f;
+                    Line(new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 0.45f, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 0.9f, 0.1f);
+                }
+                break;
+            case UpgradeEffect.EliteDamage:
+                Rect(-0.7f, -0.7f, 0.7f, -0.25f);
+                Fill(new Vector2(-0.7f, -0.25f), new Vector2(-0.25f, -0.25f), new Vector2(-0.7f, 0.5f));
+                Fill(new Vector2(-0.3f, -0.25f), new Vector2(0.3f, -0.25f), new Vector2(0f, 0.8f));
+                Fill(new Vector2(0.25f, -0.25f), new Vector2(0.7f, -0.25f), new Vector2(0.7f, 0.5f));
+                break;
+            case UpgradeEffect.WeaponRange:
+                Arc(Vector2.zero, 0.35f, 0, 360, 0.07f);
+                Arc(Vector2.zero, 0.7f, 0, 360, 0.07f);
+                Dot(Vector2.zero, 0.12f);
+                break;
+            case UpgradeEffect.OrbitSpeed:
+                Arc(Vector2.zero, 0.65f, 0, 270, 0.09f);
+                Fill(new Vector2(0.45f, 0.1f), new Vector2(0.95f, 0.1f), new Vector2(0.7f, -0.35f));
+                break;
+            case UpgradeEffect.OrbitCrit:
+                Arc(Vector2.zero, 0.65f, 0, 360, 0.07f);
+                Dot(new Vector2(0.65f, 0f), 0.16f);
+                Line(new Vector2(-0.3f, 0f), new Vector2(0.3f, 0f), 0.08f);
+                Line(new Vector2(0f, -0.3f), new Vector2(0f, 0.3f), 0.08f);
+                break;
+            case UpgradeEffect.PickupSpeed:
+                Dot(new Vector2(-0.7f, 0.6f), 0.15f);
+                Dot(new Vector2(0.7f, 0.6f), 0.15f);
+                Dot(new Vector2(0f, -0.6f), 0.25f);
+                Line(new Vector2(-0.7f, 0.6f), new Vector2(-0.1f, -0.4f), 0.06f);
+                Line(new Vector2(0.7f, 0.6f), new Vector2(0.1f, -0.4f), 0.06f);
+                break;
+            case UpgradeEffect.Luck:
+                Dot(new Vector2(-0.3f, 0.3f), 0.3f);
+                Dot(new Vector2(0.3f, 0.3f), 0.3f);
+                Dot(new Vector2(-0.3f, -0.3f), 0.3f);
+                Dot(new Vector2(0.3f, -0.3f), 0.3f);
+                Line(new Vector2(0f, -0.3f), new Vector2(0.15f, -0.95f), 0.08f);
+                break;
+            case UpgradeEffect.ExperienceGain:
+                Fill(new Vector2(0f, 0.9f), new Vector2(0.55f, 0f), new Vector2(0f, -0.9f), new Vector2(-0.55f, 0f));
+                break;
+            case UpgradeEffect.CursedGlass:
+            case UpgradeEffect.CursedHaste:
+            case UpgradeEffect.CursedGreed:
+                Dot(new Vector2(0f, 0.2f), 0.6f);
+                Rect(-0.32f, -0.85f, 0.32f, -0.3f);
+                Dot(new Vector2(-0.22f, 0.25f), 0.14f);
+                Dot(new Vector2(0.22f, 0.25f), 0.14f);
+                break;
+            case UpgradeEffect.Pierce:
+                Line(new Vector2(-0.95f, 0f), new Vector2(0.45f, 0f), 0.1f);
+                Fill(new Vector2(0.45f, 0.35f), new Vector2(0.95f, 0f), new Vector2(0.45f, -0.35f));
+                Line(new Vector2(-0.25f, 0.6f), new Vector2(-0.25f, -0.6f), 0.08f);
+                Line(new Vector2(0.15f, 0.6f), new Vector2(0.15f, -0.6f), 0.08f);
+                break;
             case UpgradeEffect.OrbitCount:
                 Arc(Vector2.zero, 0.65f, 0, 360, 0.07f);
                 Dot(Vector2.zero, 0.21f);

@@ -37,8 +37,35 @@ public class SpecialWeapons : MonoBehaviour
         shooter = owner;
         weapon = data;
         Clear();
-        if (data.kind == WeaponKind.Drone)
-            for (int i = 0; i < Mathf.Max(1, data.maxActive); i++) WeaponDrone.Create(this, i);
+        SyncDrones();
+    }
+
+    // Upgrade bonuses for the support weapons: extra drones/turrets and a damage multiplier for each.
+    public int ExtraDrones { get; private set; }
+    public int ExtraTurrets { get; private set; }
+    public float DroneDamage { get; private set; } = 1f;
+    public float TurretDamage { get; private set; } = 1f;
+    public int DroneLimit { get { return weapon == null ? 0 : Mathf.Max(1, weapon.maxActive) + ExtraDrones; } }
+    public int TurretLimit { get { return weapon == null ? 0 : Mathf.Max(1, weapon.maxActive) + ExtraTurrets; } }
+
+    public void SetBonuses(int drones, int turrets, float droneDamage, float turretDamage)
+    {
+        ExtraDrones = Mathf.Max(0, drones);
+        ExtraTurrets = Mathf.Max(0, turrets);
+        DroneDamage = Mathf.Max(1f, droneDamage);
+        TurretDamage = Mathf.Max(1f, turretDamage);
+        SyncDrones();
+    }
+
+    public int SupportDamage(float multiplier)
+    {
+        return Mathf.Max(1, Mathf.RoundToInt(shooter.RollDamage() * multiplier));
+    }
+
+    private void SyncDrones()
+    {
+        if (weapon == null || weapon.kind != WeaponKind.Drone) return;
+        for (int i = CountAlive<WeaponDrone>(); i < DroneLimit; i++) WeaponDrone.Create(this, i);
     }
 
     public void Clear()
@@ -104,6 +131,7 @@ public class SpecialWeapons : MonoBehaviour
         Collider collider = item.GetComponent<Collider>();
         if (collider != null) { collider.enabled = false; Destroy(collider); }
         if (ArenaLayout.Instance != null) ArenaLayout.Instance.Tint(item, color);
+        ModelSkins.ApplySpecial(item, name);
         return item;
     }
 
@@ -144,7 +172,7 @@ public class SpecialWeapons : MonoBehaviour
             case WeaponKind.Arc: FireArc(origin, damage, target); break;
             case WeaponKind.Flame: FireFlame(origin, damage, target); break;
             case WeaponKind.Turret:
-                if (CountAlive<WeaponTurret>() < Mathf.Max(1, weapon.maxActive))
+                if (CountAlive<WeaponTurret>() < TurretLimit)
                 {
                     Vector3 spot = transform.position + FlatDirection(transform.position, target.position) * 1.5f;
                     if (ArenaLayout.Instance != null && !ArenaLayout.Instance.IsWalkable(spot, 0.5f)) spot = transform.position;
@@ -537,7 +565,7 @@ public class WeaponTurret : MonoBehaviour
         Vector3 to = target.position;
         to.y = 0.9f;
         barrel.rotation = Quaternion.LookRotation(new Vector3(to.x - from.x, 0f, to.z - from.z));
-        owner.Hit(target.GetComponent<Health>(), owner.Shooter.RollDamage());
+        owner.Hit(target.GetComponent<Health>(), owner.SupportDamage(owner.TurretDamage));
         BeamFlash.Create(from, to, new Color(1f, 0.9f, 0.4f), 0.08f, 0.06f);
     }
 }
@@ -571,7 +599,8 @@ public class WeaponDrone : MonoBehaviour
         if (!SpecialWeapons.Running || owner == null) return;
         WeaponData data = owner.Weapon;
         angle += 80f * Time.deltaTime;
-        float radians = angle * Mathf.Deg2Rad;
+        // Drones are spread evenly on the circle, however many there are.
+        float radians = (angle + index * 360f / Mathf.Max(1, owner.DroneLimit)) * Mathf.Deg2Rad;
         transform.position = owner.transform.position + new Vector3(Mathf.Cos(radians), 0f, Mathf.Sin(radians)) * 2.4f + Vector3.up * 2.2f;
         timer += Time.deltaTime;
         if (timer < Mathf.Max(0.05f, data.placedFireRate)) return;
@@ -580,7 +609,7 @@ public class WeaponDrone : MonoBehaviour
         timer = 0f;
         Vector3 to = target.position;
         to.y = 0.9f;
-        owner.Hit(target.GetComponent<Health>(), owner.Shooter.RollDamage());
+        owner.Hit(target.GetComponent<Health>(), owner.SupportDamage(owner.DroneDamage));
         BeamFlash.Create(transform.position, to, new Color(0.4f, 1f, 0.9f), 0.07f, 0.06f);
     }
 }

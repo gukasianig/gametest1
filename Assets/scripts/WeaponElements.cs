@@ -94,7 +94,11 @@ public sealed class WeaponElementAttack
     {
         if (target == null || target.isDead || damage <= 0 || !target.CompareTag("Enemy")) return;
         Vector3 position = target.transform.position;
+        damage = Mathf.Max(1, Mathf.RoundToInt(damage * CombatStats.TargetMultiplier(target)));
+        damage = CombatStats.Roll(damage, out bool crit);
+        Health.NextHitCrit = crit;
         target.TakeDamage(damage);
+        Health.NextHitCrit = false;
         if (Rank <= 0) return;
         if (Element == WeaponElement.Lightning)
         {

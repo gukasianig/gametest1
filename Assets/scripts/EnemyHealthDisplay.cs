@@ -91,13 +91,13 @@ public class EnemyHealthDisplay : MonoBehaviour
         bars.Remove(health);
     }
 
-    public void ShowDamage(Health health, int amount)
+    public void ShowDamage(Health health, int amount, bool crit = false)
     {
         if (amount <= 0) return;
         float height = bars.TryGetValue(health, out HealthBar bar) ? bar.height : 1.5f;
         RectTransform root = Rect("Damage " + amount, canvasRect, new Vector2(100, 40));
-        Text label = TextLabel(root, "-" + amount, 24);
-        label.color = new Color(1f, 0.8f, 0.3f);
+        Text label = TextLabel(root, "-" + amount + (crit ? "!" : ""), crit ? 32 : 24);
+        label.color = crit ? new Color(1f, 0.35f, 0.2f) : new Color(1f, 0.8f, 0.3f);
         label.fontStyle = FontStyle.Bold;
         // Not parented to the enemy: a killing hit remains visible after its death.
         numbers.Add(new DamageNumber { root = root, label = label,

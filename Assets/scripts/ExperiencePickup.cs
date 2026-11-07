@@ -29,17 +29,24 @@ public class ExperiencePickup : MonoBehaviour
         collider.enabled = false;
         Destroy(collider);
         crystal.GetComponent<Renderer>().sharedMaterial = material;
+        ModelSkins.ApplyEnemy(crystal, "Crystal");
         ExperiencePickup pickup = crystal.AddComponent<ExperiencePickup>();
         pickup.amount = experience;
         active.Add(pickup);
     }
+
+    private static float magnetUntil;
+    // While active every crystal on the arena flies to the player (the Magnet pickup).
+    public static void ActivateMagnet(float seconds) { magnetUntil = Time.time + seconds; }
 
     public static void CollectNearby(PlayerProgression player, ProgressionSettings settings)
     {
         Vector3 target = player.transform.position;
         target.y = 0.55f;
         float radius = player.CollectionRadius;
-        float attraction = player.AttractionRadius;
+        bool magnet = Time.time < magnetUntil;
+        float attraction = magnet ? 100000f : player.AttractionRadius;
+        float speed = Mathf.Max(0.1f, settings.attractionSpeed) * (1f + CombatStats.PickupSpeedBonus) * (magnet ? 4f : 1f);
         for (int i = active.Count - 1; i >= 0; i--)
         {
             ExperiencePickup pickup = active[i];
@@ -47,10 +54,9 @@ public class ExperiencePickup : MonoBehaviour
             Vector3 position = pickup.transform.position;
             float distance = (position - target).sqrMagnitude;
             if (distance <= attraction * attraction)
-                pickup.transform.position = Vector3.MoveTowards(position, target,
-                    Mathf.Max(0.1f, settings.attractionSpeed) * Time.deltaTime);
+                pickup.transform.position = Vector3.MoveTowards(position, target, speed * Time.deltaTime);
             if ((pickup.transform.position - target).sqrMagnitude > radius * radius) continue;
-            int value = pickup.amount;
+            int value = Mathf.Max(1, Mathf.RoundToInt(pickup.amount * (1f + CombatStats.ExperienceGain)));
             active.RemoveAt(i);
             Destroy(pickup.gameObject);
             player.AddExperience(value);
@@ -62,6 +68,8 @@ public class ExperiencePickup : MonoBehaviour
 
     public static void Clear()
     {
+        magnetUntil = 0f;
+        DropPickup.Clear();
         for (int i = active.Count - 1; i >= 0; i--)
             if (active[i] != null) Destroy(active[i].gameObject);
         active.Clear();

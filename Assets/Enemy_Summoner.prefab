@@ -146,6 +146,7 @@ MonoBehaviour:
   maxHealth: 110
   experienceReward: 14
   isDead: 0
+  DamageTakenFactor: 1
 --- !u!54 &-7290393306951870467
 Rigidbody:
   m_ObjectHideFlags: 0

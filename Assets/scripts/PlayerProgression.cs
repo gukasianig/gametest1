@@ -21,6 +21,7 @@ public class PlayerProgression : MonoBehaviour
     private readonly Dictionary<string, int> ranks = new Dictionary<string, int>();
     private readonly List<UpgradeDefinition> offered = new List<UpgradeDefinition>();
     private readonly Button[] buttons = new Button[3];
+    private Button rerollButton;
     private readonly Text[] cardText = new Text[3];
     private readonly Image[] icons = new Image[3];
     private readonly UpgradeIcon[] vectorIcons = new UpgradeIcon[3];
@@ -44,6 +45,7 @@ public class PlayerProgression : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        CombatStats.Reset();
         shooter = GetComponent<AutoShoter>();
         movement = GetComponent<PlayMovement>();
         orbits = GetComponent<OrbitManager>();
@@ -132,7 +134,25 @@ public class PlayerProgression : MonoBehaviour
         if ((definition.effect == UpgradeEffect.OrbitDamage || definition.effect == UpgradeEffect.OrbitCount) &&
             (orbits == null || orbits.orbitPrefab == null)) return false;
         if (definition.effect == UpgradeEffect.OrbitDamage && orbits.orbitCount == 0) return false;
+        // Crit power only makes sense once there is a chance to crit.
+        if (definition.effect == UpgradeEffect.CritPower && Bonus(UpgradeEffect.CritChance) <= 0f) return false;
+        // Piercing and ricochet change ordinary bullets only; drone and turret cards need that weapon.
+        WeaponKind kind = shooter.baseWeapon != null ? shooter.baseWeapon.kind : WeaponKind.Standard;
+        if ((definition.effect == UpgradeEffect.Pierce || definition.effect == UpgradeEffect.Ricochet) && kind != WeaponKind.Standard) return false;
+        if ((definition.effect == UpgradeEffect.DroneCount || definition.effect == UpgradeEffect.DroneDamage) && kind != WeaponKind.Drone) return false;
+        if ((definition.effect == UpgradeEffect.TurretCount || definition.effect == UpgradeEffect.TurretDamage) && kind != WeaponKind.Turret) return false;
+        if ((definition.effect == UpgradeEffect.ExtraPellets || definition.effect == UpgradeEffect.ExplosiveBullets ||
+            definition.effect == UpgradeEffect.WeaponRange) && kind != WeaponKind.Standard) return false;
+        bool hasOrbits = orbits != null && orbits.orbitPrefab != null && orbits.orbitCount > 0;
+        if (definition.effect == UpgradeEffect.OrbitSpeed && !hasOrbits) return false;
+        if (definition.effect == UpgradeEffect.OrbitCrit && (!hasOrbits || Bonus(UpgradeEffect.CritChance) <= 0f)) return false;
+        // Every upgrade added after the crit card has no multiplier cap; its rank limit is enough.
+        if ((int)definition.effect >= (int)UpgradeEffect.CritChance) return true;
         return definition.effect == UpgradeEffect.MaxHealth || definition.effect == UpgradeEffect.OrbitCount ||
+            definition.effect == UpgradeEffect.CritChance || definition.effect == UpgradeEffect.CritPower ||
+            definition.effect == UpgradeEffect.Pierce || definition.effect == UpgradeEffect.Ricochet ||
+            definition.effect == UpgradeEffect.DroneCount || definition.effect == UpgradeEffect.DroneDamage ||
+            definition.effect == UpgradeEffect.TurretCount || definition.effect == UpgradeEffect.TurretDamage ||
             1f + Bonus(definition.effect) < Mathf.Max(1f, Cap(definition.effect)) - 0.0001f;
     }
 
@@ -184,6 +204,7 @@ public class PlayerProgression : MonoBehaviour
         ranks[definition.id] = Rank(definition.id) + 1;
         if (definition.effect == UpgradeEffect.MaxHealth) GetComponent<PlayerHealth>().IncreaseMaxHealth(Mathf.RoundToInt(definition.amount));
         if (definition.effect == UpgradeEffect.OrbitCount) orbits.UpgradeOrbitCount(Mathf.RoundToInt(definition.amount));
+        if (definition.effect == UpgradeEffect.CursedGlass) GetComponent<PlayerHealth>().ReduceMaxHealth(0.3f);
         ApplyStats();
         toastText.text = definition.title + "  —  улучшено";
         toastText.color = UpgradeCatalog.RarityColor(definition.rarity);
@@ -205,16 +226,50 @@ public class PlayerProgression : MonoBehaviour
 
     private void Choose(int index) { SelectOfferedUpgrade(index); }
 
+    // Writes every upgrade that lives in CombatStats (before the weapon recalculates its own numbers).
+    private void ApplyCombatBonuses()
+    {
+        float glass = Bonus(UpgradeEffect.CursedGlass), haste = Bonus(UpgradeEffect.CursedHaste), greed = Bonus(UpgradeEffect.CursedGreed);
+        CombatStats.Set(Bonus(UpgradeEffect.CritChance), Bonus(UpgradeEffect.CritPower), Mathf.RoundToInt(Bonus(UpgradeEffect.Pierce)),
+            Mathf.RoundToInt(Bonus(UpgradeEffect.Ricochet)));
+        CombatStats.Armor = Mathf.Min(0.6f, Bonus(UpgradeEffect.Armor));
+        CombatStats.RegenPerSecond = Bonus(UpgradeEffect.Regeneration);
+        CombatStats.VampirismPerKill = Bonus(UpgradeEffect.Vampirism);
+        CombatStats.DashCooldownReduction = Bonus(UpgradeEffect.DashCooldown);
+        CombatStats.DashDistanceBonus = Bonus(UpgradeEffect.DashDistance);
+        CombatStats.ExtraPellets = Mathf.RoundToInt(Bonus(UpgradeEffect.ExtraPellets));
+        CombatStats.ExplosionRadius = 1.2f * Bonus(UpgradeEffect.ExplosiveBullets);
+        CombatStats.EliteDamage = Bonus(UpgradeEffect.EliteDamage);
+        CombatStats.RangeMultiplier = 1f + Bonus(UpgradeEffect.WeaponRange);
+        CombatStats.OrbitSpeedBonus = Bonus(UpgradeEffect.OrbitSpeed);
+        CombatStats.OrbitCritShare = Bonus(UpgradeEffect.OrbitCrit);
+        CombatStats.PickupSpeedBonus = Bonus(UpgradeEffect.PickupSpeed);
+        CombatStats.DropLuck = Bonus(UpgradeEffect.Luck);
+        // Cursed upgrades: a large bonus with a price (see CursedText).
+        CombatStats.ExperienceGain = Bonus(UpgradeEffect.ExperienceGain) + 0.5f * greed;
+        CombatStats.EnemySpeedCurse = 1f + 0.15f * haste;
+        CombatStats.EnemyHealthCurse = 1f + 0.25f * greed;
+        cursedDamage = 0.6f * glass;
+        cursedAttackSpeed = 0.4f * haste;
+    }
+
+    private float cursedDamage, cursedAttackSpeed;
+
     private void ApplyStats()
     {
-        DamageMultiplier = Mathf.Min(Mathf.Max(1f, Cap(UpgradeEffect.Damage)), 1f + Bonus(UpgradeEffect.Damage));
-        AttackSpeedMultiplier = Mathf.Min(Mathf.Max(1f, Cap(UpgradeEffect.AttackSpeed)), 1f + Bonus(UpgradeEffect.AttackSpeed));
+        ApplyCombatBonuses();
+        DamageMultiplier = Mathf.Min(Mathf.Max(1f, Cap(UpgradeEffect.Damage)), 1f + Bonus(UpgradeEffect.Damage) + cursedDamage);
+        AttackSpeedMultiplier = Mathf.Min(Mathf.Max(1f, Cap(UpgradeEffect.AttackSpeed)), 1f + Bonus(UpgradeEffect.AttackSpeed) + cursedAttackSpeed);
         shooter.SetProgressionMultipliers(DamageMultiplier, AttackSpeedMultiplier);
+        shooter.SetGrenadeUnlocked(Bonus(UpgradeEffect.GrenadeDamage) > 0f || Bonus(UpgradeEffect.GrenadeRadius) > 0f);
         shooter.SetSecondaryMultipliers(Mathf.Min(5f, 1f + Bonus(UpgradeEffect.GrenadeDamage)),
             Mathf.Min(2.5f, 1f + Bonus(UpgradeEffect.GrenadeRadius)));
         movement.SpeedMultiplier = Mathf.Min(Mathf.Max(1f, Cap(UpgradeEffect.Movement)), 1f + Bonus(UpgradeEffect.Movement));
         PickupRadiusMultiplier = Mathf.Min(Mathf.Max(1f, Cap(UpgradeEffect.Pickup)), 1f + Bonus(UpgradeEffect.Pickup));
         if (orbits != null) orbits.SetDamageMultiplier(Mathf.Min(5f, 1f + Bonus(UpgradeEffect.OrbitDamage)));
+        if (orbits != null) orbits.SetSpeedBonus(CombatStats.OrbitSpeedBonus);
+        shooter.SetSupportBonuses(Mathf.RoundToInt(Bonus(UpgradeEffect.DroneCount)), Mathf.RoundToInt(Bonus(UpgradeEffect.TurretCount)),
+            1f + Bonus(UpgradeEffect.DroneDamage), 1f + Bonus(UpgradeEffect.TurretDamage));
     }
 
     public void CloseChoices()
@@ -233,14 +288,86 @@ public class PlayerProgression : MonoBehaviour
             return rankText + GetComponent<PlayerHealth>().maxHP + " → " + (GetComponent<PlayerHealth>().maxHP + Mathf.RoundToInt(definition.amount)) + " HP";
         if (definition.effect == UpgradeEffect.OrbitCount)
             return rankText + "Спутники: " + orbits.orbitCount + " → " + (orbits.orbitCount + Mathf.RoundToInt(definition.amount));
+        if (definition.effect == UpgradeEffect.CritChance)
+            return rankText + "Шанс крита: " + Mathf.RoundToInt(Bonus(definition.effect) * 100f) + "% → " +
+                Mathf.RoundToInt((Bonus(definition.effect) + definition.amount) * 100f) + "%";
+        if (definition.effect == UpgradeEffect.CritPower)
+            return rankText + "Крит: ×" + (CombatStats.BaseCritMultiplier + Bonus(definition.effect)).ToString("0.##") + " → ×" +
+                (CombatStats.BaseCritMultiplier + Bonus(definition.effect) + definition.amount).ToString("0.##");
+        string extra = NewPreview(definition);
+        if (extra != null) return rankText + extra;
+        if (definition.effect == UpgradeEffect.Ricochet)
+            return rankText + "Рикошет в других врагов: " + Mathf.RoundToInt(Bonus(definition.effect)) + " → " +
+                Mathf.RoundToInt(Bonus(definition.effect) + definition.amount) + "  (урон −20% за прыжок)";
+        if (definition.effect == UpgradeEffect.DroneCount || definition.effect == UpgradeEffect.TurretCount)
+        {
+            int baseCount = shooter.baseWeapon != null ? Mathf.Max(1, shooter.baseWeapon.maxActive) : 1;
+            int now = baseCount + Mathf.RoundToInt(Bonus(definition.effect));
+            return rankText + (definition.effect == UpgradeEffect.DroneCount ? "Дронов: " : "Турелей: ") + now + " → " +
+                (now + Mathf.RoundToInt(definition.amount));
+        }
+        if (definition.effect == UpgradeEffect.Pierce)
+            return rankText + "Пуля пробивает целей: " + Mathf.RoundToInt(Bonus(definition.effect)) + " → " +
+                Mathf.RoundToInt(Bonus(definition.effect) + definition.amount);
         float before = Mathf.Min(Mathf.Max(1f, Cap(definition.effect)), 1f + Bonus(definition.effect));
         float after = Mathf.Min(Mathf.Max(1f, Cap(definition.effect)), before + definition.amount);
         return rankText +
             "×" + before.ToString("0.##") + " → ×" + after.ToString("0.##");
     }
 
+    private static string Pair(string label, float from, float to, string suffix, string format = "0.##")
+    {
+        return label + ": " + from.ToString(format) + suffix + " → " + to.ToString(format) + suffix;
+    }
+
+    // Card text for the upgrades without an ordinary multiplier (null = not one of them).
+    private string NewPreview(UpgradeDefinition definition)
+    {
+        float now = Bonus(definition.effect), next = now + definition.amount;
+        switch (definition.effect)
+        {
+            case UpgradeEffect.Armor: return Pair("Снижение урона", now * 100f, Mathf.Min(0.6f, next) * 100f, "%", "0");
+            case UpgradeEffect.Regeneration: return Pair("Лечение", now, next, " HP/с");
+            case UpgradeEffect.Vampirism: return Pair("HP за убийство", now, next, "");
+            case UpgradeEffect.DashCooldown: return Pair("Перезарядка рывка", Mathf.Max(1f, movement.dashCooldown - now), Mathf.Max(1f, movement.dashCooldown - next), " с");
+            case UpgradeEffect.DashDistance: return Pair("Дальность рывка", movement.dashDistance + now, movement.dashDistance + next, " м");
+            case UpgradeEffect.ExtraPellets: return Pair("Доп. снарядов за выстрел", now, next, "", "0");
+            case UpgradeEffect.ExplosiveBullets: return Pair("Радиус взрыва пули", now * 1.2f, next * 1.2f, " м");
+            case UpgradeEffect.EliteDamage: return Pair("Урон по элите и боссу", now * 100f, next * 100f, "%", "0");
+            case UpgradeEffect.WeaponRange: return Pair("Дальность стрельбы", now * 100f, next * 100f, "%", "0");
+            case UpgradeEffect.OrbitSpeed: return Pair("Скорость спутников", now * 100f, next * 100f, "%", "0");
+            case UpgradeEffect.OrbitCrit: return Pair("Крит спутников (доля шанса героя)", now * 100f, Mathf.Min(1f, next) * 100f, "%", "0");
+            case UpgradeEffect.PickupSpeed: return Pair("Скорость притяжения", now * 100f, next * 100f, "%", "0");
+            case UpgradeEffect.Luck: return Pair("Шанс аптечек и магнита", now * 100f, next * 100f, "%", "0");
+            case UpgradeEffect.ExperienceGain: return Pair("Опыт с кристаллов", now * 100f, next * 100f, "%", "0");
+            case UpgradeEffect.CursedGlass: return "ПРОКЛЯТИЕ: урон +60%, но максимум HP −30%";
+            case UpgradeEffect.CursedHaste: return "ПРОКЛЯТИЕ: темп стрельбы +40%, но враги быстрее на 15%";
+            case UpgradeEffect.CursedGreed: return "ПРОКЛЯТИЕ: опыт +50%, но у новых врагов HP +25%";
+            default: return null;
+        }
+    }
+
+    // Level-up screen: swap the three offered cards for new ones (a limited number per run).
+    public int RerollsLeft { get; private set; } = 2;
+
+    public bool Reroll()
+    {
+        if (!Choosing || RerollsLeft <= 0 || (GameSession.Instance != null && GameSession.Instance.State != GameRunState.Upgrade)) return false;
+        RollOffers();
+        if (offered.Count == 0) return false;
+        RerollsLeft--;
+        RefreshCards();
+        return true;
+    }
+
     private void RefreshCards()
     {
+        if (rerollButton != null)
+        {
+            rerollButton.gameObject.SetActive(true);
+            rerollButton.interactable = RerollsLeft > 0;
+            rerollButton.GetComponentInChildren<Text>().text = "Перебросить карточки (" + RerollsLeft + ")";
+        }
         for (int i = 0; i < buttons.Length; i++)
         {
             buttons[i].gameObject.SetActive(i < offered.Count);
@@ -310,8 +437,9 @@ public class PlayerProgression : MonoBehaviour
             cardFx[i] = buttons[i].gameObject.AddComponent<UpgradeCardFx>();
             cardFx[i].icon = icons[i].transform;
         }
+        rerollButton = GameUi.Button(choices, "Перебросить", new Vector2(0.3f, 0.02f), new Vector2(0.7f, 0.085f), () => Reroll());
         choices.gameObject.SetActive(false);
-        toast = GameUi.Box(canvas.transform, "Upgrade Feedback", new Vector2(0.23f, 0.035f), new Vector2(0.77f, 0.105f), GameUi.Background);
+        toast =GameUi.Box(canvas.transform, "Upgrade Feedback", new Vector2(0.23f, 0.035f), new Vector2(0.77f, 0.105f), GameUi.Background);
         toastGroup = toast.gameObject.AddComponent<CanvasGroup>();
         toastGroup.blocksRaycasts = false;
         toastText = GameUi.Label(toast, "", Vector2.zero, Vector2.one, 23, GameUi.Accent);
@@ -320,7 +448,7 @@ public class PlayerProgression : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (Instance == this) { Instance = null; ExperiencePickup.Clear(); }
+        if (Instance == this) { Instance = null; ExperiencePickup.Clear(); CombatStats.Reset(); }
         if (canvas != null) Destroy(canvas.gameObject);
         if (ownsSettings) Destroy(settings);
     }

@@ -32,7 +32,8 @@ public static class UiArtwork
         return sprite;
     }
 
-    public static Sprite Upgrade(UpgradeEffect effect) { return Icon((int)effect); }
+    // Atlas slots 9+ hold the weapon icons, so upgrades added later draw a vector icon instead.
+    public static Sprite Upgrade(UpgradeEffect effect) { return (int)effect <= (int)UpgradeEffect.OrbitCount ? Icon((int)effect) : null; }
     public static Sprite Weapon(int index) { return Icon(9 + Mathf.Clamp(index, 0, 3)); }
     public static Sprite Heart(bool critical) { return Icon(critical ? 7 : 13); }
 

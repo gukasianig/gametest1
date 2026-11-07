@@ -34,6 +34,10 @@ public class AutoShoter : MonoBehaviour
     public int CurrentGrenadeDamage => Mathf.RoundToInt(grenadeDamage * grenadeDamageMultiplier);
     public float CurrentGrenadeRadius => grenadeRadius * grenadeRadiusMultiplier;
 
+    // Граната бросается только после первого улучшения «Гранаты» (урон или радиус).
+    public bool GrenadeUnlocked { get; private set; }
+    public void SetGrenadeUnlocked(bool unlocked) { GrenadeUnlocked = unlocked; }
+
     public void SetSecondaryMultipliers(float damageMultiplier, float radiusMultiplier)
     {
         grenadeDamageMultiplier = Mathf.Max(1f, damageMultiplier);
@@ -78,6 +82,20 @@ private float currentSpread;
         if (special == null) special = GetComponent<SpecialWeapons>();
         if (special == null) special = gameObject.AddComponent<SpecialWeapons>();
         special.Configure(this, baseWeapon);
+        special.SetBonuses(extraDrones, extraTurrets, droneDamageMultiplier, turretDamageMultiplier);
+    }
+
+    private int extraDrones, extraTurrets;
+    private float droneDamageMultiplier = 1f, turretDamageMultiplier = 1f;
+
+    // Upgrade bonuses for drones and turrets; remembered so a later weapon choice keeps them.
+    public void SetSupportBonuses(int drones, int turrets, float droneDamage, float turretDamage)
+    {
+        extraDrones = drones;
+        extraTurrets = turrets;
+        droneDamageMultiplier = droneDamage;
+        turretDamageMultiplier = turretDamage;
+        if (special != null) special.SetBonuses(drones, turrets, droneDamage, turretDamage);
     }
 
     public bool SelectWeapon(int index)
@@ -87,6 +105,7 @@ private float currentSpread;
             return false;
 
         startWeaponIndex = index;
+        ModelSkins.ApplyHeroWeapon(transform, ModelSkins.WeaponKey(weapons[index], index));
         baseWeapon = weapons[index];
         currentWeapon = baseWeapon;
         ApplyWeaponStats();
@@ -135,15 +154,21 @@ private float currentSpread;
         }
    }
 
+        private float inspectorRange;
+
         void ApplyWeaponStats()
 {
     // Older scene weapon entries have no range configured (serialized as zero).
     // Preserve the shooter's Inspector range for those entries.
-    range = baseWeapon.range > 0f ? baseWeapon.range : Mathf.Max(0.1f, range);
+    if (inspectorRange <= 0f) inspectorRange = Mathf.Max(0.1f, range);
+    bool ordinary = baseWeapon.kind == WeaponKind.Standard;
+    range = (baseWeapon.range > 0f ? baseWeapon.range : inspectorRange) * (ordinary ? CombatStats.RangeMultiplier : 1f);
     currentDamage = Mathf.Max(1, Mathf.RoundToInt(baseWeapon.damage * progressionDamage));
     currentFireRate = Mathf.Max(0.03f, baseWeapon.fireRate / progressionAttackSpeed);
-    currentPelletCount = baseWeapon.pelletCount;
+    currentPelletCount = baseWeapon.pelletCount + (ordinary ? CombatStats.ExtraPellets : 0);
     currentSpread = baseWeapon.spreadAngle;
+    // A single-bullet weapon needs some spread, otherwise the extra bullets fly on top of each other.
+    if (ordinary && CombatStats.ExtraPellets > 0) currentSpread = Mathf.Max(currentSpread, 8f + 6f * CombatStats.ExtraPellets);
 }
 
     // Exact damage with upgrades (for statistics) and a per-hit roll that keeps the fractional part:
@@ -160,7 +185,7 @@ private float currentSpread;
 
         void ThrowGrenade()
         {
-             if (grenadePrefab == null) return;
+             if (grenadePrefab == null || !GrenadeUnlocked) return;
              Transform target = FindClosestEnemy();
             if (target == null) return;
 
@@ -212,16 +237,20 @@ private float currentSpread;
 }
 
 
+    // Дуло модели оружия, если она есть; иначе прежний firePoint.
+    Vector3 ShotOrigin { get { return ModelSkins.TryGetMuzzle(out Vector3 m) ? m : firePoint.position; } }
+
     void Shoot(Transform target)
 {
-    Vector3 dir = (target.position - firePoint.position).normalized;
+    Vector3 origin = ShotOrigin;
+    Vector3 dir = (target.position - origin).normalized;
     Quaternion baseRotation = Quaternion.LookRotation(dir);
 
     if (currentPelletCount <= 1)
     {
         GameObject bullet = Instantiate(
             baseWeapon.bulletPrefab,
-            firePoint.position,
+            origin,
             baseRotation
         );
 
@@ -230,9 +259,11 @@ private float currentSpread;
         {
             b.SetOwner(transform);
             b.elementAttack = ElementAttack;
+            b.pierce = CombatStats.Pierce;
+            b.ricochet = CombatStats.Ricochet;
             b.damage = RollDamage();
             b.speed = baseWeapon.bulletSpeed;
-            b.lifeTime = baseWeapon.bulletLifeTime;
+            b.lifeTime = baseWeapon.bulletLifeTime * CombatStats.RangeMultiplier;
         }
 
         return;
@@ -247,7 +278,7 @@ private float currentSpread;
 
         GameObject bullet = Instantiate(
             baseWeapon.bulletPrefab,
-            firePoint.position,
+            origin,
             rotation
         );
 
@@ -256,9 +287,11 @@ private float currentSpread;
         {
             b.SetOwner(transform);
             b.elementAttack = ElementAttack;
+            b.pierce = CombatStats.Pierce;
+            b.ricochet = CombatStats.Ricochet;
             b.damage = RollDamage();
             b.speed = baseWeapon.bulletSpeed;
-            b.lifeTime = baseWeapon.bulletLifeTime;
+            b.lifeTime = baseWeapon.bulletLifeTime * CombatStats.RangeMultiplier;
         }
     }
 }

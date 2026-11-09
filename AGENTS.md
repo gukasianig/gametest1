@@ -23,14 +23,14 @@ Maintain these notes as part of each task, without waiting for a reminder or ask
 ## Project Structure & Module Organization
 This is a Unity 2022.3.62f3 C# game using Universal Render Pipeline (URP).
 - `Assets/scripts/` contains player movement, shooting, health, enemy AI, waves, and orbiting weapons; `Interfaces/` contains shared damage and projectile contracts.
-- `Assets/Scenes/SampleScene.unity` is the enabled build scene. Gameplay prefabs currently live directly under `Assets/`.
+- `Assets/Scenes/GreenArenaPlay.unity` is the only game and build scene (SampleScene was removed on 2026-11-09; its git history keeps it). Gameplay prefabs currently live directly under `Assets/`.
 - `Assets/Settings/` holds URP settings; `Assets/TextMesh Pro/` and `Assets/TutorialInfo/` contain supporting package and template assets.
 - `Packages/manifest.json` defines dependencies; `ProjectSettings/` holds shared Unity configuration.
 - `Library/`, `Temp/`, `Logs/`, and generated solution/project files are ignored. Do not edit or commit them.
 
 ## Build, Test, and Development Commands
 Use the editor version recorded in `ProjectSettings/ProjectVersion.txt`. In PowerShell, set `$Unity` to that editor's `Unity.exe` path.
-- `& $Unity -projectPath .` opens the project. Open `SampleScene` and press Play for local gameplay checks.
+- `& $Unity -projectPath .` opens the project. Open `GreenArenaPlay` and press Play for local gameplay checks.
 - `& $Unity -batchmode -quit -projectPath . -logFile import.log` imports assets and checks script compilation; inspect the log for errors.
 - `& $Unity -batchmode -projectPath . -runTests -testPlatform EditMode -testResults TestResults.xml -logFile tests.log` runs Edit Mode tests; use `PlayMode` for runtime tests.
 - Build through **File > Build Settings**, selecting the target platform and enabled scene. No custom command-line build method exists.

@@ -105,7 +105,7 @@ public static class KenneySkinSetup
     public static void Preview()
     {
         Create();
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity", OpenSceneMode.Single);
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity", OpenSceneMode.Single);
         Directory.CreateDirectory("docs/art");
         var cam = new GameObject("PreviewCam").AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;

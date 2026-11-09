@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-// One-off helper: appends the special weapons to AutoShoter.weapons in SampleScene (indices 4..12).
+// One-off helper: appends the special weapons to AutoShoter.weapons in GreenArenaPlay (indices 4..12).
 // Safe to re-run: weapons whose weaponName already exists are skipped.
 // Batch: -executeMethod NewWeaponBuilder.RunBatch (without -quit). Tune numbers afterwards in the Inspector.
 public static class NewWeaponBuilder
@@ -48,9 +48,9 @@ public static class NewWeaponBuilder
 
     public static void Build()
     {
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         AutoShoter shooter = Object.FindObjectOfType<AutoShoter>();
-        if (shooter == null) throw new System.Exception("No AutoShoter in SampleScene.");
+        if (shooter == null) throw new System.Exception("No AutoShoter in GreenArenaPlay.");
         SerializedObject serialized = new SerializedObject(shooter);
         SerializedProperty list = serialized.FindProperty("weapons");
         foreach (Def def in Defs)

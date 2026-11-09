@@ -13,7 +13,7 @@ public static class HeroCombatChecks
     private const string Request = "Logs/hero-combat.request";
     private const string DefaultReport = "Logs/hero-combat-results.txt";
     private const string FbxReport = "Logs/operator-fbx-combat.txt";
-    private const string SampleScene = "Assets/Scenes/SampleScene.unity";
+    private const string MainScene = "Assets/Scenes/GreenArenaPlay.unity";
     private const string GreenScene = "Assets/Scenes/GreenArenaPlay.unity";
     private static string report = DefaultReport;
     private static string frames = "Logs/hero-operator";
@@ -35,7 +35,7 @@ public static class HeroCombatChecks
         Directory.CreateDirectory("Logs");
         File.WriteAllText(DefaultReport, "Hero combat check\n");
         HeroModelBuilder.Build(false);
-        EditorSceneManager.OpenScene(SampleScene);
+        EditorSceneManager.OpenScene(MainScene);
         File.WriteAllText(Request, "batch");
         EditorApplication.isPlaying = true;
     }
@@ -46,7 +46,7 @@ public static class HeroCombatChecks
         Directory.CreateDirectory("Logs");
         File.WriteAllText(FbxReport, "Operator FBX combat check\n");
         OperatorFbxImport.ImportAndCheck();
-        OperatorFbxImport.InstallInScene(EditorSceneManager.OpenScene(SampleScene));
+        OperatorFbxImport.InstallInScene(EditorSceneManager.OpenScene(MainScene));
         File.WriteAllText(Request, "fbx");
         EditorApplication.isPlaying = true;
     }
@@ -57,13 +57,13 @@ public static class HeroCombatChecks
         Directory.CreateDirectory("Logs");
         File.WriteAllText(FbxReport, "Saved Operator FBX scene check\n");
         OperatorFbxImport.ImportAndCheck();
-        foreach (string path in new[] { SampleScene, GreenScene })
+        foreach (string path in new[] { GreenScene })
         {
             Scene scene = EditorSceneManager.OpenScene(path);
             if (OperatorFbxImport.InstallInScene(scene))
                 Require(EditorSceneManager.SaveScene(scene), "Could not save " + path);
         }
-        EditorSceneManager.OpenScene(SampleScene);
+        EditorSceneManager.OpenScene(MainScene);
         File.WriteAllText(Request, "installed");
         EditorApplication.isPlaying = true;
     }

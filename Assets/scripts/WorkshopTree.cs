@@ -36,12 +36,16 @@ public class WorkshopTree : MonoBehaviour
     private Button buy, equip;
     private RectTransform content, board;
     private float boardHeight, previousWidth;
-    private float scrollProgress = 1f, zoom = 1f;
+    private float scrollProgress = 1f;
+    private const float zoom = 1f; // масштаб фиксирован: доска всегда во всю ширину (колесо только прокручивает)
+    private readonly List<Sprite> created = new List<Sprite>(); // только свои Sprite.Create; ассеты Resources не уничтожаем
     private bool panning;
     private Vector2 lastMouse;
-    private const float BoardWidth = 1500f;
-    private const float Top = 295f, RootX = 270f, BodyX = 70f, BodyStep = 135f, WeaponRowStep = 235f, TrunkX = 470f;
-    private const int WeaponColumns = 3;
+    private const float BoardWidth = 1600f;
+    private const float Top = 295f, RootX = 240f, BodyX = 70f, BodyStep = 135f, WeaponRowStep = 260f, TrunkX = 410f;
+    // Оружие — ровная сетка 5 × 2 (10 выбираемых): центр первого столбца, шаг, ширина группы, шаг узлов стихий.
+    private const float WeaponX = 538f, WeaponPitch = 235f, GroupWidth = 226f, ElementStep = 52f;
+    private const int WeaponColumns = 5;
     public ScrollRect Scroll { get; private set; }
     public int NodeCount { get { return nodes.Count; } }
     public string SelectedTitle { get { return selected != null ? selected.title : ""; } }
@@ -78,7 +82,7 @@ public class WorkshopTree : MonoBehaviour
         Scroll = viewport.gameObject.AddComponent<ScrollRect>();
         Scroll.viewport = viewport;
         Scroll.horizontal = true;
-        Scroll.scrollSensitivity = 0f; // wheel zooms; dragging pans
+        Scroll.scrollSensitivity = 40f; // колесо прокручивает вверх-вниз, приближения нет
         Scroll.elasticity = .08f;
         Scroll.movementType = ScrollRect.MovementType.Clamped;
         Scroll.inertia = true;
@@ -125,13 +129,13 @@ public class WorkshopTree : MonoBehaviour
         root.sprite = Art("root_workshop");
         root.preserveAspect = true;
         root.raycastTarget = false;
-        Header(board, "ТЕЛО", BodyX, 232, 120, GameUi.Accent);
-        Header(board, "АРСЕНАЛ", TrunkX, 232, 150, Gold);
-        lines.Connect(new Vector2(RootX, 150), new Vector2(BodyX, 218), GameUi.Accent);
-        lines.Connect(new Vector2(RootX, 150), new Vector2(TrunkX, 218), Gold);
+        Header(board, "ГЕРОЙ", BodyX, 200, 120, GameUi.Accent);
+        Header(board, "ОРУЖИЕ", TrunkX, 200, 150, Gold);
+        lines.Connect(new Vector2(RootX, 150), new Vector2(BodyX, 186), GameUi.Accent);
+        lines.Connect(new Vector2(RootX, 150), new Vector2(TrunkX, 186), Gold);
         // Category rails feed siblings. No lines run from one independent purchase through another.
-        lines.Connect(new Vector2(BodyX, 250), new Vector2(BodyX, Top + (MetaProgress.Catalog.Length - 1) * BodyStep), GameUi.Accent * .6f);
-        lines.Connect(new Vector2(TrunkX, 250), new Vector2(TrunkX, Top + (Mathf.CeilToInt(SelectableWeapons() / (float)WeaponColumns) - 1) * WeaponRowStep), Gold * .6f);
+        lines.Connect(new Vector2(BodyX, 215), new Vector2(BodyX, Top + (MetaProgress.Catalog.Length - 1) * BodyStep), GameUi.Accent * .6f);
+        lines.Connect(new Vector2(TrunkX, 215), new Vector2(TrunkX, Top + (Mathf.CeilToInt(SelectableWeapons() / (float)WeaponColumns) - 1) * WeaponRowStep), Gold * .6f);
 
         for (int i = 0; i < MetaProgress.Catalog.Length; i++)
         {
@@ -149,25 +153,25 @@ public class WorkshopTree : MonoBehaviour
             WeaponData weapon = shooter.weapons[i];
             if (weapon == null || !weapon.IsSelectable) continue;
             int column = weaponSlot % WeaponColumns;
-            float x = 640 + column * 320;
+            float x = WeaponX + column * WeaponPitch;
             float y = Top + weaponSlot / WeaponColumns * WeaponRowStep; weaponSlot++;
-            float from = column == 0 ? TrunkX : x - 320 + 38;
+            float from = column == 0 ? TrunkX : x - WeaponPitch + 38;
             int weaponLink = lines.Connect(new Vector2(from, y), new Vector2(x - 38, y), Gold * .55f);
-            RectTransform group = Fixed("Weapon group " + i, board, x, y + 60, 300, 180);
+            RectTransform group = Fixed("Weapon group " + i, board, x, y + 60, GroupWidth, 180);
             Image groupShade = group.gameObject.AddComponent<Image>();
             groupShade.color = new Color(.02f, .06f, .09f, .32f);
             groupShade.raycastTarget = false;
             UiArtwork.Round(groupShade);
             Node node = new Node { weapon = i, title = WeaponTitle(i) };
-            AddNode(node, 150, 30, 76, WeaponIcon(i), group);
+            AddNode(node, GroupWidth * .5f, 30, 76, WeaponIcon(i), group);
             links.Add(new KeyValuePair<int, Node>(weaponLink, node));
             for (int e = 1; e <= 4; e++)
             {
                 WeaponElement element = (WeaponElement)e;
-                float offset = (e - 2.5f) * 64;
+                float offset = (e - 2.5f) * ElementStep;
                 int elementLink = lines.Connect(new Vector2(x, y + 38), new Vector2(x + offset, y + 55), WeaponElements.Colors[e] * .7f);
                 Node elementNode = new Node { weapon = i, element = element, title = node.title + ": " + WeaponElements.Names[e] };
-                AddNode(elementNode, 150 + offset, 108, 46, Art(WeaponElements.Icons[e]), group);
+                AddNode(elementNode, GroupWidth * .5f + offset, 108, 46, Art(WeaponElements.Icons[e]), group);
                 links.Add(new KeyValuePair<int, Node>(elementLink, elementNode));
             }
         }
@@ -199,7 +203,7 @@ public class WorkshopTree : MonoBehaviour
         equipText = equip.GetComponentInChildren<Text>();
         equipText.resizeTextMaxSize = 17;
         UiArtwork.Round(equip.GetComponent<Image>());
-        GameUi.Label(transform, "Колесо — приблизить / отдалить  ·  Перетаскивание — двигать  ·  Стихии связаны только со своим оружием", new Vector2(.015f, .012f), new Vector2(.735f, .075f), 14, new Color(.53f, .66f, .75f));
+        GameUi.Label(transform, "Колесо — прокрутка  ·  Правая кнопка мыши — двигать  ·  Стихии связаны только со своим оружием", new Vector2(.015f, .012f), new Vector2(.735f, .075f), 14, new Color(.53f, .66f, .75f));
         selected = nodes.Count > 0 ? nodes[0] : null;
         Refresh();
         Canvas.ForceUpdateCanvases();
@@ -220,33 +224,6 @@ public class WorkshopTree : MonoBehaviour
         Scroll.StopMovement();
         // После смены размера окна выбранный узел остаётся на экране (он может быть в середине доски, а не у края).
         if (selected != null) Reveal(selected);
-    }
-
-    private void ZoomWithWheel()
-    {
-        float wheel = Input.mouseScrollDelta.y;
-        if (Mathf.Approximately(wheel, 0f)) return;
-        RectTransform view = Scroll.viewport;
-        Canvas canvas = GetComponentInParent<Canvas>();
-        Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
-        if (!RectTransformUtility.RectangleContainsScreenPoint(view, Input.mousePosition, camera)) return;
-        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(view, Input.mousePosition, camera, out Vector2 local)) return;
-        float fit = view.rect.width / BoardWidth;
-        float oldScale = fit * zoom;
-        float newZoom = Mathf.Clamp(zoom * Mathf.Pow(1.14f, wheel), .45f, 2.6f);
-        if (Mathf.Approximately(newZoom, zoom)) return;
-        Vector2 cursor = local - new Vector2(view.rect.xMin, view.rect.yMax);
-        Vector2 boardPoint = (cursor - content.anchoredPosition) / oldScale;
-        zoom = newZoom;
-        float scale = fit * zoom;
-        board.localScale = Vector3.one * scale;
-        content.sizeDelta = new Vector2(BoardWidth * scale, boardHeight * scale);
-        Vector2 position = cursor - boardPoint * scale;
-        float minX = Mathf.Min(0f, view.rect.width - content.sizeDelta.x);
-        float maxY = Mathf.Max(0f, content.sizeDelta.y - view.rect.height);
-        content.anchoredPosition = new Vector2(Mathf.Clamp(position.x, minX, 0f), Mathf.Clamp(position.y, 0f, maxY));
-        Scroll.StopMovement();
-        RememberScrollPosition();
     }
 
     private void PanWithMouse()
@@ -275,7 +252,6 @@ public class WorkshopTree : MonoBehaviour
     private void Update()
     {
         if (Scroll == null || board == null) return;
-        ZoomWithWheel();
         PanWithMouse();
     }
 
@@ -338,11 +314,11 @@ public class WorkshopTree : MonoBehaviour
         string caption = node.element != WeaponElement.None ? WeaponElements.Names[(int)node.element] : node.title;
         bool module = node.element != WeaponElement.None;
         Text captionText = LabelAt(rect, caption, size * .5f, module ? size + 11 : size * .5f - 54,
-            module ? 62 : node.body != null ? 185 : 270, module ? 18 : 28, module ? 12 : 15, new Color(.84f, .9f, .94f));
+            module ? 50 : node.body != null ? 185 : 222, module ? 18 : 28, module ? 12 : 15, new Color(.84f, .9f, .94f));
         captionText.transform.parent.name = "Node caption";
         captionText.rectTransform.offsetMin = captionText.rectTransform.offsetMax = Vector2.zero;
         node.state = LabelAt(rect, "", module ? size * .5f : size + 44,
-            module ? size + 31 : size * .5f + 22, module ? 62 : 72, module ? 16 : 28, 12, GameUi.Accent);
+            module ? size + 31 : size * .5f + 22, module ? 50 : 72, module ? 16 : 28, 12, GameUi.Accent);
         node.state.transform.parent.name = "Node state";
         node.state.rectTransform.offsetMin = node.state.rectTransform.offsetMax = Vector2.zero;
         node.badge = LabelAt(rect, "", size - 3, 1, 36, 18, 10, GameUi.Accent);
@@ -409,12 +385,24 @@ public class WorkshopTree : MonoBehaviour
         if (art.TryGetValue(id, out Sprite cached)) return cached;
         Texture2D texture = Resources.Load<Texture2D>("UI/Tree/" + id);
         Sprite sprite = texture != null ? Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * .5f, 100f) : null;
+        if (sprite != null) created.Add(sprite);
         art[id] = sprite;
         return sprite;
     }
 
     private Sprite WeaponIcon(int index)
     {
+        // Те же иконки из боевых моделей, что в экране выбора (Resources/UI/Weapons/<ключ ModelSkinSet>).
+        if (shooter != null && shooter.weapons != null && index >= 0 && index < shooter.weapons.Length && shooter.weapons[index] != null)
+        {
+            string iconKey = "icon:" + ModelSkins.WeaponKey(shooter.weapons[index], index);
+            if (!art.TryGetValue(iconKey, out Sprite icon))
+            {
+                icon = Resources.Load<Sprite>("UI/Weapons/" + iconKey.Substring(5));
+                art[iconKey] = icon;
+            }
+            if (icon != null) return icon;
+        }
         if (index == 2)
         {
             const string key = "shotgun_cropped";
@@ -427,6 +415,7 @@ public class WorkshopTree : MonoBehaviour
                 float trim = rect.height * .27f;
                 rect.yMin += trim;
                 clean = Sprite.Create(original.texture, rect, Vector2.one * .5f, 100f);
+                created.Add(clean);
                 art[key] = clean;
             }
             return clean;
@@ -584,7 +573,9 @@ public class WorkshopTree : MonoBehaviour
 
     private void OnDestroy()
     {
-        foreach (Sprite sprite in art.Values) if (sprite != null) Destroy(sprite);
+        // Уничтожаем только созданные здесь спрайты. Иконки оружия — ассеты Resources (общие с экраном выбора):
+        // их уничтожение после возврата в меню оставляло мастерскую и выбор оружия без картинок.
+        foreach (Sprite sprite in created) if (sprite != null) Destroy(sprite);
     }
 }
 

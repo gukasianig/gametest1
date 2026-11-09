@@ -70,7 +70,7 @@ public static class AudioChecks
     {
         Directory.CreateDirectory("Logs");
         File.WriteAllText(PlayRequest, "batch");
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         EditorApplication.isPlaying = true;
     }
 

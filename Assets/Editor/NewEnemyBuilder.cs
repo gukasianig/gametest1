@@ -72,9 +72,9 @@ public static class NewEnemyBuilder
 
     private static void Register()
     {
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         WaveManager waves = Object.FindObjectOfType<WaveManager>();
-        if (waves == null) throw new System.Exception("No WaveManager in SampleScene.");
+        if (waves == null) throw new System.Exception("No WaveManager in GreenArenaPlay.");
         SerializedObject serialized = new SerializedObject(waves);
         SerializedProperty list = serialized.FindProperty("enemies");
         foreach (Def def in Defs)

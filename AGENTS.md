@@ -1,7 +1,14 @@
 # Repository Guidelines
 
 ## Start of Every Chat
-Before changing this repository, read `docs/PROJECT_CONTEXT.md`, `docs/CHANGELOG.md`, and `docs/DEVELOPMENT.md`. They contain the current state, change history, known risks, and verification results. Check `git status` and relevant source files against these notes; the code may have changed since the last update. Communicate with the owner in Russian.
+Before changing this repository, read `docs/PROJECT_CONTEXT.md` (short current state). Read `docs/CHANGELOG.md` and `docs/DEVELOPMENT.md` only as far as the task needs: usually the first ~40 lines (newest entries/risks) or a grep for the feature. Check `git status --short -- Assets ProjectSettings Packages docs/*.md` (the full status is noisy with binary art files) and relevant source files against these notes; the code may have changed since the last update. Communicate with the owner in Russian.
+
+## Token Budget (standing owner request, 2026-11-09)
+- Never read `docs/archive/` unless a task needs old history; grep it instead of reading whole files.
+- Keep active notes small: `PROJECT_CONTEXT.md` ≤ 10 KB (replace stale facts, do not append), `CHANGELOG.md` ≤ ~20 KB and `DEVELOPMENT.md` ≤ ~20 KB. When one grows beyond its limit, move the oldest dated entries to `docs/archive/<NAME>_<period>.md` and leave a one-line pointer.
+- Large docs (`GAME_ROADMAP.md`, `UPGRADE_ROADMAP.md`, `VISUAL_ASSETS.md`, `IDEAS.md`, `MASTER_PLAN.md`): grep for headings/IDs and read only the needed range with offset/limit.
+- Never read Unity-generated or binary files (`Library/`, `Logs/` beyond the needed lines, `.unity`/`.prefab`/`.asset` in full, `.fbx`, `.blend`, images); grep scene/prefab YAML for the needed object instead.
+- Do not re-read a file just edited; prefer Grep/targeted ranges over full reads of large sources.
 
 After meaningful work, update the relevant notes with the date, changed files, reasons, actual checks, and remaining issues. Distinguish observed behavior from assumptions. Never describe compilation alone as a gameplay test. Preserve existing user changes and Unity asset GUIDs. Keep credentials, tokens, license identifiers, and personal logs out of these documents.
 

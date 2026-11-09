@@ -5,4 +5,4 @@ if not exist "%UNITY_EDITOR%" (
     pause
     exit /b 1
 )
-start "" "%UNITY_EDITOR%" -projectPath "%~dp0." -openfile "%~dp0Assets\Scenes\SampleScene.unity"
+start "" "%UNITY_EDITOR%" -projectPath "%~dp0." -openfile "%~dp0Assets\Scenes\GreenArenaPlay.unity"

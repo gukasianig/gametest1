@@ -93,7 +93,7 @@ public class EnemyHealthDisplay : MonoBehaviour
 
     public void ShowDamage(Health health, int amount, bool crit = false)
     {
-        if (amount <= 0) return;
+        if (amount <= 0 || !GameSettings.DamageNumbers) return;
         float height = bars.TryGetValue(health, out HealthBar bar) ? bar.height : 1.5f;
         RectTransform root = Rect("Damage " + amount, canvasRect, new Vector2(100, 40));
         Text label = TextLabel(root, "-" + amount + (crit ? "!" : ""), crit ? 32 : 24);

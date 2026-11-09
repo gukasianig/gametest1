@@ -95,8 +95,8 @@ public static class ArenaEventChecks
         Require(arena.halfSize >= 110f, "Arena was not extended: " + arena.halfSize);
         Require(arena.Obstacles.Count >= 19, "Outer cover missing: " + arena.Obstacles.Count);
         Require(arena.IsWalkable(Vector3.zero, 1f), "Arena centre is blocked.");
-        Require(arena.IsWalkable(new Vector3(95f, 0f, 0f), 1f), "Outer zone is not walkable.");
-        Require(!arena.IsWalkable(new Vector3(109f, 0f, 0f), 1f), "Perimeter does not block.");
+        Require(arena.IsWalkable(new Vector3(arena.halfSize - 15f, 0f, 0f), 1f), "Outer zone is not walkable.");
+        Require(!arena.IsWalkable(new Vector3(arena.halfSize - 1f, 0f, 0f), 1f), "Perimeter does not block.");
         GridDrawer floor = UnityEngine.Object.FindObjectOfType<GridDrawer>();
         Require(floor == null || floor.groundSize >= arena.halfSize * 2f, "Floor is smaller than the arena.");
         Pass("Arena half-size " + arena.halfSize + ", " + arena.Obstacles.Count + " obstacles, outer zone walkable, perimeter blocks.");
@@ -141,6 +141,21 @@ public static class ArenaEventChecks
         int crystals = 0;
         foreach (GameObject item in UnityEngine.Object.FindObjectsOfType<GameObject>()) if (item.name == "Experience Crystal") crystals++;
         Require(crystals >= 14, "Supply crystals: " + crystals);
+        foreach (GameObject item in UnityEngine.Object.FindObjectsOfType<GameObject>())
+            if (item.name == "Experience Crystal")
+                Require(item.transform.position.y >= GroundHeight.At(item.transform.position) + 0.3f, "Supply crystal under the ground at " + item.transform.position);
+        yield return Wait(0.3f);
+        GameObject eventHud = GameObject.Find("Event HUD");
+        Require(eventHud != null, "Event HUD missing for the supply drop.");
+        bool arrowShown = false, hintShown = false, distanceShown = false;
+        foreach (UnityEngine.UI.Text label in eventHud.GetComponentsInChildren<UnityEngine.UI.Text>())
+        {
+            if (label.text == "►") arrowShown = true;
+            if (label.text.Contains("маяку")) hintShown = true;
+            if (label.text.EndsWith(" м")) distanceShown = true;
+        }
+        Require(arrowShown && hintShown && distanceShown, "Supply hint/arrow/distance: " + hintShown + "/" + arrowShown + "/" + distanceShown);
+        Pass("Supply drop: crystals stand above the ground; the HUD shows what to do and an arrow with the distance to the beacon.");
         events.End(false);
         yield return Wait(0.3f);
         Require(GameObject.Find("Supply beacon") == null, "Beacon not removed.");
@@ -200,11 +215,44 @@ public static class ArenaEventChecks
         yield return Wait(1.6f);
         Require(health.CurrentHP < poolHp, "Pool did not hurt the hero.");
         Require(poolEnemy.GetComponent<Health>().CurrentHealth < 1000, "Pool did not hurt the enemy.");
+        Require(pool.transform.childCount >= 2, "Toxic pool is not the AcidPuddle model.");
+        string poolMaterials = "";
+        foreach (Renderer part in pool.GetComponentsInChildren<Renderer>()) poolMaterials += part.sharedMaterial.name + " ";
+        Require(poolMaterials.Contains("HazardEmissive") && poolMaterials.Contains("SurfaceHazardsPalette"),
+            "Acid materials not remapped: " + poolMaterials);
+        Require(Mathf.Abs(pool.transform.localScale.x - 4f / 2.7f) < 0.05f && pool.GetComponentInChildren<Collider>() == null,
+            "Acid pool scale/collider: " + pool.transform.localScale);
+        Pass("Toxic pools use AcidPuddle (" + poolMaterials.Trim() + "), spread to " + pool.transform.localScale.x.ToString("0.00") + "x, no colliders.");
         events.End(false);
         UnityEngine.Object.Destroy(poolEnemy);
         yield return Wait(0.3f);
         Require(GameObject.Find("Toxic pool") == null, "Pools not removed.");
         Pass("Toxic pools: no damage during the warning, then hurt the hero and an enemy; removed afterwards.");
+
+        // 5d2. Wildfire: three GroundFireVisual hearths grow, burn the hero and an enemy, then go out.
+        events.Begin(ArenaEventKind.Wildfire);
+        yield return Wait(0.3f);
+        GroundFireZone[] fires = UnityEngine.Object.FindObjectsOfType<GroundFireZone>();
+        Require(events.FireCount == 3 && fires.Length == 3, "Wildfire hearths: " + fires.Length);
+        Require(fires[0].GetComponentInChildren<GroundFireVisual>() != null, "Wildfire has no GroundFireVisual model.");
+        float startRadius = fires[0].Radius;
+        GameObject fireEnemy = UnityEngine.Object.Instantiate(weakType.prefab, fires[0].transform.position + Vector3.up * 0.5f, Quaternion.identity);
+        fireEnemy.GetComponent<EnemyAI>().MovementLocked = true;
+        fireEnemy.GetComponent<Health>().SetHealth(1000);
+        player.transform.position = new Vector3(fires[0].transform.position.x, player.transform.position.y, fires[0].transform.position.z);
+        int fireHp = health.CurrentHP;
+        yield return Wait(2f);
+        Require(fires[0].Radius > startRadius + 0.3f, "Wildfire did not grow: " + startRadius + " -> " + fires[0].Radius);
+        Require(health.CurrentHP < fireHp, "Wildfire did not hurt the hero.");
+        Require(fireEnemy.GetComponent<Health>().CurrentHealth < 1000, "Wildfire did not hurt the enemy.");
+        int flames = fires[0].GetComponentsInChildren<MeshRenderer>().Length;
+        float grown = fires[0].Radius;
+        events.End(false);
+        UnityEngine.Object.Destroy(fireEnemy);
+        yield return Wait(3.2f);
+        Require(UnityEngine.Object.FindObjectsOfType<GroundFireZone>().Length == 0, "Wildfire not removed after going out.");
+        Pass("Wildfire: 3 hearths with GroundFireVisual (" + flames + " renderers), radius " + startRadius.ToString("0.0") + " -> " +
+             grown.ToString("0.0") + " m in 2 s, hurt the hero and an enemy, went out and were removed.");
 
         // 5e. The on-screen event line exists and names the running event.
         events.Begin(ArenaEventKind.MagneticStorm);

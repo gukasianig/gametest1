@@ -31,14 +31,17 @@ public class PlayerProgression : MonoBehaviour
     private readonly Text[] rarityLabels = new Text[3];
     private RectTransform toast;
     private CanvasGroup toastGroup;
-    private Text toastText;
+    private Text toastText, toastDetail;
+    private Image toastStripe, toastIcon;
+    private UpgradeIcon toastVector;
+    private const float ToastLife = 2.6f;
     private float toastTime;
     private AutoShoter shooter;
     private PlayMovement movement;
     private OrbitManager orbits;
     private Canvas canvas;
     private RectTransform choices;
-    private Text status;
+    private Text status, levelText;
     private Image fill;
     private bool ownsSettings;
 
@@ -59,8 +62,13 @@ public class PlayerProgression : MonoBehaviour
         if (toastTime > 0f)
         {
             toastTime = Mathf.Max(0f, toastTime - Time.unscaledDeltaTime);
-            toastGroup.alpha = Mathf.Min(1f, toastTime / 0.3f);
-            toast.localScale = Vector3.one * (1f + Mathf.Max(0f, toastTime - 1.2f) * 0.06f);
+            // Въезд снизу с небольшим перелётом, затем затухание за последние 0,4 с.
+            float age = ToastLife - toastTime;
+            float k = Mathf.Clamp01(age / 0.3f);
+            float back = 1f + 2.2f * Mathf.Pow(k - 1f, 3f) + 1.2f * Mathf.Pow(k - 1f, 2f);
+            toast.anchoredPosition = new Vector2(0f, Mathf.LerpUnclamped(-40f, 0f, back));
+            toast.localScale = Vector3.one * Mathf.LerpUnclamped(0.85f, 1f, back);
+            toastGroup.alpha = Mathf.Min(Mathf.Clamp01(age / 0.15f), toastTime / 0.4f);
             if (toastTime == 0f) toast.gameObject.SetActive(false);
         }
         if (Time.timeScale <= 0f || Choosing) return;
@@ -136,11 +144,12 @@ public class PlayerProgression : MonoBehaviour
         if (definition.effect == UpgradeEffect.OrbitDamage && orbits.orbitCount == 0) return false;
         // Crit power only makes sense once there is a chance to crit.
         if (definition.effect == UpgradeEffect.CritPower && Bonus(UpgradeEffect.CritChance) <= 0f) return false;
-        // Piercing and ricochet change ordinary bullets only; drone and turret cards need that weapon.
+        // Piercing and ricochet change ordinary bullets only (drone, turret and mine cards work with any weapon).
         WeaponKind kind = shooter.baseWeapon != null ? shooter.baseWeapon.kind : WeaponKind.Standard;
         if ((definition.effect == UpgradeEffect.Pierce || definition.effect == UpgradeEffect.Ricochet) && kind != WeaponKind.Standard) return false;
-        if ((definition.effect == UpgradeEffect.DroneCount || definition.effect == UpgradeEffect.DroneDamage) && kind != WeaponKind.Drone) return false;
-        if ((definition.effect == UpgradeEffect.TurretCount || definition.effect == UpgradeEffect.TurretDamage) && kind != WeaponKind.Turret) return false;
+        // Дрон, турель и мины — улучшения боя для любого оружия; карточки урона нужны только после первого юнита.
+        if (definition.effect == UpgradeEffect.DroneDamage && Bonus(UpgradeEffect.DroneCount) <= 0f) return false;
+        if (definition.effect == UpgradeEffect.TurretDamage && Bonus(UpgradeEffect.TurretCount) <= 0f) return false;
         if ((definition.effect == UpgradeEffect.ExtraPellets || definition.effect == UpgradeEffect.ExplosiveBullets ||
             definition.effect == UpgradeEffect.WeaponRange) && kind != WeaponKind.Standard) return false;
         bool hasOrbits = orbits != null && orbits.orbitPrefab != null && orbits.orbitCount > 0;
@@ -152,7 +161,7 @@ public class PlayerProgression : MonoBehaviour
             definition.effect == UpgradeEffect.CritChance || definition.effect == UpgradeEffect.CritPower ||
             definition.effect == UpgradeEffect.Pierce || definition.effect == UpgradeEffect.Ricochet ||
             definition.effect == UpgradeEffect.DroneCount || definition.effect == UpgradeEffect.DroneDamage ||
-            definition.effect == UpgradeEffect.TurretCount || definition.effect == UpgradeEffect.TurretDamage ||
+            definition.effect == UpgradeEffect.TurretCount || definition.effect == UpgradeEffect.TurretDamage || definition.effect == UpgradeEffect.MineCount ||
             1f + Bonus(definition.effect) < Mathf.Max(1f, Cap(definition.effect)) - 0.0001f;
     }
 
@@ -201,14 +210,23 @@ public class PlayerProgression : MonoBehaviour
             (GameSession.Instance != null && GameSession.Instance.State != GameRunState.Upgrade)) return false;
         UpgradeDefinition definition = offered[index];
         if (!Available(definition)) return false;
+        string gained = Preview(definition);   // «было → станет» до применения — для уведомления
         ranks[definition.id] = Rank(definition.id) + 1;
         if (definition.effect == UpgradeEffect.MaxHealth) GetComponent<PlayerHealth>().IncreaseMaxHealth(Mathf.RoundToInt(definition.amount));
         if (definition.effect == UpgradeEffect.OrbitCount) orbits.UpgradeOrbitCount(Mathf.RoundToInt(definition.amount));
         if (definition.effect == UpgradeEffect.CursedGlass) GetComponent<PlayerHealth>().ReduceMaxHealth(0.3f);
         ApplyStats();
-        toastText.text = definition.title + "  —  улучшено";
-        toastText.color = UpgradeCatalog.RarityColor(definition.rarity);
-        toastTime = 1.6f;
+        Color rarity = UpgradeCatalog.RarityColor(definition.rarity);
+        toastText.text = "<b>" + definition.title + "</b>  •  ранг " + Rank(definition.id);
+        toastText.color = rarity;
+        toastDetail.text = gained;
+        toastStripe.color = rarity;
+        toastIcon.sprite = definition.icon != null ? definition.icon : UiArtwork.Upgrade(definition.effect);
+        toastIcon.enabled = toastIcon.sprite != null;
+        toastVector.enabled = toastIcon.sprite == null;
+        toastVector.Effect = definition.effect;
+        toastVector.color = rarity;
+        toastTime = ToastLife;
         toastGroup.alpha = 1f;
         toast.gameObject.SetActive(true);
         PendingChoices--;
@@ -268,8 +286,8 @@ public class PlayerProgression : MonoBehaviour
         PickupRadiusMultiplier = Mathf.Min(Mathf.Max(1f, Cap(UpgradeEffect.Pickup)), 1f + Bonus(UpgradeEffect.Pickup));
         if (orbits != null) orbits.SetDamageMultiplier(Mathf.Min(5f, 1f + Bonus(UpgradeEffect.OrbitDamage)));
         if (orbits != null) orbits.SetSpeedBonus(CombatStats.OrbitSpeedBonus);
-        shooter.SetSupportBonuses(Mathf.RoundToInt(Bonus(UpgradeEffect.DroneCount)), Mathf.RoundToInt(Bonus(UpgradeEffect.TurretCount)),
-            1f + Bonus(UpgradeEffect.DroneDamage), 1f + Bonus(UpgradeEffect.TurretDamage));
+        shooter.SetSupportUnits(Mathf.RoundToInt(Bonus(UpgradeEffect.DroneCount)), Mathf.RoundToInt(Bonus(UpgradeEffect.TurretCount)),
+            Mathf.RoundToInt(Bonus(UpgradeEffect.MineCount)), 1f + Bonus(UpgradeEffect.DroneDamage), 1f + Bonus(UpgradeEffect.TurretDamage));
     }
 
     public void CloseChoices()
@@ -280,10 +298,8 @@ public class PlayerProgression : MonoBehaviour
 
     private string Preview(UpgradeDefinition definition)
     {
-        int rank = Rank(definition.id);
-        string rankText = rank == 0
-            ? "Новое улучшение  •  станет ранг 1 из " + definition.maxRanks + "\n"
-            : "Сейчас ранг " + rank + "  •  станет ранг " + (rank + 1) + " из " + definition.maxRanks + "\n";
+        // Только «что даст» (было → станет); ранг показывает RankLine отдельной мелкой строкой.
+        const string rankText = "";
         if (definition.effect == UpgradeEffect.MaxHealth)
             return rankText + GetComponent<PlayerHealth>().maxHP + " → " + (GetComponent<PlayerHealth>().maxHP + Mathf.RoundToInt(definition.amount)) + " HP";
         if (definition.effect == UpgradeEffect.OrbitCount)
@@ -299,20 +315,53 @@ public class PlayerProgression : MonoBehaviour
         if (definition.effect == UpgradeEffect.Ricochet)
             return rankText + "Рикошет в других врагов: " + Mathf.RoundToInt(Bonus(definition.effect)) + " → " +
                 Mathf.RoundToInt(Bonus(definition.effect) + definition.amount) + "  (урон −20% за прыжок)";
-        if (definition.effect == UpgradeEffect.DroneCount || definition.effect == UpgradeEffect.TurretCount)
+        if (definition.effect == UpgradeEffect.DroneCount || definition.effect == UpgradeEffect.TurretCount || definition.effect == UpgradeEffect.MineCount)
         {
-            int baseCount = shooter.baseWeapon != null ? Mathf.Max(1, shooter.baseWeapon.maxActive) : 1;
-            int now = baseCount + Mathf.RoundToInt(Bonus(definition.effect));
-            return rankText + (definition.effect == UpgradeEffect.DroneCount ? "Дронов: " : "Турелей: ") + now + " → " +
-                (now + Mathf.RoundToInt(definition.amount));
+            // Сапёрные мины: 1-й ранг даёт 3 мины, каждый следующий +1.
+            int now = Mathf.RoundToInt(Bonus(definition.effect));
+            int next = now + Mathf.RoundToInt(definition.amount);
+            if (definition.effect == UpgradeEffect.MineCount) { now = SpecialWeapons.SupportMines(now); next = SpecialWeapons.SupportMines(next); }
+            return rankText + (definition.effect == UpgradeEffect.DroneCount ? "Дронов: " : definition.effect == UpgradeEffect.TurretCount ? "Турелей: " : "Мин: ") + now + " → " + next;
         }
         if (definition.effect == UpgradeEffect.Pierce)
             return rankText + "Пуля пробивает целей: " + Mathf.RoundToInt(Bonus(definition.effect)) + " → " +
                 Mathf.RoundToInt(Bonus(definition.effect) + definition.amount);
         float before = Mathf.Min(Mathf.Max(1f, Cap(definition.effect)), 1f + Bonus(definition.effect));
         float after = Mathf.Min(Mathf.Max(1f, Cap(definition.effect)), before + definition.amount);
-        return rankText +
-            "×" + before.ToString("0.##") + " → ×" + after.ToString("0.##");
+        // Множитель показываем как прибавку с подписью: «Урон: +20% → +40%» вместо «×1,2 → ×1,4».
+        return rankText + EffectLabel(definition.effect) + ": +" + Mathf.RoundToInt((before - 1f) * 100f) + "% → +" +
+            Mathf.RoundToInt((after - 1f) * 100f) + "%";
+    }
+
+    private static string EffectLabel(UpgradeEffect effect)
+    {
+        switch (effect)
+        {
+            case UpgradeEffect.Damage: return "Урон оружия";
+            case UpgradeEffect.AttackSpeed: return "Скорость стрельбы";
+            case UpgradeEffect.Movement: return "Скорость бега";
+            case UpgradeEffect.Pickup: return "Радиус сбора опыта";
+            case UpgradeEffect.GrenadeDamage: return "Урон гранат";
+            case UpgradeEffect.GrenadeRadius: return "Радиус взрыва гранат";
+            case UpgradeEffect.OrbitDamage: return "Урон спутников";
+            case UpgradeEffect.MineCount: return "Сапёрные мины";
+            case UpgradeEffect.DroneDamage: return "Урон дронов";
+            case UpgradeEffect.TurretDamage: return "Урон турелей";
+            default: return "Бонус";
+        }
+    }
+
+    // Ранг точками: ●●●○○ и подпись «новое» / «ранг 2 → 3».
+    private string RankLine(UpgradeDefinition definition)
+    {
+        int rank = Rank(definition.id);
+        int max = Mathf.Max(1, definition.maxRanks);
+        string pips = "";
+        if (max <= 10)
+            for (int i = 0; i < max; i++)
+                pips += i < rank ? "<color=#5FD9B8>●</color>" : i == rank ? "<color=#FFFFFF>●</color>" : "○";
+        string caption = rank == 0 ? "новое" : "ранг " + rank + " → " + (rank + 1) + " из " + max;
+        return (pips.Length > 0 ? pips + "   " : "") + caption;
     }
 
     private static string Pair(string label, float from, float to, string suffix, string format = "0.##")
@@ -375,7 +424,9 @@ public class PlayerProgression : MonoBehaviour
             UpgradeDefinition definition = offered[i];
             Color color = UpgradeCatalog.RarityColor(definition.rarity);
             buttons[i].GetComponent<Image>().color = new Color(0.035f + color.r * 0.06f, 0.045f + color.g * 0.06f, 0.065f + color.b * 0.06f);
-            cardText[i].text = "<b>" + definition.title + "</b>\n<color=#ABB9CB>" + Preview(definition) + "</color>";
+            string hex = ColorUtility.ToHtmlStringRGB(Color.Lerp(color, Color.white, 0.35f));
+            cardText[i].text = "<size=27><b>" + definition.title + "</b></size>\n<size=23><color=#" + hex + ">" + Preview(definition) +
+                "</color></size>\n<size=17><color=#8796A8>" + RankLine(definition) + "</color></size>";
             rarityLabels[i].text = UpgradeCatalog.RarityName(definition.rarity).ToUpperInvariant();
             rarityLabels[i].color = color;
             icons[i].sprite = definition.icon != null ? definition.icon : UiArtwork.Upgrade(definition.effect);
@@ -395,14 +446,24 @@ public class PlayerProgression : MonoBehaviour
         int required = settings.ExperienceForLevel(Level);
         status.text = "Уровень " + Level + "   •   Опыт " + Experience + " / " + required;
         fill.rectTransform.anchorMax = new Vector2((float)Experience / required, 1f);
+        if (levelText != null) levelText.text = Level.ToString();
     }
 
     private void BuildUI()
     {
         canvas = GameUi.Canvas("Experience HUD", 80);
-        RectTransform bar = GameUi.Box(canvas.transform, "Experience", new Vector2(0.2f, 0.91f), new Vector2(0.8f, 0.97f), GameUi.Background);
-        fill = GameUi.Box(bar, "Fill", Vector2.zero, Vector2.one, new Color(0.05f, 0.4f, 0.55f)).GetComponent<Image>();
-        status = GameUi.Label(bar, "", Vector2.zero, Vector2.one, 23);
+        // Полоса опыта: значок уровня слева, тонкая полоса с бликом, подпись поверх.
+        RectTransform bar = GameUi.Box(canvas.transform, "Experience", new Vector2(0.27f, 0.935f), new Vector2(0.78f, 0.975f), GameUi.Background);
+        UiArtwork.Round(bar.GetComponent<Image>());
+        fill = GameUi.Box(bar, "Fill", Vector2.zero, Vector2.one, new Color(0.1f, 0.62f, 0.85f)).GetComponent<Image>();
+        fill.rectTransform.offsetMin = new Vector2(3f, 3f);
+        fill.rectTransform.offsetMax = new Vector2(-3f, -3f);
+        GameUi.Box(bar, "Shine", new Vector2(0f, 0.55f), Vector2.one, new Color(1f, 1f, 1f, 0.1f));
+        status = GameUi.Readable(GameUi.Label(bar, "", Vector2.zero, Vector2.one, 17), 1f);
+        RectTransform levelBadge = GameUi.Box(canvas.transform, "Level Badge", new Vector2(0.22f, 0.925f), new Vector2(0.265f, 0.985f), new Color(0.1f, 0.45f, 0.62f));
+        UiArtwork.Round(levelBadge.GetComponent<Image>());
+        levelText = GameUi.Readable(GameUi.Label(levelBadge, "", Vector2.zero, Vector2.one, 22), 1f);
+        levelText.fontStyle = FontStyle.Bold;
         choices = GameUi.Box(canvas.transform, "Level Up", Vector2.zero, Vector2.one, GameUi.Background, true);
         GameUi.Label(choices, "НОВЫЙ УРОВЕНЬ\nВыбери улучшение", new Vector2(0.1f, 0.77f), new Vector2(0.9f, 0.96f), 36);
         for (int i = 0; i < 3; i++)
@@ -416,6 +477,11 @@ public class PlayerProgression : MonoBehaviour
             cardText[i].alignment = TextAnchor.MiddleLeft;
             cardText[i].fontSize = 23;
             cardText[i].resizeTextMaxSize = 23;
+            // Размеры строк заданы тегами <size>; автоподбор их игнорирует, поэтому выключен.
+            cardText[i].resizeTextForBestFit = false;
+            cardText[i].horizontalOverflow = HorizontalWrapMode.Wrap;
+            cardText[i].verticalOverflow = VerticalWrapMode.Overflow;
+            cardText[i].lineSpacing = 1.05f;
             RectTransform badge = GameUi.Box(buttons[i].transform, "Icon Badge", new Vector2(0.025f, 0.12f), new Vector2(0.205f, 0.88f), GameUi.Background);
             iconBadges[i] = badge.GetComponent<Image>();
             UiArtwork.Round(iconBadges[i]);
@@ -439,10 +505,33 @@ public class PlayerProgression : MonoBehaviour
         }
         rerollButton = GameUi.Button(choices, "Перебросить", new Vector2(0.3f, 0.02f), new Vector2(0.7f, 0.085f), () => Reroll());
         choices.gameObject.SetActive(false);
-        toast =GameUi.Box(canvas.transform, "Upgrade Feedback", new Vector2(0.23f, 0.035f), new Vector2(0.77f, 0.105f), GameUi.Background);
+        // Уведомление о полученном улучшении: значок, название с рангом и что изменилось.
+        toast = GameUi.Box(canvas.transform, "Upgrade Feedback", new Vector2(0.37f, 0.19f), new Vector2(0.8f, 0.335f),
+            new Color(0.02f, 0.035f, 0.05f, 0.92f));
+        UiArtwork.Round(toast.GetComponent<Image>());
         toastGroup = toast.gameObject.AddComponent<CanvasGroup>();
         toastGroup.blocksRaycasts = false;
-        toastText = GameUi.Label(toast, "", Vector2.zero, Vector2.one, 23, GameUi.Accent);
+        toastStripe = GameUi.Box(toast, "Stripe", new Vector2(0.02f, 0.06f), new Vector2(0.98f, 0.12f), GameUi.Accent).GetComponent<Image>();
+        RectTransform toastBadge = GameUi.Box(toast, "Badge", new Vector2(0.02f, 0.18f), new Vector2(0.15f, 0.92f), GameUi.Background);
+        UiArtwork.Round(toastBadge.GetComponent<Image>());
+        toastIcon = GameUi.Box(toastBadge, "Icon", new Vector2(0.1f, 0.1f), new Vector2(0.9f, 0.9f), Color.white).GetComponent<Image>();
+        toastIcon.preserveAspect = true;
+        GameObject vector = new GameObject("Vector Icon", typeof(RectTransform), typeof(UpgradeIcon));
+        vector.transform.SetParent(toastBadge, false);
+        RectTransform vectorRect = vector.GetComponent<RectTransform>();
+        vectorRect.anchorMin = new Vector2(0.12f, 0.12f);
+        vectorRect.anchorMax = new Vector2(0.88f, 0.88f);
+        vectorRect.offsetMin = vectorRect.offsetMax = Vector2.zero;
+        toastVector = vector.GetComponent<UpgradeIcon>();
+        toastVector.raycastTarget = false;
+        Text toastCaption = GameUi.Label(toast, "УЛУЧШЕНИЕ ПОЛУЧЕНО", new Vector2(0.17f, 0.72f), new Vector2(0.97f, 0.97f), 15, new Color(0.75f, 0.82f, 0.88f));
+        toastCaption.alignment = TextAnchor.MiddleLeft;
+        toastCaption.resizeTextForBestFit = false;
+        toastCaption.verticalOverflow = VerticalWrapMode.Overflow;
+        toastText = GameUi.Readable(GameUi.Label(toast, "", new Vector2(0.17f, 0.45f), new Vector2(0.97f, 0.76f), 26, GameUi.Accent), 1f);
+        toastText.alignment = TextAnchor.MiddleLeft;
+        toastDetail = GameUi.Label(toast, "", new Vector2(0.17f, 0.15f), new Vector2(0.97f, 0.46f), 21, new Color(0.93f, 0.95f, 0.97f));
+        toastDetail.alignment = TextAnchor.MiddleLeft;
         toast.gameObject.SetActive(false);
     }
 

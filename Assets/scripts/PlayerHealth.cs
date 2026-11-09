@@ -16,8 +16,12 @@ public class PlayerHealth : MonoBehaviour, IDamagable
     public bool IsDead => isDead;
     private float damageHold;
 
+    // Удар по герою: (урон до брони, урон после брони). Нужен экрану боя (вспышка ХП и брони).
+    public event System.Action<int, int> Damaged;
+
     private void Start()
     {
+        if (GetComponent<CombatHud>() == null) gameObject.AddComponent<CombatHud>();
         Time.timeScale = 1f;
         currentHP = Mathf.Max(1, maxHP);
         StyleHealthBar();
@@ -42,9 +46,11 @@ public class PlayerHealth : MonoBehaviour, IDamagable
     public void TakeDamage(int damage)
     {
         if (isDead || damage <= 0 || Invulnerable || (GameSession.Instance != null && GameSession.Instance.State != GameRunState.Playing)) return;
+        int raw = damage;
         if (CombatStats.Armor > 0f) damage = Mathf.Max(1, Mathf.RoundToInt(damage * (1f - Mathf.Min(0.6f, CombatStats.Armor))));
         currentHP = Mathf.Max(0, currentHP - damage);
         damageHold = 0.25f;
+        if (Damaged != null) Damaged(raw, damage);
         if (currentHP == 0) Die();
     }
 

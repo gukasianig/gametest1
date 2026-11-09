@@ -63,7 +63,7 @@ MonoBehaviour:
     centerOnHand: 1
     muzzleOffset: {x: 0, y: 0, z: 0}
   - key: Kind_Rocket
-    model: {fileID: 919132149155446097, guid: db0b13ce399621e48b8dbedb582304f7, type: 3}
+    model: {fileID: 919132149155446097, guid: 16943f3d98d96d747ba8788aaa437d8b, type: 3}
     eulerOffset: {x: 0, y: 180, z: 0}
     sizeMultiplier: 1
     localPosition: {x: 0, y: 0, z: 0}
@@ -71,7 +71,7 @@ MonoBehaviour:
     centerOnHand: 1
     muzzleOffset: {x: 0, y: 0, z: 0}
   - key: Kind_Arc
-    model: {fileID: 919132149155446097, guid: 16943f3d98d96d747ba8788aaa437d8b, type: 3}
+    model: {fileID: 919132149155446097, guid: 0aa125ccf950e0c44b7d2cfd9221cd82, type: 3}
     eulerOffset: {x: 0, y: 180, z: 0}
     sizeMultiplier: 1
     localPosition: {x: 0, y: 0, z: 0}

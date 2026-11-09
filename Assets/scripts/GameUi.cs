@@ -53,6 +53,18 @@ public static class GameUi
         return label;
     }
 
+    // Тёмная обводка и тень: текст читается поверх светлой арены и вспышек.
+    public static Text Readable(Text label, float outline = 1.5f)
+    {
+        Outline border = label.gameObject.AddComponent<Outline>();
+        border.effectColor = new Color(0f, 0f, 0f, 0.85f);
+        border.effectDistance = new Vector2(outline, -outline);
+        Shadow shadow = label.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+        shadow.effectDistance = new Vector2(0f, -3f);
+        return label;
+    }
+
     public static Button Button(Transform parent, string value, Vector2 min, Vector2 max,
         UnityEngine.Events.UnityAction action)
     {

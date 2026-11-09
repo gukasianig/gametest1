@@ -103,8 +103,7 @@ public static class CombatMechanicsChecks
         UpgradeDefinition critPower = progression.catalog.entries.Find(e => e.id == "crit_power");
         UpgradeDefinition pierce = progression.catalog.entries.Find(e => e.id == "pierce");
         Require(critChance != null && critPower != null && pierce != null, "New upgrades are not in the catalog.");
-        Require(progression.catalog.entries.Count == 34, "Catalog size: " + progression.catalog.entries.Count);
-        BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
+        Require(progression.catalog.entries.Count == 35, "Catalog size: " + progression.catalog.entries.Count);
         typeof(PlayerProgression).GetProperty("Level").SetValue(progression, 6);
         Require(progression.Available(critChance) && pierce != null && progression.Available(pierce), "Crit chance / pierce not offered at level 6.");
         Require(!progression.Available(critPower), "Crit power is offered before any crit chance.");
@@ -113,7 +112,7 @@ public static class CombatMechanicsChecks
         Require(Mathf.Approximately(CombatStats.CritMultiplier, 2f), "Crit multiplier " + CombatStats.CritMultiplier);
         Require(CombatStats.Pierce == 2, "Pierce " + CombatStats.Pierce);
         Require(progression.Available(critPower), "Crit power is not offered after crit chance.");
-        Pass("Catalog has 34 upgrades; crit power needs crit chance; ranks give 20% / x2.0 / pierce 2.");
+        Pass("Catalog has 35 upgrades; crit power needs crit chance; ranks give 20% / x2.0 / pierce 2.");
 
         // 2. Crit rolls: always crit at 100%, never at 0%, average near the chance.
         CombatStats.Set(1f, 0.5f, 0);
@@ -278,40 +277,43 @@ public static class CombatMechanicsChecks
         Require(ricochetHits[0] == 0 && ricochetHits[1] == 1, "Ricochet hits without/with: " + ricochetHits[0] + "/" + ricochetHits[1]);
         Pass("Ricochet: without it the second enemy is untouched; with 1 rank it takes 80% damage after the jump.");
 
-        // 8. Drone and turret cards: only offered with that weapon; counts and damage multipliers apply.
-        int droneIndex = Array.FindIndex(shooter.weapons, w => w != null && w.kind == WeaponKind.Drone);
-        int turretIndex = Array.FindIndex(shooter.weapons, w => w != null && w.kind == WeaponKind.Turret);
-        Require(droneIndex >= 0 && turretIndex >= 0, "Drone or turret weapon missing.");
+        // 8. Drone, turret and mine cards: combat upgrades for any weapon; counts and damage multipliers apply.
         UpgradeDefinition droneCount = progression.catalog.entries.Find(e => e.id == "drone_count");
         UpgradeDefinition droneDamage = progression.catalog.entries.Find(e => e.id == "drone_damage");
         UpgradeDefinition turretCount = progression.catalog.entries.Find(e => e.id == "turret_count");
         UpgradeDefinition turretDamage = progression.catalog.entries.Find(e => e.id == "turret_damage");
         UpgradeDefinition ricochetCard = progression.catalog.entries.Find(e => e.id == "ricochet");
         Require(droneCount != null && droneDamage != null && turretCount != null && turretDamage != null && ricochetCard != null, "New cards missing.");
-        Require(!progression.Available(droneCount) && !progression.Available(turretCount) && progression.Available(ricochetCard), "Cards offered for the wrong weapon.");
-        Require(shooter.SelectWeapon(droneIndex), "Drone weapon not selectable.");
-        int baseDrones = shooter.baseWeapon.maxActive;
-        yield return Wait(0.2f);
-        Require(UnityEngine.Object.FindObjectsOfType<WeaponDrone>().Length == baseDrones, "Base drone count.");
-        Require(progression.Available(droneCount) && progression.Available(droneDamage) && !progression.Available(turretCount) && !progression.Available(ricochetCard),
-            "Drone weapon card availability.");
+        // Дрон, турель и мины — улучшения боя для любого оружия (в выборе перед боем их нет).
+        UpgradeDefinition mineCount = progression.catalog.entries.Find(e => e.id == "mine_count");
+        Require(mineCount != null, "mine_count card missing.");
+        shooter.SelectWeapon(Array.FindIndex(shooter.weapons, w => w != null && w.kind == WeaponKind.Standard));
+        Require(progression.Available(droneCount) && progression.Available(turretCount) && progression.Available(mineCount) && progression.Available(ricochetCard) &&
+            !progression.Available(droneDamage) && !progression.Available(turretDamage), "Support cards availability with an ordinary weapon.");
         BindingFlags flags2 = BindingFlags.NonPublic | BindingFlags.Instance;
         var ranks = (Dictionary<string, int>)typeof(PlayerProgression).GetField("ranks", flags2).GetValue(progression);
         ranks["drone_count"] = 2;
         ranks["drone_damage"] = 5;
-        typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
-        yield return Wait(0.2f);
-        Require(UnityEngine.Object.FindObjectsOfType<WeaponDrone>().Length == baseDrones + 2, "Drones after 2 ranks: " + UnityEngine.Object.FindObjectsOfType<WeaponDrone>().Length);
-        SpecialWeapons special = player.GetComponent<SpecialWeapons>();
-        Require(Mathf.Approximately(special.DroneDamage, 2f) && special.SupportDamage(special.DroneDamage) >= 2, "Drone damage multiplier " + special.DroneDamage);
-        Require(shooter.SelectWeapon(turretIndex), "Turret weapon not selectable.");
         ranks["turret_count"] = 2;
         ranks["turret_damage"] = 3;
+        ranks["mine_count"] = 2;
         typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
-        Require(special.TurretLimit == shooter.baseWeapon.maxActive + 2 && Mathf.Approximately(special.TurretDamage, 1.6f),
-            "Turret limit/damage " + special.TurretLimit + " / " + special.TurretDamage);
-        Require(progression.Available(turretCount) && !progression.Available(droneCount), "Turret weapon card availability.");
-        Pass("Drone cards: " + baseDrones + " -> " + (baseDrones + 2) + " drones, x2.0 damage; turret limit " + special.TurretLimit + ", x1.6 damage; cards only with the matching weapon.");
+        yield return Wait(0.2f);
+        Require(UnityEngine.Object.FindObjectsOfType<WeaponDrone>().Length == 2, "Drones after 2 ranks: " + UnityEngine.Object.FindObjectsOfType<WeaponDrone>().Length);
+        SpecialWeapons droneUnit = null, turretUnit = null, mineUnit = null;
+        foreach (SpecialWeapons unit in player.GetComponents<SpecialWeapons>())
+        {
+            if (!unit.support) continue;
+            if (unit.Weapon.kind == WeaponKind.Drone) droneUnit = unit;
+            if (unit.Weapon.kind == WeaponKind.Turret) turretUnit = unit;
+            if (unit.Weapon.kind == WeaponKind.Mines) mineUnit = unit;
+        }
+        Require(droneUnit != null && turretUnit != null && mineUnit != null, "Support units were not created.");
+        Require(Mathf.Approximately(droneUnit.DroneDamage, 2f) && droneUnit.SupportDamage(droneUnit.DroneDamage) >= 2, "Drone damage multiplier " + droneUnit.DroneDamage);
+        Require(turretUnit.TurretLimit == 2 && Mathf.Approximately(turretUnit.TurretDamage, 1.6f), "Turret limit/damage " + turretUnit.TurretLimit + " / " + turretUnit.TurretDamage);
+        Require(mineUnit.MineLimit == 4, "Mine limit after 2 ranks (expected 4): " + mineUnit.MineLimit);
+        Require(progression.Available(droneDamage) && progression.Available(turretDamage), "Damage cards must appear after the first unit.");
+        Pass("Support upgrades with an ordinary weapon: 2 drones x2.0 damage, turret limit " + turretUnit.TurretLimit + " x1.6, mine limit " + mineUnit.MineLimit + "; damage cards appear only after the first unit.");
 
         // 9. The remaining cards: survival, combat, progress and cursed upgrades, card texts, reroll.
         origin = player.transform.position;
@@ -327,9 +329,9 @@ public static class CombatMechanicsChecks
             string text = (string)preview.Invoke(progression, new object[] { definition });
             Require(!string.IsNullOrEmpty(text), "Empty card text for " + definition.id);
         }
-        Pass("All 34 cards produce a text preview.");
+        Pass("All 35 cards produce a text preview.");
 
-        foreach (string id in new[] { "crit_chance", "crit_power", "pierce", "ricochet", "drone_count", "drone_damage", "turret_count", "turret_damage" }) ranks[id] = 0;
+        foreach (string id in new[] { "crit_chance", "crit_power", "pierce", "ricochet", "drone_count", "drone_damage", "turret_count", "turret_damage", "mine_count" }) ranks[id] = 0;
         float baseRange = shooter.range;
         int basePellets = shooter.CurrentPelletCount;
         ranks["armor"] = 4; ranks["regen"] = 5; ranks["vampirism"] = 5; ranks["dash_cooldown"] = 4;

@@ -31,6 +31,7 @@ public class WeaponData //: MonoBehaviour
     public float fireRate = 0.5f;
     public int damage = 20;
     public float range = 20f;
+    public bool useAutomaticShotSound;
 
 
    [Header("Shotgun")]
@@ -86,4 +87,7 @@ public class WeaponData //: MonoBehaviour
     public float placedFireRate = 0.4f;
 
     public bool IsUsable { get { return kind != WeaponKind.Standard || bulletPrefab != null; } }
+
+    // Дроны, турель и мины больше не выбираются перед боем: они появляются как улучшения во время боя (AutoShoter.SetSupportUnits).
+    public bool IsSelectable { get { return IsUsable && kind != WeaponKind.Drone && kind != WeaponKind.Turret && kind != WeaponKind.Mines; } }
 }

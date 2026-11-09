@@ -29,7 +29,9 @@ public class Bullet : MonoBehaviour, IProjectile
             if (WeaponTargets.Flat(transform.position, candidate.transform.position) <= radius + WeaponTargets.BodyRadius(candidate) * 0.5f)
                 candidate.TakeDamage(blast);
         }
-        ExpandingSphere.Create(transform.position, radius, new Color(1f, 0.6f, 0.2f), 0.2f);
+        // Взрывная пуля: лёгкий вариант взрыва без тряски (их бывает много).
+        Vector3 blastPoint = transform.position;
+        EnemyFx.Explosion(new Vector3(blastPoint.x, GroundHeight.At(blastPoint), blastPoint.z), radius * 0.7f, 0f, false);
     }
 
     private bool Redirect()
@@ -75,6 +77,7 @@ public class Bullet : MonoBehaviour, IProjectile
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+        ProjectileModels.Skin(gameObject, "bullet", 0.7f);
         rb.velocity = transform.forward * speed;
         
         Destroy(gameObject, lifeTime);

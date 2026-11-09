@@ -40,18 +40,26 @@ public class SpecialWeapons : MonoBehaviour
         SyncDrones();
     }
 
-    // Upgrade bonuses for the support weapons: extra drones/turrets and a damage multiplier for each.
-    public int ExtraDrones { get; private set; }
-    public int ExtraTurrets { get; private set; }
+    // Юниты из улучшений боя (support = true): их число задаёт только улучшение. Без support — то же оружие,
+    // выбранное основным (сейчас только в WeaponChecks): число берётся из weapon.maxActive.
+    public bool support;
+    public int Drones { get; private set; }
+    public int Turrets { get; private set; }
+    public int Mines { get; private set; }
     public float DroneDamage { get; private set; } = 1f;
     public float TurretDamage { get; private set; } = 1f;
-    public int DroneLimit { get { return weapon == null ? 0 : Mathf.Max(1, weapon.maxActive) + ExtraDrones; } }
-    public int TurretLimit { get { return weapon == null ? 0 : Mathf.Max(1, weapon.maxActive) + ExtraTurrets; } }
+    private int BaseActive { get { return weapon == null ? 0 : Mathf.Max(1, weapon.maxActive); } }
+    public int DroneLimit { get { return support ? Drones : BaseActive; } }
+    public int TurretLimit { get { return support ? Turrets : BaseActive; } }
+    public int MineLimit { get { return support ? SupportMines(Mines) : BaseActive; } }
+    // Улучшение «Сапёрные мины»: 1-й ранг — 3 мины, каждый следующий +1.
+    public static int SupportMines(int ranks) { return ranks <= 0 ? 0 : 2 + ranks; }
 
-    public void SetBonuses(int drones, int turrets, float droneDamage, float turretDamage)
+    public void SetUnits(int drones, int turrets, int mines, float droneDamage, float turretDamage)
     {
-        ExtraDrones = Mathf.Max(0, drones);
-        ExtraTurrets = Mathf.Max(0, turrets);
+        Drones = Mathf.Max(0, drones);
+        Turrets = Mathf.Max(0, turrets);
+        Mines = Mathf.Max(0, mines);
         DroneDamage = Mathf.Max(1f, droneDamage);
         TurretDamage = Mathf.Max(1f, turretDamage);
         SyncDrones();
@@ -91,6 +99,8 @@ public class SpecialWeapons : MonoBehaviour
     private void Update()
     {
         if (flame != null && flame.activeSelf && Time.time > flameUntil) flame.SetActive(false);
+        // Огнемёт бьёт каждые ~0,15 с: звук - непрерывная петля, пока горит пламя, а не новый звук на каждый тик.
+        if (flame != null && flame.activeSelf && Running) GameAudio.Hold(SfxLoop.Flame, 0.6f);
     }
 
     // Beams, projectiles and blasts start at the hero's centre (like target selection), not at the muzzle,
@@ -138,6 +148,7 @@ public class SpecialWeapons : MonoBehaviour
     // Damage everything within the radius and show a short expanding sphere.
     public static void Blast(Vector3 center, float radius, int damage, Color color, SpecialWeapons source = null)
     {
+        GameAudio.Play(Sfx.Explosion, 0.75f);   // ракета и мина
         WeaponTargets.Collect(blastBuffer);
         foreach (Health health in blastBuffer)
             if (WeaponTargets.Flat(center, health.transform.position) <= radius + WeaponTargets.BodyRadius(health) * 0.5f)
@@ -145,12 +156,23 @@ public class SpecialWeapons : MonoBehaviour
                 if (source != null) source.Hit(health, damage);
                 else Damage(health, damage);
             }
-        ExpandingSphere.Create(center, radius, color, 0.3f);
+        // Ракета и мина: полноценный взрыв (вспышка, огонь, дым, искры, обломки) вместо простой сферы.
+        EnemyFx.Explosion(new Vector3(center.x, GroundHeight.At(center), center.z), radius * 0.8f, Mathf.Clamp01(radius / 5f));
     }
 
     public void Fire(int damage, Transform target)
     {
         if (weapon == null || shooter == null || target == null || !Running) return;
+        // Отдача модели в руке: лёгкая для большинства (дымок только у «огнестрельных»), у ракетницы — полная анимация ниже.
+        switch (weapon.kind)
+        {
+            case WeaponKind.Rail: shooter.PlayWeaponRecoil(0.5f, true); break;
+            case WeaponKind.Ice: shooter.PlayWeaponRecoil(0.3f, false); break;
+            case WeaponKind.Arc: shooter.PlayWeaponRecoil(0.2f, false); break;
+            case WeaponKind.Flame: shooter.PlayWeaponRecoil(0.08f, false); break;
+            case WeaponKind.Rocket: shooter.PlayWeaponRecoil(0f, false); break;
+        }
+        PlayFireSound();
         Vector3 origin = Origin();
         switch (weapon.kind)
         {
@@ -161,10 +183,13 @@ public class SpecialWeapons : MonoBehaviour
                         Mathf.Min(weapon.range, WeaponTargets.Flat(origin, target.position) + 3f));
                 break;
             case WeaponKind.Mines:
-                if (CountAlive<WeaponMine>() < Mathf.Max(1, weapon.maxActive)) WeaponMine.Create(this, transform.position, damage);
+                if (CountAlive<WeaponMine>() < MineLimit) WeaponMine.Create(this, transform.position, damage);
                 break;
             case WeaponKind.Rocket:
                 WeaponProjectile.CreateRocket(this, origin, FlatDirection(origin, target.position), damage);
+                // Отскок ракетницы, дым у жерла и из сопла, боеголовка в жерле возвращается к середине перезарядки.
+                WeaponFireAnimation fx = ModelSkins.CurrentWeaponFx;
+                if (fx != null) fx.Play(1f, Mathf.Clamp(weapon.fireRate * 0.5f, 0.15f, 0.8f));
                 break;
             case WeaponKind.Ice:
                 WeaponProjectile.CreateIce(this, origin, FlatDirection(origin, target.position), damage);
@@ -180,6 +205,21 @@ public class SpecialWeapons : MonoBehaviour
                 }
                 break;
             default: break; // drones act on their own
+        }
+    }
+
+    private void PlayFireSound()
+    {
+        switch (weapon.kind)
+        {
+            case WeaponKind.Rail: GameAudio.Play(Sfx.Rail); break;
+            case WeaponKind.Arc: GameAudio.Play(Sfx.Arc); break;
+            case WeaponKind.Rocket: GameAudio.Play(Sfx.Rocket); break;
+            case WeaponKind.Ice: GameAudio.Play(Sfx.Ice); break;
+            // Только вспышка зажигания, когда пламя загорается заново; дальше звучит петля (Update).
+            case WeaponKind.Flame: if (flame == null || !flame.activeSelf) GameAudio.Play(Sfx.Flame, 0.5f); break;
+            case WeaponKind.Boomerang: GameAudio.Play(Sfx.Throw); break;
+            case WeaponKind.Turret: if (CountAlive<WeaponTurret>() < TurretLimit) GameAudio.Play(Sfx.Deploy, 0.6f); break;
         }
     }
 
@@ -211,7 +251,10 @@ public class SpecialWeapons : MonoBehaviour
             point.y = 0.9f;
             Hit(current, Mathf.Max(1, Mathf.RoundToInt(strength)));
             hit.Add(current);
-            BeamFlash.Create(from, point, new Color(0.65f, 0.8f, 1f), 0.14f, 0.2f);
+            Color electric = new Color(0.35f, 0.6f, 1f);
+            LightningBolt.Create(from, point, electric, jump == 0 ? 0.42f : 0.34f, jump == 0 ? 0.55f : 0.48f, jump == 0 ? 3 : 2);
+            if (jump == 0) LightningBolt.Impact(from, electric, 0.45f, false);   // вспышка у ствола
+            LightningBolt.Impact(point, electric, 1f - 0.12f * jump);
             from = point;
             strength *= weapon.chainFalloff;
             current = NearestUnhit(current.transform.position, hit, weapon.chainRadius);
@@ -247,7 +290,9 @@ public class SpecialWeapons : MonoBehaviour
             // Wide bodies count when their edge is inside the cone.
             float slack = distance > 0.01f ? Mathf.Atan2(radius, distance) * Mathf.Rad2Deg : 180f;
             if (distance > 0.8f && Vector3.Angle(direction, offset) > half + slack) continue;
-            Hit(health, damage);
+            Health.HitSoundScale = 0.35f;   // тики огня частые - попадания тише
+            try { Hit(health, damage); }
+            finally { Health.HitSoundScale = 1f; }
             BurnEffect.Apply(health, weapon.burnPerSecond, weapon.effectDuration);
         }
         if (flame == null) flame = Prim(PrimitiveType.Sphere, "Flame", origin, Vector3.one, new Color(1f, 0.5f, 0.1f));
@@ -257,6 +302,43 @@ public class SpecialWeapons : MonoBehaviour
         flame.transform.localScale = new Vector3(width, 0.5f, weapon.range);
         flame.SetActive(true);
         flameUntil = Time.time + 0.2f;
+        IgniteGround(origin, direction, target);
+    }
+
+    // --- Огнемёт поджигает землю: небольшие очаги в конце струи поджигают врагов, героя не жгут.
+    private const int GroundFireLimit = 5;
+    private const float GroundFireInterval = 0.6f, GroundFireLife = 3f, GroundFireMerge = 1.3f;
+    private readonly List<GroundFireZone> groundFires = new List<GroundFireZone>();
+    private float nextGroundFire;
+    public int GroundFireCount { get { groundFires.RemoveAll(f => f == null || !f.Burning); return groundFires.Count; } }
+
+    private void IgniteGround(Vector3 origin, Vector3 direction, Transform target)
+    {
+        if (Time.time < nextGroundFire) return;
+        nextGroundFire = Time.time + GroundFireInterval;
+        Vector3 point = origin + direction * weapon.range * 0.65f;
+        float toTarget = WeaponTargets.Flat(origin, target.position);
+        if (toTarget < weapon.range) point = origin + direction * Mathf.Max(1.5f, toTarget);
+        point.y = 0f;
+        if (ArenaLayout.Instance != null && !ArenaLayout.Instance.IsWalkable(point, 0.5f)) return;
+
+        groundFires.RemoveAll(f => f == null || !f.Burning);
+        foreach (GroundFireZone fire in groundFires)
+        {
+            if (WeaponTargets.Flat(fire.transform.position, point) > GroundFireMerge) continue;
+            fire.Refresh(GroundFireLife, 0.15f, 1.8f);
+            return;
+        }
+        if (groundFires.Count >= GroundFireLimit)
+        {
+            groundFires[0].Extinguish();
+            groundFires.RemoveAt(0);
+        }
+        float burn = weapon.burnPerSecond, duration = Mathf.Max(1f, weapon.effectDuration * 0.5f);
+        GroundFireZone zone = GroundFireZone.Spawn(point, 1f, 1.3f, 0.5f, GroundFireLife,
+            health => BurnEffect.Apply(health, burn, duration), 0);
+        groundFires.Add(zone);
+        Register(zone.gameObject);
     }
 }
 
@@ -327,7 +409,9 @@ public class BurnEffect : MonoBehaviour
         tick += Time.deltaTime;
         if (tick < 0.5f) return;
         tick -= 0.5f;
-        SpecialWeapons.Damage(health, Mathf.Max(1, Mathf.RoundToInt(damagePerSecond * 0.5f)));
+        Health.HitSoundScale = 0f;   // горение без звука попадания
+        try { SpecialWeapons.Damage(health, Mathf.Max(1, Mathf.RoundToInt(damagePerSecond * 0.5f))); }
+        finally { Health.HitSoundScale = 1f; }
     }
 }
 
@@ -385,8 +469,12 @@ public class WeaponProjectile : MonoBehaviour
     private static void Spawn(SpecialWeapons owner, Vector3 origin, Vector3 direction, int damage, bool ice, Color color, Vector3 scale)
     {
         WeaponData data = owner.Weapon;
-        GameObject item = SpecialWeapons.Prim(ice ? PrimitiveType.Sphere : PrimitiveType.Capsule, ice ? "Ice shot" : "Rocket", origin, scale, color);
-        item.transform.rotation = Quaternion.LookRotation(direction) * (ice ? Quaternion.identity : Quaternion.Euler(90f, 0f, 0f));
+        GameObject item = ProjectileModels.Create(ice ? "ice_shard" : "rocket", origin, Quaternion.LookRotation(direction), ice ? 0.75f : 1.6f);
+        if (item == null)
+        {
+            item = SpecialWeapons.Prim(ice ? PrimitiveType.Sphere : PrimitiveType.Capsule, ice ? "Ice shot" : "Rocket", origin, scale, color);
+            item.transform.rotation = Quaternion.LookRotation(direction) * (ice ? Quaternion.identity : Quaternion.Euler(90f, 0f, 0f));
+        }
         WeaponProjectile shot = item.AddComponent<WeaponProjectile>();
         shot.owner = owner;
         shot.direction = direction;
@@ -466,6 +554,9 @@ public class WeaponSaw : MonoBehaviour
         age += Time.deltaTime;
         transform.Rotate(0f, 900f * Time.deltaTime, 0f);
         Vector3 position = transform.position;
+        // Звук вращения: громче рядом с героем, выше на быстрой пиле и на возврате.
+        float near = owner != null ? Mathf.Lerp(1f, 0.45f, Mathf.Clamp01(WeaponTargets.Flat(position, owner.transform.position) / 18f)) : 0.6f;
+        GameAudio.Hold(SfxLoop.Saw, 0.55f * near, Mathf.Lerp(0.9f, 1.25f, Mathf.InverseLerp(6f, 30f, speed)) * (returning ? 1.06f : 1f));
         if (!returning)
         {
             Vector3 next = position + direction * step;
@@ -486,6 +577,8 @@ public class WeaponSaw : MonoBehaviour
             if (!hit.Contains(health) && WeaponTargets.Flat(transform.position, health.transform.position) <= radius + WeaponTargets.BodyRadius(health))
             {
                 hit.Add(health);
+                GameAudio.Play(Sfx.SawCut, 0.8f);
+                GameAudio.Load(SfxLoop.Saw, 0.8f);   // диск «вязнет» в теле и снова раскручивается
                 if (owner != null) owner.Hit(health, damage);
                 else SpecialWeapons.Damage(health, damage);
             }
@@ -565,6 +658,7 @@ public class WeaponTurret : MonoBehaviour
         Vector3 to = target.position;
         to.y = 0.9f;
         barrel.rotation = Quaternion.LookRotation(new Vector3(to.x - from.x, 0f, to.z - from.z));
+        GameAudio.Play(Sfx.Zap, 0.35f);
         owner.Hit(target.GetComponent<Health>(), owner.SupportDamage(owner.TurretDamage));
         BeamFlash.Create(from, to, new Color(1f, 0.9f, 0.4f), 0.08f, 0.06f);
     }
@@ -609,6 +703,7 @@ public class WeaponDrone : MonoBehaviour
         timer = 0f;
         Vector3 to = target.position;
         to.y = 0.9f;
+        GameAudio.Play(Sfx.Zap, 0.3f, 0.12f);
         owner.Hit(target.GetComponent<Health>(), owner.SupportDamage(owner.DroneDamage));
         BeamFlash.Create(transform.position, to, new Color(0.4f, 1f, 0.9f), 0.07f, 0.06f);
     }

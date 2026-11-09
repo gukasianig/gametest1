@@ -28,7 +28,6 @@ public class GameSession : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        if (Application.targetFrameRate < 0) Application.targetFrameRate = 60;
         waves = FindObjectOfType<WaveManager>();
         if (ArenaLayout.Instance == null) new GameObject("Industrial Arena").AddComponent<ArenaLayout>();
         if (GetComponent<ArenaEvents>() == null) gameObject.AddComponent<ArenaEvents>();
@@ -42,10 +41,20 @@ public class GameSession : MonoBehaviour
         return index;
     }
 
+    // Test arena (main menu): no waves, no Guardian, no rewards. Reset on every scene load.
+    public static bool TestMode { get; set; }
+
     public void Begin(int weapon)
     {
         SelectedWeapon = weapon;
-        survivalSeconds = RunModifiers.SurvivalSeconds(survivalSeconds);
+        survivalSeconds = TestMode ? 1000000f : RunModifiers.SurvivalSeconds(survivalSeconds);
+        if (TestMode)
+        {
+            if (waves != null) waves.StopSpawning();
+            TestArena arena = GetComponent<TestArena>();
+            if (arena == null) arena = gameObject.AddComponent<TestArena>();
+            arena.Build(weapon);
+        }
         Elapsed = 0f;
         BossWarning = false;
         State = GameRunState.Playing;
@@ -71,10 +80,12 @@ public class GameSession : MonoBehaviour
             announceUntil = 0f;
         }
         // The level-up screen has its own title in the same place: hide the timer while cards are open.
-        clock.enabled = State != GameRunState.Upgrade;
+        clockPlate.gameObject.SetActive(State != GameRunState.Upgrade && !TestMode);
         int seconds = Mathf.FloorToInt(Mathf.Max(0f, survivalSeconds - Elapsed));
-        clock.text = Boss != null ? "Уничтожь Стража арены" :
-            "До Стража  " + (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00") + "   •   Esc — пауза";
+        clockCaption.text = Boss != null ? "СТРАЖ АРЕНЫ" : "ДО СТРАЖА";
+        clock.text = Boss != null ? "Уничтожь!" : (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00");
+        // Последние 10 секунд до Стража — красные цифры.
+        clock.color = Boss == null && seconds <= 10 ? new Color(1f, 0.4f, 0.3f) : Color.white;
         if (Boss != null && Boss.Health != null)
             bossFill.rectTransform.anchorMax = new Vector2((float)Boss.Health.CurrentHealth / Boss.Health.maxHealth, 1f);
     }
@@ -87,6 +98,24 @@ public class GameSession : MonoBehaviour
         if (BossWarning || announcement == null) return;
         announcement.text = text;
         announceUntil = Time.unscaledTime + seconds;
+        announcedAt = Time.unscaledTime;
+    }
+
+    private RectTransform clockPlate;
+    private Text clockCaption;
+    private float announcedAt = -10f;
+
+    // Анонс «выпрыгивает»: короткий рост с перелётом и затухание в конце.
+    private void LateUpdate()
+    {
+        if (announcement == null) return;
+        float age = Time.unscaledTime - announcedAt;
+        float pop = age < 0.25f ? Mathf.Lerp(0.6f, 1.12f, age / 0.25f) : age < 0.4f ? Mathf.Lerp(1.12f, 1f, (age - 0.25f) / 0.15f) : 1f;
+        announcement.rectTransform.localScale = Vector3.one * pop;
+        Color c = announcement.color;
+        float left = announceUntil > 0f ? announceUntil - Time.unscaledTime : 1f;
+        c.a = Mathf.Clamp01(left / 0.4f);
+        announcement.color = c;
     }
 
     public bool EnterUpgrade()
@@ -127,6 +156,8 @@ public class GameSession : MonoBehaviour
         if (waves != null) waves.StopSpawning();
         foreach (EnemyAI enemy in FindObjectsOfType<EnemyAI>()) Destroy(enemy.gameObject);
         announcement.text = "ПРИБЛИЖАЕТСЯ СТРАЖ\nСобери опыт и приготовься";
+        announceUntil = 0f;
+        announcedAt = Time.unscaledTime;
     }
 
     private void SpawnBoss()
@@ -166,7 +197,8 @@ public class GameSession : MonoBehaviour
         int seconds = Mathf.FloorToInt(Elapsed);
         int kills = stats != null ? stats.Kills : 0;
         int level = GetComponent<PlayerProgression>().Level;
-        RunReward reward = MetaProgress.RecordRun(SelectedWeapon, victory, Elapsed, kills, level);
+        RunReward reward = TestMode ? new RunReward() : MetaProgress.RecordRun(SelectedWeapon, victory, Elapsed, kills, level,
+            stats != null ? stats.DamageDealt : 0, waves != null ? waves.wave : 0);
         resultBody.text = "Время  " + seconds / 60 + ":" + (seconds % 60).ToString("00") +
             (reward.newBestTime ? "  (новый рекорд!)" : "") +
             "\nУбийства  " + kills + (reward.newBestKills ? "  (новый рекорд!)" : "") +
@@ -180,7 +212,8 @@ public class GameSession : MonoBehaviour
 
     public void Reload(bool repeat)
     {
-        RestartWeapon = repeat ? SelectedWeapon : -1;
+        RestartWeapon = repeat && !TestMode ? SelectedWeapon : -1;
+        TestMode = false;
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
@@ -188,25 +221,28 @@ public class GameSession : MonoBehaviour
     private void BuildUI()
     {
         overlay = GameUi.Canvas("Session UI", 150);
-        clock = GameUi.Label(overlay.transform, "", new Vector2(0.2f, 0.84f), new Vector2(0.8f, 0.9f), 20);
-        announcement = GameUi.Label(overlay.transform, "", new Vector2(0.1f, 0.65f), new Vector2(0.9f, 0.82f), 32,
-            new Color(1f, 0.65f, 0.25f));
+        // Таймер: плашка под полосой опыта, крупные цифры и подпись.
+        clockPlate = GameUi.Box(overlay.transform, "Clock", new Vector2(0.42f, 0.845f), new Vector2(0.58f, 0.925f),
+            new Color(0.02f, 0.035f, 0.05f, 0.78f));
+        UiArtwork.Round(clockPlate.GetComponent<Image>());
+        clockCaption = GameUi.Label(clockPlate, "ДО СТРАЖА", new Vector2(0f, 0.62f), Vector2.one, 13, new Color(0.6f, 0.68f, 0.76f));
+        clock = GameUi.Readable(GameUi.Label(clockPlate, "", new Vector2(0f, 0f), new Vector2(1f, 0.72f), 30));
+        clock.fontStyle = FontStyle.Bold;
+        announcement = GameUi.Readable(GameUi.Label(overlay.transform, "", new Vector2(0.1f, 0.66f), new Vector2(0.9f, 0.8f), 34,
+            new Color(1f, 0.65f, 0.25f)), 2f);
+        announcement.fontStyle = FontStyle.Bold;
         bossBar = GameUi.Box(overlay.transform, "Boss HP", new Vector2(0.2f, 0.77f), new Vector2(0.8f, 0.83f), GameUi.Background);
         bossFill = GameUi.Box(bossBar, "Fill", Vector2.zero, Vector2.one, new Color(0.65f, 0.17f, 0.1f)).GetComponent<Image>();
         GameUi.Label(bossBar, "СТРАЖ АРЕНЫ", Vector2.zero, Vector2.one, 20);
         bossBar.gameObject.SetActive(false);
         pause = GameUi.Box(overlay.transform, "Pause", Vector2.zero, Vector2.one, GameUi.Background, true);
         GameUi.Label(pause, "ПАУЗА", new Vector2(0.2f, 0.72f), new Vector2(0.8f, 0.88f), 44);
-        GameUi.Button(pause, "Продолжить", new Vector2(0.33f, 0.53f), new Vector2(0.67f, 0.64f), TogglePause);
-        GameUi.Button(pause, "Настройки", new Vector2(0.33f, 0.37f), new Vector2(0.67f, 0.48f), () => settings.gameObject.SetActive(true));
-        GameUi.Button(pause, "В главное меню", new Vector2(0.33f, 0.21f), new Vector2(0.67f, 0.32f), () => Reload(false));
-        settings = GameUi.Box(overlay.transform, "Settings", Vector2.zero, Vector2.one, GameUi.Background, true);
-        GameUi.Label(settings, "НАСТРОЙКИ", new Vector2(0.2f, 0.77f), new Vector2(0.8f, 0.9f), 36);
-        Setting("Ограничение FPS", 0.58f, () => Application.targetFrameRate = Application.targetFrameRate == 60 ? 120 : 60,
-            () => Application.targetFrameRate + " FPS");
-        Setting("Качество графики", 0.4f, () => QualitySettings.SetQualityLevel((QualitySettings.GetQualityLevel() + 1) % QualitySettings.names.Length),
-            () => QualitySettings.names[QualitySettings.GetQualityLevel()]);
-        GameUi.Button(settings, "Назад", new Vector2(0.35f, 0.18f), new Vector2(0.65f, 0.28f), () => settings.gameObject.SetActive(false));
+        GameUi.Button(pause, "Продолжить", new Vector2(0.33f, 0.58f), new Vector2(0.67f, 0.67f), TogglePause);
+        // Заново: тот же забег с тем же оружием, текущий забег не засчитывается (как и выход в меню из паузы).
+        GameUi.Button(pause, "Заново", new Vector2(0.33f, 0.46f), new Vector2(0.67f, 0.55f), () => Reload(true));
+        GameUi.Button(pause, "Настройки", new Vector2(0.33f, 0.34f), new Vector2(0.67f, 0.43f), () => settings.gameObject.SetActive(true));
+        GameUi.Button(pause, "В главное меню", new Vector2(0.33f, 0.22f), new Vector2(0.67f, 0.31f), () => Reload(false));
+        settings = SettingsPanel.Build(overlay.transform, () => settings.gameObject.SetActive(false));
         pause.gameObject.SetActive(false);
         settings.gameObject.SetActive(false);
         result = GameUi.Box(overlay.transform, "Results", Vector2.zero, Vector2.one, GameUi.Background, true);
@@ -215,16 +251,6 @@ public class GameSession : MonoBehaviour
         GameUi.Button(result, "Заново", new Vector2(0.18f, 0.14f), new Vector2(0.48f, 0.27f), () => Reload(true));
         GameUi.Button(result, "В главное меню", new Vector2(0.52f, 0.14f), new Vector2(0.82f, 0.27f), () => Reload(false));
         result.gameObject.SetActive(false);
-    }
-
-    private void Setting(string title, float y, UnityEngine.Events.UnityAction action, System.Func<string> value)
-    {
-        Button button = null;
-        button = GameUi.Button(settings, title + ": " + value(), new Vector2(0.2f, y), new Vector2(0.8f, y + 0.11f), () =>
-        {
-            action();
-            button.GetComponentInChildren<Text>().text = title + ": " + value();
-        });
     }
 
     private void OnDestroy()

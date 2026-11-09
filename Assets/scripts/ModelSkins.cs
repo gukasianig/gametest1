@@ -138,24 +138,34 @@ public static class ModelSkins
         model.transform.localRotation = Quaternion.Euler(entry.eulerOffset);
         model.transform.localScale = Vector3.one * entry.sizeMultiplier;
         foreach (Collider c in model.GetComponentsInChildren<Collider>()) Object.Destroy(c);
-        if (entry.centerOnHand && LocalBounds(model.transform, hero, out Vector3 bmin, out Vector3 bmax))
+        if (entry.centerOnHand && LocalBounds(model.transform, socket, out Vector3 bmin, out Vector3 bmax))
         {
-            // Центр модели по длине — чуть впереди кисти (у некоторых моделей начало координат на конце ствола).
-            float handZ = hero.InverseTransformPoint(socket.position).z;
-            float shift = handZ + 0.1f - (bmin.z + bmax.z) * 0.5f;
-            model.transform.position += hero.forward * shift;
+            // Fit the rear grip in socket space so switching a weapon mid-animation keeps the same grip.
+            Vector3 grip = new Vector3((bmin.x + bmax.x) * .5f, Mathf.Lerp(bmin.y, bmax.y, .26f), Mathf.Lerp(bmin.z, bmax.z, .28f));
+            model.transform.localPosition += entry.localPosition - grip;
         }
-        CreateMuzzle(model.transform, hero, entry.muzzleOffset);
+        CreateMuzzle(model.transform, socket, entry.muzzleOffset);
+        // Анимация выстрела (отскок, перезарядка боеголовки, дым) — запоминается после окончательной расстановки.
+        currentWeaponFx = model.AddComponent<WeaponFireAnimation>();
+        currentWeaponFx.Init(socket);
     }
 
-    // Точка выстрела на конце ствола: самая передняя точка модели вдоль «вперёд» героя, по центру и чуть выше середины.
-    static void CreateMuzzle(Transform skin, Transform hero, Vector3 offset)
+    static WeaponFireAnimation currentWeaponFx;
+
+    // Анимация выстрела текущей модели оружия героя или null.
+    public static WeaponFireAnimation CurrentWeaponFx
     {
-        if (!LocalBounds(skin, hero, out Vector3 min, out Vector3 max)) return;
+        get { return currentWeaponFx != null && currentWeaponFx.gameObject.activeInHierarchy ? currentWeaponFx : null; }
+    }
+
+    // The muzzle is calculated in weapon coordinates and moves with the grip.
+    static void CreateMuzzle(Transform skin, Transform socket, Vector3 offset)
+    {
+        if (!LocalBounds(skin, socket, out Vector3 min, out Vector3 max)) return;
         Vector3 local = new Vector3((min.x + max.x) * 0.5f, min.y + (max.y - min.y) * 0.65f, max.z) + offset;
         var muzzle = new GameObject("Muzzle").transform;
         muzzle.SetParent(skin, true);
-        muzzle.position = hero.TransformPoint(local);
+        muzzle.position = socket.TransformPoint(local);
         currentMuzzle = muzzle;
     }
 

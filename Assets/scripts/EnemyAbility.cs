@@ -165,7 +165,15 @@ public class EnemyAbility : MonoBehaviour
         BeginAction();
         Vector3 impact = ai.target.position;
         CircleAt(impact, MortarRadius);
-        yield return Wait(1.5f);
+        Face(impact - transform.position);
+        // Набирает спору (мешок пульсирует), выстреливает её по дуге — она падает в кольцо ровно к моменту урона.
+        Anim?.Hold(ModelWalkAnimator.Pose.Aim);
+        yield return Wait(0.45f);
+        Anim?.Release();
+        Anim?.Fire();
+        Vector3 landing = new Vector3(impact.x, GroundHeight.At(impact), impact.z);
+        MortarShell.Launch(Muzzle("SporeSac", transform.position + Vector3.up * 1.2f), landing, 1.05f, MortarRadius);
+        yield return Wait(1.05f);
         warning.enabled = false;
         if (ai.target != null && FlatDistance(impact, ai.target.position) <= MortarRadius)
             ai.target.GetComponent<PlayerHealth>()?.TakeDamage(MortarDamage);
@@ -187,9 +195,16 @@ public class EnemyAbility : MonoBehaviour
         if (found)
         {
             CircleAt(destination, 1.0f);
+            Anim?.Hold(ModelWalkAnimator.Pose.Blink);   // складывает крылья и исчезает, крутясь
             yield return Wait(0.7f);
             warning.enabled = false;
+            Color blink = RoleColor(role);
+            EnemyFx.Blobs(transform.position + Vector3.up * 0.5f, blink, 8, 3f, 0.1f, 0.4f, GroundHeight.At(transform.position));
             if (ArenaLayout.Instance.IsWalkable(destination, 0.5f)) transform.position = destination;
+            Anim?.Release();
+            Anim?.PopIn(0f, 0.3f);
+            EnemyFx.Blobs(transform.position + Vector3.up * 0.5f, blink, 8, 3f, 0.1f, 0.4f, GroundHeight.At(transform.position));
+            EnemyFx.Ring(new Vector3(transform.position.x, GroundHeight.At(transform.position) + 0.1f, transform.position.z), 1.2f, blink, 0.3f, 0.25f);
         }
         EndAction(5f);
     }
@@ -200,10 +215,15 @@ public class EnemyAbility : MonoBehaviour
     {
         BeginAction();
         Circle(BuffRadius);
+        Anim?.Hold(ModelWalkAnimator.Pose.Cast);
         yield return Wait(0.7f);
+        CastBurst(BuffRadius);
         foreach (EnemyAI ally in FindObjectsOfType<EnemyAI>())
             if (ally != ai && FlatDistance(transform.position, ally.transform.position) <= BuffRadius)
+            {
                 ally.Boost(BuffFactor, 4f);
+                ModelWalkAnimator.Of(ally)?.Flash(new Color(2f, 1.3f, 0.6f), 0.25f);
+            }
         EndAction(6f);
     }
 
@@ -223,6 +243,7 @@ public class EnemyAbility : MonoBehaviour
         acting = false;
         ai.MovementLocked = false;
         nextAction = Time.time + cooldown;
+        if (anim != null) anim.Release();
     }
     private Vector3 Aim()
     {
@@ -254,26 +275,54 @@ public class EnemyAbility : MonoBehaviour
     {
         BeginAction();
         Vector3 direction = Aim();
+        Face(direction);
         Line(transform.position + direction * 15f);
+        // Раздувает горловой мешок и воротник, затем плюёт сгустком кислоты.
+        Anim?.Hold(ModelWalkAnimator.Pose.Aim);
         yield return Wait(0.65f);
+        Anim?.Release();
         if (ai.target != null && ArenaLayout.Instance.PathClear(transform.position, transform.position + direction * 1.2f, 0.15f))
-            EnemyProjectile.Create(transform.position + direction * 1.2f, direction, ai.target, 10);
+        {
+            Anim?.Fire();
+            EnemyProjectile.Create(transform.position + direction * 1.2f, direction, ai.target, 10, EnemyProjectile.Style.Acid);
+            EnemyFx.Blobs(Muzzle("Head", transform.position + direction * 0.9f + Vector3.up), new Color(0.6f, 0.95f, 0.2f), 4, 2.5f, 0.08f, 0.3f,
+                GroundHeight.At(transform.position));
+        }
         EndAction(2.4f);
     }
     private IEnumerator Charge()
     {
         BeginAction();
         Vector3 direction = Aim();
+        Face(direction);
         Line(transform.position + direction * 8f);
-        yield return Wait(0.9f);
+        // Замах: приседает, опускает голову, бьёт лапой и роет землю.
+        Anim?.Hold(ModelWalkAnimator.Pose.Windup);
+        float ground = GroundHeight.At(transform.position);
+        for (float dust = 0f; dust < 0.9f; dust += 0.15f)
+        {
+            yield return Wait(0.15f);
+            EnemyFx.Puff(new Vector3(transform.position.x, ground + 0.15f, transform.position.z) + direction * 0.5f - Vector3.Cross(Vector3.up, direction) * 0.3f,
+                new Color(0.55f, 0.5f, 0.45f), 0.35f, 0.4f, -direction * 1.5f + Vector3.up);
+        }
         warning.enabled = false;
-        float elapsed = 0f;
+        Anim?.Hold(ModelWalkAnimator.Pose.Dash);
+        DashTrail(true);
+        float elapsed = 0f, nextDust = 0f;
         bool hit = false;
         while (elapsed < 0.65f)
         {
             if (Running)
             {
                 elapsed += Time.deltaTime;
+                if (elapsed >= nextDust)
+                {
+                    nextDust = elapsed + 0.05f;
+                    Vector3 feet = transform.position;
+                    feet.y = GroundHeight.At(feet) + 0.15f;
+                    EnemyFx.Puff(feet - direction * 0.4f + Random.insideUnitSphere * 0.25f, new Color(0.58f, 0.52f, 0.46f), 0.45f, 0.45f,
+                        -direction * 2f + Vector3.up * 0.8f);
+                }
                 Vector3 before = transform.position;
                 Vector3 after = ArenaLayout.Instance.ResolveMovement(before, before + direction * 12f * Time.deltaTime, 0.7f);
                 transform.position = after;
@@ -282,31 +331,118 @@ public class EnemyAbility : MonoBehaviour
                     ai.target.GetComponent<PlayerHealth>()?.TakeDamage(18);
                     hit = true;
                 }
-                if ((after - before).sqrMagnitude < 0.000001f) break;
+                if ((after - before).sqrMagnitude < 0.000001f)
+                {
+                    // Врезался в препятствие: облако пыли и лёгкая тряска.
+                    EnemyFx.Puff(after + direction * 0.6f + Vector3.up * 0.4f, new Color(0.6f, 0.55f, 0.5f), 1f, 0.5f, Vector3.up);
+                    ScreenShake.AddAt(after, 0.12f);
+                    break;
+                }
             }
             yield return null;
         }
+        DashTrail(false);
+        Anim?.Release();
+        Anim?.Fire();   // тормозит, мотнув головой
         EndAction(3.5f);
     }
+    // Подрывник взорвался сам (а не убит): труп разлетается обугленными кусками.
+    public bool Detonated { get; private set; }
     private IEnumerator Explode()
     {
         BeginAction();
         Circle(3.5f);
+        // Раздувается, мигает красным и дрожит всё быстрее.
+        Anim?.Hold(ModelWalkAnimator.Pose.Swell);
         yield return Wait(1.2f);
         if (DistanceToTarget <= 3.5f && ArenaLayout.Instance.PathClear(transform.position, ai.target.position, 0f))
             ai.target.GetComponent<PlayerHealth>()?.TakeDamage(25);
+        Detonated = true;
+        Vector3 ground = transform.position;
+        ground.y = GroundHeight.At(ground);
+        EnemyFx.Explosion(ground, 3.5f, 1f);
+        GameAudio.Play(Sfx.Explosion);
         health.TakeDamage(health.CurrentHealth);
     }
     private IEnumerator HealAllies()
     {
         BeginAction();
         Circle(7f);
+        Anim?.Hold(ModelWalkAnimator.Pose.Cast);
         yield return Wait(0.7f);
+        CastBurst(7f);
         foreach (EnemyAI ally in FindObjectsOfType<EnemyAI>())
             if (ally != ai && FlatDistance(transform.position, ally.transform.position) <= 7f &&
                 ArenaLayout.Instance.PathClear(transform.position, ally.transform.position, 0f))
-                ally.GetComponent<Health>()?.Heal(12);
+            {
+                Health allyHealth = ally.GetComponent<Health>();
+                if (allyHealth != null && allyHealth.Heal(12) > 0)
+                {
+                    ModelWalkAnimator.Of(ally)?.Flash(new Color(0.8f, 2f, 1.1f), 0.25f);
+                    EnemyFx.Blobs(ally.transform.position + Vector3.up * 0.8f, RoleColor(role), 3, 1.5f, 0.09f, 0.45f, GroundHeight.At(ally.transform.position));
+                }
+            }
         EndAction(4f);
+    }
+
+    // ---- Вид атак ----
+
+    private ModelWalkAnimator anim;
+    private ModelWalkAnimator Anim => anim != null ? anim : (anim = ModelWalkAnimator.Of(this));
+    private TrailRenderer dashTrail;
+
+    // Повернуться к цели атаки (иначе модель могла смотреть туда, куда шла).
+    private void Face(Vector3 direction)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude > 0.0001f) transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+    }
+
+    // Мировая точка части модели (мешок миномёта, голова стрелка) или запасная точка, если модели нет.
+    private Vector3 Muzzle(string part, Vector3 fallback)
+    {
+        Transform skin = transform.Find("SkinModel");
+        if (skin == null) return fallback;
+        foreach (Transform t in skin.GetComponentsInChildren<Transform>())
+            if (t.name == part)
+            {
+                Renderer r = t.GetComponent<Renderer>();
+                return r != null ? r.bounds.center : t.position;
+            }
+        return fallback;
+    }
+
+    // След за тараном на рывке.
+    private void DashTrail(bool on)
+    {
+        if (dashTrail == null)
+        {
+            if (!on) return;
+            var go = new GameObject("Dash trail");
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = Vector3.up * 0.5f;
+            dashTrail = go.AddComponent<TrailRenderer>();
+            dashTrail.time = 0.15f;
+            dashTrail.widthMultiplier = 0.45f;
+            dashTrail.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
+            dashTrail.sharedMaterial = EnemyFx.Mat(Color.Lerp(RoleColor(role), Color.white, 0.3f));
+            dashTrail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            dashTrail.receiveShadows = false;
+        }
+        dashTrail.Clear();
+        dashTrail.emitting = on;
+    }
+
+    // Выброс силы в конце каста (лечение, усиление, призыв): кольцо цвета роли и искры.
+    private void CastBurst(float radius)
+    {
+        Anim?.Release();
+        Anim?.Fire();
+        Vector3 ground = transform.position;
+        ground.y = GroundHeight.At(ground) + 0.1f;
+        Color color = RoleColor(role);
+        EnemyFx.Ring(ground, radius, color, 0.45f, 0.3f);
+        EnemyFx.Blobs(Muzzle("Head", transform.position + Vector3.up), color, 6, 3f, 0.09f, 0.45f, ground.y);
     }
 
     // Long thin warning, a pause, then one fast and heavy shot along the locked direction (sidestep to dodge).
@@ -321,14 +457,19 @@ public class EnemyAbility : MonoBehaviour
         muzzle.y = transform.position.y;
         Line(muzzle + direction * 28f, muzzle);
         warning.widthMultiplier = 0.07f;
+        // Пригибается и замирает, целясь костяным «стволом» на морде; выстрел — иглой с отдачей.
+        Anim?.Hold(ModelWalkAnimator.Pose.Aim);
         yield return Wait(1.2f);
+        Anim?.Release();
         warning.widthMultiplier = 0.12f;
         muzzle = transform.TransformPoint(new Vector3(0f, 0.25f, 1.45f));
         muzzle.y = transform.position.y;
         if (ai.target != null && ArenaLayout.Instance.PathClear(transform.position, muzzle + direction * 0.3f, 0.15f))
         {
-            EnemyProjectile shot = EnemyProjectile.Create(muzzle + direction * 0.3f, direction, ai.target, 22);
+            Anim?.Fire();
+            EnemyProjectile shot = EnemyProjectile.Create(muzzle + direction * 0.3f, direction, ai.target, 22, EnemyProjectile.Style.Quill);
             shot.speed = 24f;
+            EnemyFx.Puff(new Vector3(muzzle.x, 0.9f, muzzle.z), new Color(0.95f, 0.9f, 0.75f), 0.35f, 0.25f, direction * 2f);
         }
         EndAction(4.5f);
     }
@@ -338,9 +479,11 @@ public class EnemyAbility : MonoBehaviour
     {
         BeginAction();
         Circle(2.5f);
+        Anim?.Hold(ModelWalkAnimator.Pose.Cast);   // мешки с выводком пульсируют
         yield return Wait(0.8f);
+        CastBurst(2.5f);
         WaveManager waves = FindObjectOfType<WaveManager>();
-        if (splitPrefab != null && waves != null && !waves.Suspended)
+        if (splitPrefab != null && waves != null && (!waves.Suspended || GameSession.TestMode))
         {
             int cap = waves.settings.AbsoluteLimitForWave(waves.wave);
             for (int i = 0; i < 2 && LiveMinions < SummonerMinionLimit && EnemyAI.ActiveCount < cap; i++)
@@ -371,6 +514,8 @@ public class EnemyAbility : MonoBehaviour
         childHealth.SetHealth(15);
         childHealth.experienceReward = 0;
         ArenaLayout.Instance.Tint(child, RoleColor(role));
+        ModelWalkAnimator.Of(child.transform)?.PopIn(0f, 0.35f);   // «вылупляется» с перелётом масштаба
+        EnemyFx.Blobs(child.transform.position + Vector3.up * 0.3f, RoleColor(role), 5, 2.5f, 0.08f, 0.4f, groundHeight);
         return childHealth;
     }
 
@@ -378,7 +523,8 @@ public class EnemyAbility : MonoBehaviour
     {
         if (role != EnemyRole.Splitter || splitPrefab == null || !Running) return;
         WaveManager waves = FindObjectOfType<WaveManager>();
-        if (waves == null || waves.Suspended) return;
+        // В тест-арене волны выключены, но разделение должно работать, чтобы его можно было посмотреть.
+        if (waves == null || (waves.Suspended && !GameSession.TestMode)) return;
         int limit = waves.settings.AliveLimitForWave(waves.wave);
         for (int i = 0; i < 2 && EnemyAI.ActiveCount < limit; i++)
         {
@@ -399,6 +545,8 @@ public class EnemyAbility : MonoBehaviour
             childHealth.SetHealth(20);
             childHealth.experienceReward = 0;
             ArenaLayout.Instance.Tint(child, RoleColor(role));
+            // Осколок «вырастает» там, куда доехала половина трупа (EnemyCorpse.Split).
+            ModelWalkAnimator.Of(child.transform)?.PopIn(0.16f, 0.3f);
         }
     }
     private static float FlatDistance(Vector3 a, Vector3 b) { a.y = b.y = 0f; return Vector3.Distance(a, b); }
@@ -414,6 +562,8 @@ public class EnemyAbility : MonoBehaviour
         acting = false;
         if (ai != null) ai.MovementLocked = false;
         if (warning != null) warning.enabled = false;
+        if (dashTrail != null) dashTrail.emitting = false;
+        if (anim != null) anim.Release();
     }
     private void OnDestroy()
     {

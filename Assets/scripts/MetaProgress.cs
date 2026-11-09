@@ -14,6 +14,25 @@ public class MetaRecord
     public int bestLevel;
     public int runs;
     public int victories;
+    public long bestDamage;
+}
+
+// Last counted run, shown on the menu statistics screen.
+[Serializable]
+public class MetaLastRun
+{
+    public int weapon = -1;
+    public bool victory;
+    public float seconds;
+    public int kills;
+    public int level;
+    public int wave;
+    public long damage;
+    public int reward;
+    public float multiplier = 1f;
+    public string modifiers = "";
+    public string date = "";
+    public bool newBestTime, newBestKills;
 }
 
 // Everything that survives between runs. Lists of keyed entries (not fixed fields) let later features
@@ -31,6 +50,13 @@ public class MetaSave
     public List<string> unlocked = new List<string>();
     public List<MetaRecord> records = new List<MetaRecord>();
     public List<string> modifiers = new List<string>();   // run modifiers chosen in the menu (RunModifiers)
+    // Totals over all counted runs (added 09.11.2026; older saves start them from zero).
+    public long totalKills;
+    public long totalDamage;
+    public double totalSeconds;
+    public int totalLevels;
+    public bool hasLastRun;
+    public MetaLastRun lastRun = new MetaLastRun();
 }
 
 public class MetaUpgrade
@@ -141,6 +167,7 @@ public static class MetaProgress
             if (read.unlocked == null) read.unlocked = new List<string>();
             if (read.records == null) read.records = new List<MetaRecord>();
             if (read.modifiers == null) read.modifiers = new List<string>();
+            if (read.lastRun == null) { read.lastRun = new MetaLastRun(); read.hasLastRun = false; }
             return read;
         }
         catch (Exception) { return null; }
@@ -258,7 +285,8 @@ public static class MetaProgress
             Mathf.Max(1, level) * 3 + (victory ? 250 : 0);
     }
 
-    public static RunReward RecordRun(int weapon, bool victory, float seconds, int kills, int level)
+    public static RunReward RecordRun(int weapon, bool victory, float seconds, int kills, int level,
+        long damage = 0, int wave = 0)
     {
         float multiplier = RunModifiers.RewardMultiplier;
         RunReward result = new RunReward { multiplier = multiplier,
@@ -267,6 +295,10 @@ public static class MetaProgress
         Data.totalEarned += result.amount;
         Data.runs++;
         if (victory) Data.victories++;
+        Data.totalKills += Mathf.Max(0, kills);
+        Data.totalDamage += Math.Max(0L, damage);
+        Data.totalSeconds += Mathf.Max(0f, seconds);
+        Data.totalLevels += Mathf.Max(0, level);
         foreach (string key in new[] { "all", WeaponKey(weapon) })
         {
             MetaRecord record = Record(key);
@@ -281,8 +313,13 @@ public static class MetaProgress
             record.bestTime = Mathf.Max(record.bestTime, seconds);
             record.bestKills = Mathf.Max(record.bestKills, kills);
             record.bestLevel = Mathf.Max(record.bestLevel, level);
+            record.bestDamage = Math.Max(record.bestDamage, damage);
             if (key == "all") { result.bestTime = record.bestTime; result.bestKills = record.bestKills; }
         }
+        Data.hasLastRun = true;
+        Data.lastRun = new MetaLastRun { weapon = weapon, victory = victory, seconds = seconds, kills = kills, level = level,
+            wave = wave, damage = damage, reward = result.amount, multiplier = multiplier, modifiers = RunModifiers.Summary(),
+            date = DateTime.Now.ToString("dd.MM.yyyy HH:mm"), newBestTime = result.newBestTime, newBestKills = result.newBestKills };
         Save();
         return result;
     }

@@ -7,6 +7,8 @@ public class EnemyAI : MonoBehaviour
     public static int ActiveCount => active.Count;
     public static IEnumerable<EnemyAI> All => active;
     private Health cachedHealth;
+    private bool heightKnown;
+    private float baseHeight;
     public Health Health => cachedHealth != null ? cachedHealth : (cachedHealth = GetComponent<Health>());
 
     public static int CountWithin(Vector3 center, float radius)
@@ -109,8 +111,11 @@ public class EnemyAI : MonoBehaviour
         Vector3 chosen = AvoidCrowd(position, desired, deltaTime);
         Vector3 next = position + chosen * deltaTime;
         if (ArenaLayout.Instance != null) next = ArenaLayout.Instance.ResolveMovement(position, next, bodyRadius);
-        transform.position = next;
+        if (!heightKnown) { baseHeight = position.y; heightKnown = true; }   // высота спавна задана от плоскости 0 (WaveManager.groundHeight)
         velocity = deltaTime > 0f ? (next - position) / deltaTime : Vector3.zero;
+        velocity.y = 0f;
+        next.y = baseHeight + GroundHeight.At(next);   // на рельефе (GreenArenaPlay) враг идёт по земле; на плоских аренах высота 0
+        transform.position = next;
         if (velocity.sqrMagnitude > 0.01f)
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(velocity), 10f * deltaTime);
         if (UsesMelee && distance <= attackRange) Attack();

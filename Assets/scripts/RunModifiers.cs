@@ -88,6 +88,6 @@ public static class RunModifiers
     {
         var names = new List<string>();
         foreach (RunModifier modifier in Catalog) if (IsActive(modifier.id)) names.Add(modifier.title);
-        return names.Count == 0 ? "Условия: обычные" : "Условия: " + string.Join(", ", names) + "  •  награда ×" + RewardMultiplier.ToString("0.##");
+        return names.Count == 0 ? "Испытания: нет" : "Испытания: " + string.Join(", ", names) + "  •  награда ×" + RewardMultiplier.ToString("0.##");
     }
 }

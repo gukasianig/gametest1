@@ -127,19 +127,23 @@ public static class WeaponChecks
         for (int i = 0; i < expected.Length; i++) Require(shooter.weapons[i].kind == expected[i], "Weapon kind at " + i);
         Require(shooter.weapons[10].targeting == TargetRule.Strongest && shooter.weapons[6].targeting == TargetRule.Densest, "Target rules.");
         for (int i = 4; i < 13; i++) Require(!MetaProgress.IsWeaponUnlocked(i) && MetaProgress.FindUnlock("weapon:" + i) != null, "Unlock entry for " + i);
-        Require(menu.WeaponPageCount == 4, "Page count: " + menu.WeaponPageCount);
         menu.ShowWeapons();
-        Require(menu.WeaponPage == 0, "First page.");
-        Require(Card("Weapon Card 0").activeSelf && !Card("Weapon Card 4").activeSelf, "Page 0 shows cards 0-3 only.");
-        menu.NextWeaponPage();
-        Require(!Card("Weapon Card 0").activeSelf && Card("Weapon Card 4").activeSelf && Card("Weapon Card 7").activeSelf && !Card("Weapon Card 8").activeSelf, "Page 1 shows cards 4-7.");
-        menu.NextWeaponPage(); menu.NextWeaponPage(); menu.NextWeaponPage();
-        Require(menu.WeaponPage == 0, "Pages wrap around.");
+        WeaponSelectScreen screen = menu.WeaponScreen;
+        Require(screen != null && screen.Selected == 0, "Weapon screen missing or wrong first selection.");
+        int shown = 0;
+        for (int i = 0; i < 13; i++)
+        {
+            if (!shooter.weapons[i].IsSelectable) { Require(GameObject.Find("Weapon Card " + i) == null, "Support weapon " + i + " must not be a tile."); continue; }
+            Require(Card("Weapon Card " + i).activeInHierarchy, "Tile " + i + " not on the single screen.");
+            shown++;
+        }
+        Require(shown == 10, "Selectable weapons: " + shown);
         MetaProgress.Data.currency = 100000;
-        menu.ShowWeaponPage(1);
-        Card("Weapon Card 5").GetComponent<Button>().onClick.Invoke();
-        Require(MetaProgress.IsWeaponUnlocked(5) && MetaProgress.Currency == 100000 - 250, "Buying weapon 5 through its card.");
-        Pass("Roster: 13 weapons with the right kinds/targeting, 4 menu pages, locked entries priced, a card purchase opens a weapon.");
+        Card("Weapon Card 6").GetComponent<Button>().onClick.Invoke();
+        Require(screen.Selected == 6 && !MetaProgress.IsWeaponUnlocked(6), "First click must only select weapon 6.");
+        Card("Weapon Card 6").GetComponent<Button>().onClick.Invoke();
+        Require(MetaProgress.IsWeaponUnlocked(6) && MetaProgress.Currency == 100000 - 400, "Second click must buy weapon 6.");
+        Pass("Roster: 13 weapons with the right kinds/targeting, 10 tiles on one screen (drones, turret and mines are combat upgrades only), first click selects, second buys a locked weapon.");
 
         // Start a run, then switch weapons directly; grenades are off so only the weapon under test deals damage.
         menu.SendMessage("BeginGame", 1);
@@ -210,6 +214,13 @@ public static class WeaponChecks
         ModuleReached(front);
         Require(Lost(behind) == 0 && Lost(side) == 0, "Flame hit outside the cone: " + Lost(behind) + "/" + Lost(side));
         Pass("Flame: damage and burn inside the cone only (" + Lost(front) + " dealt), nothing behind or to the side.");
+        SpecialWeapons flameWeapon = shooter.GetComponent<SpecialWeapons>();
+        Require(flameWeapon != null && flameWeapon.GroundFireCount > 0, "Flame left no ground fire.");
+        GroundFireZone patch = UnityEngine.Object.FindObjectOfType<GroundFireZone>();
+        Require(patch != null && WeaponTargets.Flat(patch.transform.position, front.transform.position) <= 2f,
+            "Ground fire not under the target.");
+        Require(Lost(behind) == 0 && Lost(side) == 0, "Ground fire hit outside the cone.");
+        Pass("Flame: left " + flameWeapon.GroundFireCount + " ground fire patch(es) under the target, radius " + patch.Radius.ToString("0.0") + " m.");
         ClearArena(); yield return null;
 
         // Ice: slows on hit, then restores the original speed.
@@ -254,6 +265,24 @@ public static class WeaponChecks
         int saws = UnityEngine.Object.FindObjectsOfType<WeaponSaw>().Length;
         Require(drones == 0 && turrets == 0 && saws == 0, "Switching weapon must remove placed objects: drones=" + drones + ", turrets=" + turrets + ", saws=" + saws);
         Pass("Drones: two orbiters shot the enemy (" + Lost(drone) + " damage); changing weapon removes placed objects.");
+
+        // Facing (09.11 bug: the hero spun and shot from the side): at the shot the hero faces the target,
+        // collision spin does not accumulate.
+        ClearArena(); yield return null;
+        Rigidbody heroBody = hero.GetComponent<Rigidbody>();
+        hero.rotation = Quaternion.LookRotation(Vector3.back);
+        heroBody.rotation = hero.rotation;
+        heroBody.angularVelocity = new Vector3(0f, 25f, 0f);
+        Health aside = Dummy(new Vector3(7f, 0f, 3f));
+        yield return WaitUntilLost(() => Lost(aside) > 0, 4f);
+        Require(Lost(aside) > 0, "Standard weapon did not hit the side target.");
+        Vector3 toTarget = aside.transform.position - hero.position;
+        toTarget.y = 0f;
+        float facingError = Vector3.Angle(hero.forward, toTarget);
+        Require(facingError < 12f, "Hero does not face the target when shooting: " + facingError.ToString("F1") + " deg");
+        Require(Mathf.Abs(heroBody.angularVelocity.y) < 0.01f, "Hero keeps spinning: " + heroBody.angularVelocity.y);
+        Pass("Facing: hero turns to the target at the shot (error " + facingError.ToString("F1") + " deg), collision spin cleared.");
+        ClearArena(); yield return null;
     }
 
     private static GameObject Card(string name)

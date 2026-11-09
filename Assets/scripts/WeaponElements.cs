@@ -36,9 +36,12 @@ public static class WeaponElements
         else entry.value = value;
     }
 
+    // ВРЕМЕННО: улучшения оружия (стихии) в мастерской закрыты ключом. Вернуть: false. Уже купленные ранги и выбранная стихия работают как раньше.
+    public static readonly bool Locked = true;
+
     public static bool CanBuy(int weapon, WeaponElement element)
     {
-        return Valid(weapon, element) && MetaProgress.IsWeaponUnlocked(weapon) &&
+        return !Locked && Valid(weapon, element) && MetaProgress.IsWeaponUnlocked(weapon) &&
             Rank(weapon, element) < MaxRank && MetaProgress.Currency >= Cost(Rank(weapon, element));
     }
 
@@ -132,7 +135,8 @@ public sealed class WeaponElementAttack
             if (nearest == null) break;
             Vector3 to = nearest.transform.position;
             nearest.TakeDamage(Mathf.Max(1, Mathf.RoundToInt(strength)));
-            BeamFlash.Create(from + Vector3.up, to + Vector3.up, WeaponElements.Colors[3], .09f, .15f);
+            LightningBolt.Create(from + Vector3.up, to + Vector3.up, new Color(0.35f, 0.6f, 1f), .22f, .2f, 1);
+            LightningBolt.Impact(to + Vector3.up, new Color(0.35f, 0.6f, 1f), .6f);
             hit.Add(nearest);
             from = to;
             strength *= .65f;

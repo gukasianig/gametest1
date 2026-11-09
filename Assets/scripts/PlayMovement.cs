@@ -14,6 +14,8 @@ public class PlayMovement : MonoBehaviour
     public Transform cameraTransform;
 
     Rigidbody rb;
+    private bool followGround;
+    private float heightAboveGround = 1f;
     private Vector2 movementInput;
     private Vector3 aimDirection;
 
@@ -21,6 +23,14 @@ public class PlayMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.interpolation = RigidbodyInterpolation.Interpolate;
+        if (GroundHeight.HasTerrain)
+        {
+            // Рельеф: Y больше не заморожена, высоту каждый шаг задаём по земле (капсула сама на склон не заберётся).
+            heightAboveGround = Mathf.Max(0.5f, rb.position.y - GroundHeight.At(rb.position));
+            rb.constraints &= ~RigidbodyConstraints.FreezePositionY;
+            rb.useGravity = false;
+            followGround = true;
+        }
     }
 
     [Header("Dash")]
@@ -34,11 +44,12 @@ public class PlayMovement : MonoBehaviour
     private Text dashLabel;
     private Canvas dashCanvas;
     public bool Dashing => dashTimeLeft > 0f;
+    public Vector3 DashDirection => dashDirection;
     public float DashCooldownRemaining => Mathf.Max(0f, nextDash - Time.time);
 
     void Update()
     {
-        movementInput = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+        movementInput = CheckInput.HasValue ? CheckInput.Value : new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
         bool playing = GameSession.Instance != null && GameSession.Instance.State == GameRunState.Playing;
         if (playing && Time.timeScale > 0f && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.LeftShift)))
             dashRequested = true;
@@ -48,8 +59,19 @@ public class PlayMovement : MonoBehaviour
     // Public so checks can trigger a dash without a keyboard.
     public void RequestDash() { dashRequested = true; }
 
+    // Ввод для автоматических проверок (GreenArenaPlayCheck: ходьба вдоль и между камнями); null — клавиатура.
+    public Vector2? CheckInput { get; set; }
+
+    // Рывок показывает панель героя (CombatHud); тогда отдельная плашка не нужна.
+    public static bool DashInCombatHud;
+
     private void UpdateDashLabel(bool playing)
     {
+        if (DashInCombatHud)
+        {
+            if (dashCanvas != null) dashCanvas.enabled = false;
+            return;
+        }
         if (dashLabel == null)
         {
             if (!playing) return;
@@ -72,6 +94,16 @@ public class PlayMovement : MonoBehaviour
     {
         direction.y = 0f;
         aimDirection = direction;
+    }
+
+    // Мгновенный поворот к цели в момент выстрела: дуло и пуля смотрят туда же, куда летит выстрел.
+    public void FaceNow(Vector3 direction)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f) return;
+        Quaternion rotation = Quaternion.LookRotation(direction);
+        transform.rotation = rotation;
+        if (rb != null) { rb.rotation = rotation; rb.angularVelocity = Vector3.zero; }
     }
 
     void FixedUpdate()
@@ -116,7 +148,16 @@ public class PlayMovement : MonoBehaviour
             Vector3 allowed = ArenaLayout.Instance.ResolveMovement(rb.position, desired, 0.5f);
             velocity = (allowed - rb.position) / Time.fixedDeltaTime;
         }
-        rb.velocity = new Vector3(velocity.x, rb.velocity.y, velocity.z);
+        float vy = rb.velocity.y;
+        if (followGround)
+        {
+            Vector3 target = rb.position + new Vector3(velocity.x, 0f, velocity.z) * Time.fixedDeltaTime;
+            vy = (GroundHeight.At(target) + heightAboveGround - rb.position.y) / Time.fixedDeltaTime;
+        }
+        rb.velocity = new Vector3(velocity.x, vy, velocity.z);
+        // Поворот по Y не заморожен, поэтому толчки врагов и углов закручивали героя (кружение на месте).
+        // Поворотом управляет только код ниже.
+        rb.angularVelocity = Vector3.zero;
         //transform.Translate(move * speed * Time.deltaTime, Space.World);
 
             Vector3 facing = aimDirection.sqrMagnitude > 0.001f ? aimDirection : move;

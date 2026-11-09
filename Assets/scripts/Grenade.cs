@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Grenade : MonoBehaviour
 {
+    public const float VisualLength = .32f;
     public float explosionRadius = 3f;
     public int damage = 20;
     public GameObject explosionEffect;
@@ -12,31 +13,16 @@ public class Grenade : MonoBehaviour
 
     void Start()
     {
+        ProjectileModels.Skin(gameObject, "grenade", VisualLength);
         Invoke(nameof(Explode), delay);
     }
 
     void Explode()
     {
-        if (explosionEffect != null)
-    {
-        GameObject effect = Instantiate(
-            explosionEffect,
-            transform.position,
-            Quaternion.identity
-        );
-
-        // размер = радиус
-        float size = explosionRadius * 2f;
-        effect.transform.localScale = new Vector3(
-
-            size,
-            size,
-            size
-        );
-
-
-        Destroy(effect, 0.5f);
-    }
+        GameAudio.Play(Sfx.Explosion);
+        // Общий эффект взрыва вместо старого explosionEffect (растянутой сферы); поле оставлено ради сцены.
+        Vector3 point = transform.position;
+        EnemyFx.Explosion(new Vector3(point.x, GroundHeight.At(point), point.z), explosionRadius * 0.8f, 0.5f);
 
     Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius);
 

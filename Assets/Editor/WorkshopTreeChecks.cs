@@ -111,6 +111,18 @@ public static class WorkshopTreeChecks
     {
         yield return null;
         MetaProgress.UseMemory();
+        // Стихии оружия временно закрыты (WeaponElements.Locked): проверяем только, что купить и надеть их нельзя.
+        bool modulesLocked = WeaponElements.Locked;
+        if (modulesLocked)
+        {
+            MetaProgress.Data.currency = 100000;
+            foreach (MetaUnlock unlock in MetaProgress.Unlocks) MetaProgress.Unlock(unlock.id);
+            for (int w = 0; w < 13; w++)
+                for (int e = 1; e <= 4; e++)
+                    Check(!WeaponElements.Buy(w, (WeaponElement)e) && !WeaponElements.Equip(w, (WeaponElement)e), "Locked module bought or equipped " + w + ":" + e);
+            Pass("Weapon modules are locked: none of 52 can be bought or equipped; purchase checks skipped until the lock is removed");
+            yield break;
+        }
         Check(!WeaponElements.Buy(2, WeaponElement.Fire), "Module bought for a locked weapon");
         Check(!WeaponElements.Buy(0, WeaponElement.Fire), "Module bought without currency");
         Check(!WeaponElements.Equip(0, WeaponElement.Fire), "Unowned module equipped");

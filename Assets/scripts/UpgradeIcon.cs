@@ -115,6 +115,13 @@ public class UpgradeIcon : MaskableGraphic
                 if (effect == UpgradeEffect.TurretDamage) Fill(new Vector2(-0.75f, 0.5f), new Vector2(-0.3f, 0.25f), new Vector2(-0.4f, 0.8f));
                 else Dot(new Vector2(-0.65f, 0.55f), 0.2f);
                 break;
+            case UpgradeEffect.MineCount:
+                Rect(-0.7f, -0.55f, 0.7f, -0.3f);
+                Dot(new Vector2(0f, -0.2f), 0.55f);
+                Line(new Vector2(0f, 0.2f), new Vector2(0f, 0.8f), 0.14f);
+                Line(new Vector2(-0.5f, 0.1f), new Vector2(-0.8f, 0.45f), 0.14f);
+                Line(new Vector2(0.5f, 0.1f), new Vector2(0.8f, 0.45f), 0.14f);
+                break;
             case UpgradeEffect.Armor:
                 Fill(new Vector2(-0.6f, 0.75f), new Vector2(0.6f, 0.75f), new Vector2(0.6f, -0.05f), new Vector2(0f, -0.9f), new Vector2(-0.6f, -0.05f));
                 Line(new Vector2(0f, 0.5f), new Vector2(0f, -0.45f), 0.08f, new Color(0.03f, 0.08f, 0.1f));

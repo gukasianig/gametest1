@@ -22,7 +22,8 @@ public class ExperiencePickup : MonoBehaviour
         }
         GameObject crystal = GameObject.CreatePrimitive(PrimitiveType.Cube);
         crystal.name = "Experience Crystal";
-        crystal.transform.position = new Vector3(position.x, 0.55f, position.z);
+        // Высота от земли: на аренах с рельефом кристаллы на y=0,55 были под землёй (видны не были, но собирались).
+        crystal.transform.position = new Vector3(position.x, GroundHeight.At(position) + 0.55f, position.z);
         crystal.transform.localScale = new Vector3(0.25f, 0.4f, 0.25f);
         crystal.transform.rotation = Quaternion.Euler(0f, 45f, 30f);
         Collider collider = crystal.GetComponent<Collider>();
@@ -42,7 +43,7 @@ public class ExperiencePickup : MonoBehaviour
     public static void CollectNearby(PlayerProgression player, ProgressionSettings settings)
     {
         Vector3 target = player.transform.position;
-        target.y = 0.55f;
+        target.y = GroundHeight.At(target) + 0.55f;
         float radius = player.CollectionRadius;
         bool magnet = Time.time < magnetUntil;
         float attraction = magnet ? 100000f : player.AttractionRadius;

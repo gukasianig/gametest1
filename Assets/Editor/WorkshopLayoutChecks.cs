@@ -88,7 +88,7 @@ public static class WorkshopLayoutChecks
                     Rect intersection = Rect.MinMaxRect(Mathf.Max(a.xMin, b.xMin), Mathf.Max(a.yMin, b.yMin),
                         Mathf.Min(a.xMax, b.xMax), Mathf.Min(a.yMax, b.yMax));
                     Check(intersection.width < .5f || intersection.height < .5f,
-                        "Overlapping labels: " + labels[i].parent.name + " / " + labels[j].parent.name);
+                        "Overlapping labels: " + labels[i].parent.name + " " + labels[i].name + " " + a + " / " + labels[j].parent.name + " " + labels[j].name + " " + b);
                 }
             }
         foreach (RectTransform label in labels)
@@ -105,15 +105,17 @@ public static class WorkshopLayoutChecks
         StartMenu menu = PlayerProgression.Instance.GetComponent<StartMenu>();
         menu.ShowWorkshop();
         WorkshopTree tree = UnityEngine.Object.FindObjectOfType<WorkshopTree>();
-        Check(tree != null && tree.NodeCount == 69, "Missing nodes");
+        Check(tree != null && tree.NodeCount == 54, "Missing nodes");
+        AutoShoter workshopShooter = PlayerProgression.Instance.GetComponent<AutoShoter>();
         for (int weapon = 0; weapon < 13; weapon++)
         {
+            if (!workshopShooter.weapons[weapon].IsSelectable) continue;
             Transform group = Find(tree.transform, "Weapon group " + weapon);
             Check(group != null && group.GetComponentsInChildren<Button>().Length == 5, "Weapon/module grouping " + weapon);
             for (int e = 1; e <= 4; e++)
                 Check(Find(group, "Node weapon:" + weapon + ":" + (WeaponElement)e) != null, "Module belongs to wrong weapon");
         }
-        Pass("All 13 weapon clusters contain exactly their own weapon and four modules");
+        Pass("All selectable weapon clusters contain exactly their own weapon and four modules");
 
         // Select a locked module and check that the UI does not call its preview an owned effect.
         Find(tree.transform, "Node weapon:2:Frost").GetComponent<Button>().onClick.Invoke();
@@ -127,10 +129,22 @@ public static class WorkshopLayoutChecks
         MetaProgress.Data.currency = 2000;
         MetaProgress.TryUnlock("weapon:2");
         tree.Refresh();
-        Check(buy.interactable, "Unlocking weapon did not enable its module purchase");
-        buy.onClick.Invoke();
-        Check(WeaponElements.Rank(2, WeaponElement.Frost) == 1 && equip.interactable, "Module purchase did not update UI");
-        Pass("Locked, available, bought and equipped module states update through actual UI buttons");
+        if (WeaponElements.Locked)
+        {
+            // Улучшения оружия временно закрыты ключом: покупка недоступна даже у открытого оружия.
+            Check(!buy.interactable && !equip.gameObject.activeSelf, "Locked module is purchasable");
+            Check(Find(tree.transform, "Lock key") != null, "Lock key icon missing");
+            Pass("Weapon upgrades are temporarily locked: key icons shown, purchase and equip disabled");
+            Find(tree.transform, "Node weapon:0").GetComponent<Button>().onClick.Invoke();
+            WorkshopTreeChecks.Capture(tree.GetComponentInParent<Canvas>(), "Logs/workshop-keys.png", 1600, 900, null);
+        }
+        else
+        {
+            Check(buy.interactable, "Unlocking weapon did not enable its module purchase");
+            buy.onClick.Invoke();
+            Check(WeaponElements.Rank(2, WeaponElement.Frost) == 1 && equip.interactable, "Module purchase did not update UI");
+            Pass("Locked, available, bought and equipped module states update through actual UI buttons");
+        }
 
         Canvas canvas = tree.GetComponentInParent<Canvas>();
         // Three distinct aspect ratios. Only two top snapshots and one bottom snapshot are retained.
@@ -142,9 +156,10 @@ public static class WorkshopLayoutChecks
             Pass("No overlapping labels or horizontal clipping at " + size.x + "x" + size.y);
             yield return null;
         }
-        Find(tree.transform, "Node weapon:12:Poison").GetComponent<Button>().onClick.Invoke();
+        int lastWeapon = Array.FindLastIndex(workshopShooter.weapons, w => w != null && w.IsSelectable);
+        Find(tree.transform, "Node weapon:" + lastWeapon + ":Poison").GetComponent<Button>().onClick.Invoke();
         Canvas.ForceUpdateCanvases();
-        RectTransform last = (RectTransform)Find(tree.transform, "Node weapon:12:Poison");
+        RectTransform last = (RectTransform)Find(tree.transform, "Node weapon:" + lastWeapon + ":Poison");
         Rect lastBounds = Bounds(tree.Scroll.viewport, last);
         Check(lastBounds.yMin >= tree.Scroll.viewport.rect.yMin - 1 && lastBounds.yMax <= tree.Scroll.viewport.rect.yMax + 1,
             "Selected final module is not revealed by scrolling");

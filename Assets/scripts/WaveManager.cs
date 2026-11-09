@@ -272,6 +272,30 @@ public class WaveManager : MonoBehaviour
         return made;
     }
 
+    // Test arena: creates `count` enemies of one authored type on a ring around the centre. Ignores waves and gates.
+    public int SpawnTest(int typeIndex, int count, Vector3 centre)
+    {
+        if (enemies == null || typeIndex < 0 || typeIndex >= enemies.Length) return 0;
+        EnemyType type = enemies[typeIndex];
+        if (type == null || type.prefab == null) return 0;
+        int made = 0;
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 position = Vector3.zero;
+            bool found = false;
+            for (int attempt = 0; attempt < 20 && !found; attempt++)
+            {
+                float angle = Random.Range(0f, Mathf.PI * 2f);
+                float radius = Random.Range(9f, 14f) + (attempt / 5) * 3f;
+                position = new Vector3(centre.x + Mathf.Cos(angle) * radius, HeightFor(type.prefab), centre.z + Mathf.Sin(angle) * radius);
+                found = ArenaLayout.Instance == null || ArenaLayout.Instance.IsWalkable(position, 1.5f);
+            }
+            if (!found) continue;
+            if (SpawnEnemyAtPosition(type, position) != null) made++;
+        }
+        return made;
+    }
+
     // Same rule as OffscreenSpawn: the prefab's lowest point sits on the ground.
     float HeightFor(GameObject prefab)
     {

@@ -4,7 +4,9 @@ using UnityEngine;
 public partial class ArenaLayout : MonoBehaviour
 {
     public static ArenaLayout Instance { get; private set; }
-    public float halfSize = 110f;
+    public float halfSize = 200f;
+    // Открытое поле (GreenArenaPlay): без заводских построек и декора, только невидимые борта по периметру.
+    public bool openField;
     private readonly List<Bounds> obstacles = new List<Bounds>();
     private readonly HashSet<Collider> blockers = new HashSet<Collider>();
     private readonly Dictionary<Color, Material> materials = new Dictionary<Color, Material>();
@@ -18,14 +20,31 @@ public partial class ArenaLayout : MonoBehaviour
 
     private void Build()
     {
+        if (openField) { BuildOpenField(); return; }
         ArenaTheme theme = ArenaThemes.Current;
-        if (theme == ArenaTheme.Factory) { BuildFactory(); if (!ArenaProps.Apply(this, true)) ArenaDecor.Populate(this); }
-        else { ArenaProps.Apply(this, false); BuildThemed(theme); }
+        ArenaTerrain terrain = ArenaTerrain.Apply(theme == ArenaTheme.Factory);
+        if (theme != ArenaTheme.Factory)
+        {
+            ArenaProps.Apply(this, false);
+            BuildThemed(theme);
+            return;
+        }
+        if (terrain != null && terrain.TryGetComponent(out AcidQuarry quarry))
+        {
+            BuildFactoryPerimeter();
+            ArenaProps.Apply(this, false);
+            quarry.RegisterObstacles(this);
+            return;
+        }
+        BuildFactory();
+        if (!ArenaProps.Apply(this, true)) ArenaDecor.Populate(this);
     }
 
     // Пересборка под выбранную тему (вызывается из ArenaThemes.Apply, пока забег не идёт).
     public void Rebuild()
     {
+        if (openField) return;
+        gridCount = -1;
         for (int i = transform.childCount - 1; i >= 0; i--) { transform.GetChild(i).gameObject.SetActive(false); Destroy(transform.GetChild(i).gameObject); }
         obstacles.Clear();
         blockers.Clear();
@@ -72,13 +91,42 @@ public partial class ArenaLayout : MonoBehaviour
             new Vector3(size.x, 0.05f, size.z * 0.3f), new Color(0.85f, 0.63f, 0.18f), false);
     }
 
-    private void BuildFactory()
+    // С объёмным полем серые кубы бортов не нужны: остаются только их коллайдеры.
+    private static void HideIfTerrain(GameObject block)
+    {
+        if (block == null || !ArenaTerrain.Exists) return;
+        MeshRenderer r = block.GetComponent<MeshRenderer>();
+        if (r != null) r.enabled = false;
+    }
+
+    private void BuildOpenField()
+    {
+        float wall = 30f;
+        foreach (var side in new[] { new Vector3(0, wall / 2f, halfSize), new Vector3(0, wall / 2f, -halfSize), new Vector3(halfSize, wall / 2f, 0), new Vector3(-halfSize, wall / 2f, 0) })
+        {
+            bool alongX = Mathf.Abs(side.z) > 0.1f;
+            GameObject block = Prop("Perimeter wall", PrimitiveType.Cube, side, alongX ? new Vector3(halfSize * 2f, wall, 1f) : new Vector3(1f, wall, halfSize * 2f), Color.gray, true);
+            block.GetComponent<MeshRenderer>().enabled = false;
+        }
+    }
+
+    // Препятствие для героя и врагов (только плоскость XZ). Используется открытым полем для зданий и больших скал.
+    public void AddObstacle(Bounds bounds) { obstacles.Add(bounds); }
+    public void AddBlocker(Collider collider) { blockers.Add(collider); }
+
+    private void BuildFactoryPerimeter()
     {
         Color steel = new Color(0.13f, 0.2f, 0.22f);
-        Prop("North perimeter", PrimitiveType.Cube, new Vector3(0, 1.5f, halfSize), new Vector3(halfSize * 2, 3, 1), steel, true);
-        Prop("South perimeter", PrimitiveType.Cube, new Vector3(0, 1.5f, -halfSize), new Vector3(halfSize * 2, 3, 1), steel, true);
-        Prop("East perimeter", PrimitiveType.Cube, new Vector3(halfSize, 1.5f, 0), new Vector3(1, 3, halfSize * 2), steel, true);
-        Prop("West perimeter", PrimitiveType.Cube, new Vector3(-halfSize, 1.5f, 0), new Vector3(1, 3, halfSize * 2), steel, true);
+        HideIfTerrain(Prop("North perimeter", PrimitiveType.Cube, new Vector3(0, 1.5f, halfSize), new Vector3(halfSize * 2, 3, 1), steel, true));
+        HideIfTerrain(Prop("South perimeter", PrimitiveType.Cube, new Vector3(0, 1.5f, -halfSize), new Vector3(halfSize * 2, 3, 1), steel, true));
+        HideIfTerrain(Prop("East perimeter", PrimitiveType.Cube, new Vector3(halfSize, 1.5f, 0), new Vector3(1, 3, halfSize * 2), steel, true));
+        HideIfTerrain(Prop("West perimeter", PrimitiveType.Cube, new Vector3(-halfSize, 1.5f, 0), new Vector3(1, 3, halfSize * 2), steel, true));
+    }
+
+    private void BuildFactory()
+    {
+        BuildFactoryPerimeter();
+        Color steel = new Color(0.13f, 0.2f, 0.22f);
         Cover("Cargo A", new Vector3(-15, 1, 13), new Vector3(6, 2, 3), steel);
         Cover("Cargo B", new Vector3(16, 1, -14), new Vector3(3, 2, 6), steel);
         Cover("Cargo C", new Vector3(31, 1, 22), new Vector3(6, 2, 3), steel);
@@ -152,10 +200,66 @@ public partial class ArenaLayout : MonoBehaviour
     public bool IsWalkable(Vector3 point, float radius)
     {
         if (Mathf.Abs(point.x) + radius >= halfSize - 0.6f || Mathf.Abs(point.z) + radius >= halfSize - 0.6f) return false;
-        foreach (Bounds bounds in obstacles)
+        foreach (int i in Near(point.x - radius, point.z - radius, point.x + radius, point.z + radius))
+        {
+            Bounds bounds = obstacles[i];
             if (Mathf.Abs(point.x - bounds.center.x) < bounds.extents.x + radius &&
                 Mathf.Abs(point.z - bounds.center.z) < bounds.extents.z + radius) return false;
+        }
         return true;
+    }
+
+    // Сетка 10 м по препятствиям: на зелёной арене их сотни, перебирать все на каждый шаг каждого врага нельзя.
+    private const float CellSize = 10f;
+    private Dictionary<long, List<int>> grid;
+    private int gridCount = -1;
+    private int[] stamp;
+    private int stampId;
+    private readonly List<int> nearBuffer = new List<int>();
+
+    private static long CellKey(int x, int z) { return ((long)x << 32) ^ (uint)z; }
+
+    private void BuildGrid()
+    {
+        grid = new Dictionary<long, List<int>>();
+        for (int i = 0; i < obstacles.Count; i++)
+        {
+            Bounds b = obstacles[i];
+            int x0 = Mathf.FloorToInt((b.min.x - 3f) / CellSize), x1 = Mathf.FloorToInt((b.max.x + 3f) / CellSize);
+            int z0 = Mathf.FloorToInt((b.min.z - 3f) / CellSize), z1 = Mathf.FloorToInt((b.max.z + 3f) / CellSize);
+            for (int x = x0; x <= x1; x++)
+            for (int z = z0; z <= z1; z++)
+            {
+                long key = CellKey(x, z);
+                if (!grid.TryGetValue(key, out List<int> list)) grid[key] = list = new List<int>();
+                list.Add(i);
+            }
+        }
+        stamp = new int[obstacles.Count];
+        gridCount = obstacles.Count;
+    }
+
+    // Индексы препятствий в ячейках, пересекающих прямоугольник (с запасом 3 м на радиус тела). Буфер общий: до следующего вызова копировать.
+    private List<int> Near(float minX, float minZ, float maxX, float maxZ)
+    {
+        if (gridCount != obstacles.Count) BuildGrid();
+        stampId++;
+        nearBuffer.Clear();
+        int x0 = Mathf.FloorToInt(minX / CellSize), x1 = Mathf.FloorToInt(maxX / CellSize);
+        int z0 = Mathf.FloorToInt(minZ / CellSize), z1 = Mathf.FloorToInt(maxZ / CellSize);
+        if ((x1 - x0 + 1) * (z1 - z0 + 1) > 400)   // очень длинный отрезок: проще пройти по всем
+        {
+            for (int i = 0; i < obstacles.Count; i++) nearBuffer.Add(i);
+            return nearBuffer;
+        }
+        for (int x = x0; x <= x1; x++)
+        for (int z = z0; z <= z1; z++)
+        {
+            if (!grid.TryGetValue(CellKey(x, z), out List<int> list)) continue;
+            foreach (int i in list)
+                if (stamp[i] != stampId) { stamp[i] = stampId; nearBuffer.Add(i); }
+        }
+        return nearBuffer;
     }
 
     private static bool Crosses(Vector3 start, Vector3 end, Bounds obstacle, float radius)
@@ -182,19 +286,60 @@ public partial class ArenaLayout : MonoBehaviour
 
     public bool PathClear(Vector3 start, Vector3 end, float radius)
     {
-        foreach (Bounds bounds in obstacles) if (Crosses(start, end, bounds, radius)) return false;
+        foreach (int i in Near(Mathf.Min(start.x, end.x) - radius, Mathf.Min(start.z, end.z) - radius, Mathf.Max(start.x, end.x) + radius, Mathf.Max(start.z, end.z) + radius))
+            if (Crosses(start, end, obstacles[i], radius)) return false;
         return true;
+    }
+
+    // Глубина точки внутри препятствия, раздутого на radius (плоскость XZ): >0 — внутри, до ближайшей грани.
+    private static float Penetration(Vector3 point, Bounds obstacle, float radius)
+    {
+        float left = point.x - (obstacle.min.x - radius), right = obstacle.max.x + radius - point.x;
+        float back = point.z - (obstacle.min.z - radius), front = obstacle.max.z + radius - point.z;
+        return Mathf.Min(Mathf.Min(left, right), Mathf.Min(back, front));
+    }
+
+    // Как PathClear, но препятствие, внутри которого уже стоит start (враг втолкнул физикой, спавн, телепорт), не держит:
+    // запрещено только углубляться в него. Раньше такое препятствие запрещало любое движение — герой замирал у камня навсегда.
+    private bool MoveClear(Vector3 start, Vector3 end, float radius)
+    {
+        foreach (int i in Near(Mathf.Min(start.x, end.x) - radius, Mathf.Min(start.z, end.z) - radius, Mathf.Max(start.x, end.x) + radius, Mathf.Max(start.z, end.z) + radius))
+        {
+            Bounds b = obstacles[i];
+            float inside = Penetration(start, b, radius);
+            if (inside > 0.0001f) { if (Penetration(end, b, radius) > inside + 0.0001f) return false; }
+            else if (Crosses(start, end, b, radius)) return false;
+        }
+        return true;
+    }
+
+    // Выталкивание из препятствий, внутри которых стоит point: к ближайшей грани, не больше maxStep за вызов.
+    private Vector3 PushOut(Vector3 point, float radius, float maxStep)
+    {
+        Vector3 push = Vector3.zero;
+        foreach (int i in Near(point.x - radius, point.z - radius, point.x + radius, point.z + radius))
+        {
+            Bounds b = obstacles[i];
+            float depth = Penetration(point, b, radius);
+            if (depth <= 0f) continue;
+            float left = point.x - (b.min.x - radius), right = b.max.x + radius - point.x;
+            float back = point.z - (b.min.z - radius), front = b.max.z + radius - point.z;
+            if (depth == left) push.x -= depth; else if (depth == right) push.x += depth;
+            else if (depth == back) push.z -= depth; else push.z += depth;
+        }
+        return push.sqrMagnitude > maxStep * maxStep ? push.normalized * maxStep : push;
     }
 
     public Vector3 ResolveMovement(Vector3 start, Vector3 desired, float radius)
     {
         float edge = halfSize - radius - 0.65f;
+        desired += PushOut(start, radius, 0.08f);   // ~4 м/с при 50 вызовах в секунду: выход без рывка
         desired.x = Mathf.Clamp(desired.x, -edge, edge);
         desired.z = Mathf.Clamp(desired.z, -edge, edge);
-        if (PathClear(start, desired, radius)) return desired;
+        if (MoveClear(start, desired, radius)) return desired;
         Vector3 xOnly = new Vector3(desired.x, desired.y, start.z);
         Vector3 zOnly = new Vector3(start.x, desired.y, desired.z);
-        bool x = PathClear(start, xOnly, radius), z = PathClear(start, zOnly, radius);
+        bool x = MoveClear(start, xOnly, radius), z = MoveClear(start, zOnly, radius);
         if (x && z) return (xOnly - start).sqrMagnitude > (zOnly - start).sqrMagnitude ? xOnly : zOnly;
         if (x) return xOnly;
         return z ? zOnly : start;
@@ -204,7 +349,13 @@ public partial class ArenaLayout : MonoBehaviour
     {
         if (PathClear(start, goal, radius)) return goal;
         var nodes = new List<Vector3> { start, goal };
-        foreach (Bounds bounds in obstacles)
+        // Углы берём только у препятствий, которые стоят на прямой к цели (ближайшие восемь), а не у всех на арене.
+        var blocking = new List<Bounds>();
+        foreach (int i in Near(Mathf.Min(start.x, goal.x) - radius, Mathf.Min(start.z, goal.z) - radius, Mathf.Max(start.x, goal.x) + radius, Mathf.Max(start.z, goal.z) + radius))
+            if (Crosses(start, goal, obstacles[i], radius)) blocking.Add(obstacles[i]);
+        blocking.Sort((a, b) => (a.center - start).sqrMagnitude.CompareTo((b.center - start).sqrMagnitude));
+        if (blocking.Count > 8) blocking.RemoveRange(8, blocking.Count - 8);
+        foreach (Bounds bounds in blocking)
         for (int x = -1; x <= 1; x += 2)
         for (int z = -1; z <= 1; z += 2)
         {
@@ -235,7 +386,15 @@ public partial class ArenaLayout : MonoBehaviour
             }
         }
         int next = 1;
-        if (previous[next] < 0) return start;
+        if (previous[next] < 0)
+        {
+            // До цели за один обход не дойти (за углом ещё препятствия): идём к достижимому углу, ближайшему к цели.
+            int best = -1;
+            for (int i = 2; i < nodes.Count; i++)
+                if (previous[i] >= 0 && (best < 0 || (nodes[i] - goal).sqrMagnitude < (nodes[best] - goal).sqrMagnitude)) best = i;
+            if (best < 0) return start;
+            next = best;
+        }
         while (previous[next] > 0) next = previous[next];
         return nodes[next];
     }

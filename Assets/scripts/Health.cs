@@ -14,11 +14,14 @@ public class Health : MonoBehaviour, IDamagable
 
     // Set by the weapon code around a single TakeDamage call so the damage number can show a critical hit.
     public static bool NextHitCrit;
+    // Громкость звука попадания для частого урона (огнемёт, горение): оружие ставит её вокруг своих TakeDamage.
+    public static float HitSoundScale = 1f;
     public bool isDead = false;
     // Armored enemies set this below 1 to take reduced damage.
     public float DamageTakenFactor = 1f;
     public int CurrentHealth => currentHealth;
     private EnemyHealthDisplay display;
+    private ModelWalkAnimator animator;
 
     void Awake()
     {
@@ -58,6 +61,12 @@ public class Health : MonoBehaviour, IDamagable
             display.Register(this);
         }
         if (display != null) display.ShowDamage(this, receivedDamage, NextHitCrit);
+        if (CompareTag("Enemy") && HitSoundScale > 0.01f) GameAudio.Play(Sfx.Hit, 0.4f * HitSoundScale);
+        if (CompareTag("Enemy") && currentHealth > 0)
+        {
+            if (animator == null) animator = ModelWalkAnimator.Of(this);   // модель-скин ставится после Awake
+            if (animator != null) animator.Flinch();
+        }
 
         UpdateHPText();
             if (currentHealth <= 0)
@@ -84,6 +93,7 @@ public class Health : MonoBehaviour, IDamagable
     void Die()
     {
         isDead = true;
+        if (CompareTag("Enemy")) GameAudio.Play(Sfx.Kill, 0.5f);
         if (CompareTag("Enemy") && RunStatistics.Instance != null)
             RunStatistics.Instance.RecordKill();
         if (CompareTag("Enemy") && CombatStats.VampirismPerKill > 0f && PlayerProgression.Instance != null)
@@ -94,6 +104,7 @@ public class Health : MonoBehaviour, IDamagable
         if (CompareTag("Enemy") && experienceReward > 0) DropPickup.TryDrop(transform.position, name.StartsWith("Elite"));
         if (CompareTag("Enemy")) ExperiencePickup.Spawn(transform.position, Mathf.RoundToInt(experienceReward * ArenaEvents.ExperienceFactor));
         Died?.Invoke(this);
+        if (CompareTag("Enemy")) EnemyCorpse.Spawn(this);   // модель отцепляется и доигрывает смерть
         Destroy(gameObject);
     }
 

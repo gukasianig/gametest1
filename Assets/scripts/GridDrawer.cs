@@ -42,6 +42,7 @@ public class GridDrawer : MonoBehaviour
         solidFloor.size = new Vector3(10f, 4f, 10f);
         solidFloor.center = new Vector3(0f, -2f, 0f);
         ArenaThemes.ApplyEnvironment(ArenaThemes.Current);
+        if (ArenaThemes.Current == ArenaTheme.Factory && ArenaTerrain.Exists) floor.GetComponent<MeshRenderer>().enabled = false;
         if (ArenaThemes.Current == ArenaTheme.Glacier) groundMaterial.SetFloat("_Smoothness", 0.45f);
     }
 

@@ -99,6 +99,9 @@ public partial class ArenaLayout
     private void BuildThemed(ArenaTheme theme)
     {
         ThemeSpec s = SpecFor(theme);
+        float areaScale = Mathf.Pow(halfSize / 110f, 2f);   // декор рассчитан на арену 220×220: на большой — пропорционально больше
+        s.boulders = Mathf.RoundToInt(s.boulders * areaScale); s.pillars = Mathf.RoundToInt(s.pillars * areaScale);
+        s.crystals = Mathf.RoundToInt(s.crystals * areaScale); s.details = Mathf.RoundToInt(s.details * areaScale);
         bool ice = theme == ArenaTheme.Glacier;
         var rng = new System.Random(s.seed);
         float h = halfSize;

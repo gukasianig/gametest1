@@ -144,7 +144,7 @@ MonoBehaviour:
     minimumLevel: 3
     weight: 8
   - id: drone_count
-    title: Больше дронов
+    title: Дрон-стрелок
     icon: {fileID: 0}
     symbol: DRN
     effect: 13
@@ -164,7 +164,7 @@ MonoBehaviour:
     minimumLevel: 1
     weight: 10
   - id: turret_count
-    title: Больше турелей
+    title: Турель
     icon: {fileID: 0}
     symbol: TUR
     effect: 15
@@ -352,6 +352,16 @@ MonoBehaviour:
     amount: 1
     maxRanks: 1
     minimumLevel: 5
+    weight: 10
+  - id: mine_count
+    title: Сапёрные мины
+    icon: {fileID: 0}
+    symbol: MIN
+    effect: 34
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 2
     weight: 10
   commonWeight: 70
   rareWeight: 25

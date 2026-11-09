@@ -14,6 +14,7 @@ public class WorkshopTree : MonoBehaviour
         public Button button;
         public WorkshopDiamond diamond;
         public Image picture;
+        public Image keyIcon;
         public Text state;
         public Text badge;
         public RectTransform rect;
@@ -49,6 +50,14 @@ public class WorkshopTree : MonoBehaviour
         "w_arc", "w_flame", "w_ice_cannon", "w_rail", "w_turret", "w_drones" };
     private static readonly Color Dim = new Color(.34f, .41f, .48f);
     private static readonly Color Gold = new Color(1f, .74f, .32f);
+
+    private int SelectableWeapons()
+    {
+        int n = 0;
+        for (int i = 0; shooter.weapons != null && i < shooter.weapons.Length; i++)
+            if (shooter.weapons[i] != null && shooter.weapons[i].IsSelectable) n++;
+        return n;
+    }
 
     public void Build(AutoShoter owner, Action returnHome)
     {
@@ -86,7 +95,7 @@ public class WorkshopTree : MonoBehaviour
         content.pivot = new Vector2(0, 1);
         int weapons = shooter.weapons != null ? shooter.weapons.Length : 0;
         boardHeight = Mathf.Max(Top + (MetaProgress.Catalog.Length - 1) * BodyStep + 100,
-            Top + (Mathf.CeilToInt(weapons / (float)WeaponColumns) - 1) * WeaponRowStep + 170);
+            Top + (Mathf.CeilToInt(SelectableWeapons() / (float)WeaponColumns) - 1) * WeaponRowStep + 170);
         Scroll.content = content;
         board = Fixed("Tree board", content, 0, 0, BoardWidth, boardHeight);
         board.pivot = new Vector2(0, 1);
@@ -122,7 +131,7 @@ public class WorkshopTree : MonoBehaviour
         lines.Connect(new Vector2(RootX, 150), new Vector2(TrunkX, 218), Gold);
         // Category rails feed siblings. No lines run from one independent purchase through another.
         lines.Connect(new Vector2(BodyX, 250), new Vector2(BodyX, Top + (MetaProgress.Catalog.Length - 1) * BodyStep), GameUi.Accent * .6f);
-        lines.Connect(new Vector2(TrunkX, 250), new Vector2(TrunkX, Top + (Mathf.CeilToInt(weapons / (float)WeaponColumns) - 1) * WeaponRowStep), Gold * .6f);
+        lines.Connect(new Vector2(TrunkX, 250), new Vector2(TrunkX, Top + (Mathf.CeilToInt(SelectableWeapons() / (float)WeaponColumns) - 1) * WeaponRowStep), Gold * .6f);
 
         for (int i = 0; i < MetaProgress.Catalog.Length; i++)
         {
@@ -134,13 +143,14 @@ public class WorkshopTree : MonoBehaviour
             links.Add(new KeyValuePair<int, Node>(bodyLink, node));
         }
 
+        int weaponSlot = 0;
         for (int i = 0; i < weapons; i++)
         {
             WeaponData weapon = shooter.weapons[i];
-            if (weapon == null || !weapon.IsUsable) continue;
-            int column = i % WeaponColumns;
+            if (weapon == null || !weapon.IsSelectable) continue;
+            int column = weaponSlot % WeaponColumns;
             float x = 640 + column * 320;
-            float y = Top + i / WeaponColumns * WeaponRowStep;
+            float y = Top + weaponSlot / WeaponColumns * WeaponRowStep; weaponSlot++;
             float from = column == 0 ? TrunkX : x - 320 + 38;
             int weaponLink = lines.Connect(new Vector2(from, y), new Vector2(x - 38, y), Gold * .55f);
             RectTransform group = Fixed("Weapon group " + i, board, x, y + 60, 300, 180);
@@ -208,6 +218,8 @@ public class WorkshopTree : MonoBehaviour
         previousWidth = width;
         Scroll.verticalNormalizedPosition = scrollProgress;
         Scroll.StopMovement();
+        // После смены размера окна выбранный узел остаётся на экране (он может быть в середине доски, а не у края).
+        if (selected != null) Reveal(selected);
     }
 
     private void ZoomWithWheel()
@@ -317,6 +329,12 @@ public class WorkshopTree : MonoBehaviour
         node.button.onClick.AddListener(() => { selected = node; Refresh(); Reveal(node); });
         node.picture = UiArtwork.Picture(rect, sprite, new Vector2(.04f, .04f), new Vector2(.96f, .96f));
         if (sprite == null) node.picture.enabled = false;
+        if (node.element != WeaponElement.None && WeaponElements.Locked)
+        {
+            node.keyIcon = UiArtwork.Picture(rect, KeySprite(), new Vector2(.05f, .05f), new Vector2(.95f, .95f));
+            node.keyIcon.raycastTarget = false;
+            node.keyIcon.name = "Lock key";
+        }
         string caption = node.element != WeaponElement.None ? WeaponElements.Names[(int)node.element] : node.title;
         bool module = node.element != WeaponElement.None;
         Text captionText = LabelAt(rect, caption, size * .5f, module ? size + 11 : size * .5f - 54,
@@ -324,7 +342,7 @@ public class WorkshopTree : MonoBehaviour
         captionText.transform.parent.name = "Node caption";
         captionText.rectTransform.offsetMin = captionText.rectTransform.offsetMax = Vector2.zero;
         node.state = LabelAt(rect, "", module ? size * .5f : size + 44,
-            module ? size + 28 : size * .5f + 22, module ? 62 : 72, module ? 16 : 28, 12, GameUi.Accent);
+            module ? size + 31 : size * .5f + 22, module ? 62 : 72, module ? 16 : 28, 12, GameUi.Accent);
         node.state.transform.parent.name = "Node state";
         node.state.rectTransform.offsetMin = node.state.rectTransform.offsetMax = Vector2.zero;
         node.badge = LabelAt(rect, "", size - 3, 1, 36, 18, 10, GameUi.Accent);
@@ -332,6 +350,37 @@ public class WorkshopTree : MonoBehaviour
         node.badge.resizeTextMinSize = 10;
         node.badge.rectTransform.offsetMin = node.badge.rectTransform.offsetMax = Vector2.zero;
         nodes.Add(node);
+    }
+
+    // Ключ-замок для закрытых узлов: рисуется в коде (кольцо, стержень, два зубца), золотой с тёмной обводкой.
+    private static Sprite keySprite;
+
+    private static Sprite KeySprite()
+    {
+        if (keySprite != null) return keySprite;
+        const int N = 64;
+        var texture = new Texture2D(N, N, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+        Color gold = new Color(1f, .8f, .28f), shade = new Color(.55f, .38f, .08f), outline = new Color(.04f, .05f, .07f, .95f);
+        Vector2 ringCentre = new Vector2(20f, 44f), tip = new Vector2(54f, 10f);
+        Vector2 axis = (tip - ringCentre).normalized, normal = new Vector2(-axis.y, axis.x);
+        for (int y = 0; y < N; y++)
+            for (int x = 0; x < N; x++)
+            {
+                Vector2 p = new Vector2(x + .5f, y + .5f);
+                float ring = Mathf.Abs(Vector2.Distance(p, ringCentre) - 10.5f) - 4.2f;
+                Vector2 q = p - ringCentre;
+                float along = Vector2.Dot(q, axis), across = Vector2.Dot(q, normal);
+                float length = Vector2.Distance(ringCentre, tip);
+                float shaft = along > 8f && along < length ? Mathf.Abs(across) - 3.2f : 99f;
+                float toothA = (along > length - 17f && along < length - 11f) ? Mathf.Max(Mathf.Abs(across + 6f) - 6.2f, 0f) : 99f;
+                float toothB = (along > length - 8f && along < length - 2f) ? Mathf.Max(Mathf.Abs(across + 5f) - 5.2f, 0f) : 99f;
+                float d = Mathf.Min(ring, Mathf.Min(shaft, Mathf.Min(toothA > 90f ? 99f : toothA - 0.01f, toothB > 90f ? 99f : toothB - 0.01f)));
+                Color c = d < 0f ? (across > 1f || (p.y - ringCentre.y) > 4f && Vector2.Distance(p, ringCentre) > 10f ? gold : Color.Lerp(gold, shade, .45f)) : d < 2.2f ? outline : Color.clear;
+                texture.SetPixel(x, y, c);
+            }
+        texture.Apply();
+        keySprite = Sprite.Create(texture, new Rect(0, 0, N, N), new Vector2(.5f, .5f), 64f);
+        return keySprite;
     }
 
     private void Reveal(Node node)
@@ -413,7 +462,7 @@ public class WorkshopTree : MonoBehaviour
                 int rank = WeaponElements.Rank(node.weapon, node.element);
                 owned = rank > 0;
                 affordable = WeaponElements.CanBuy(node.weapon, node.element);
-                node.state.text = !MetaProgress.IsWeaponUnlocked(node.weapon) ? "Закрыто" :
+                node.state.text = WeaponElements.Locked || !MetaProgress.IsWeaponUnlocked(node.weapon) ? "Закрыто" :
                     rank + "/3";
                 if (rank > 0 && WeaponElements.Equipped(node.weapon) == node.element) node.badge.text = "ВКЛ";
             }
@@ -424,6 +473,7 @@ public class WorkshopTree : MonoBehaviour
             node.diamond.Glow = affordable;
             node.diamond.SetVerticesDirty();
             node.picture.color = owned || affordable || node == selected ? Color.white : new Color(.4f, .45f, .5f, .7f);
+            if (node.keyIcon != null) { node.keyIcon.enabled = WeaponElements.Locked; if (WeaponElements.Locked) node.picture.color = new Color(.35f, .4f, .45f, .55f); }
             node.owned = owned;
             node.affordable = affordable;
         }
@@ -475,13 +525,15 @@ public class WorkshopTree : MonoBehaviour
                 (rank > 0 && rank < 3 ? "\n\nРанг " + (rank + 1) + ":\n" + Summary(selected.element, rank + 1) : "") +
                 "\n\nТолько для этого оружия.";
             state.text = !unlocked ? "Сначала открой оружие" : rank == 0 ? "Стихия не открыта" : "Ранг " + rank + "/3" + (active ? " · активна" : " · не активна");
+            if (WeaponElements.Locked && unlocked) state.text = "Улучшения оружия временно закрыты";
             buyText.text = rank == 3 ? "МАКСИМУМ" : (rank == 0 ? "ОТКРЫТЬ · " : "УЛУЧШИТЬ · ") + WeaponElements.Cost(rank);
             if (!unlocked) buyText.text = "ОРУЖИЕ ЗАКРЫТО";
             buy.interactable = WeaponElements.CanBuy(selected.weapon, selected.element);
             equip.gameObject.SetActive(rank > 0 && unlocked);
             equip.interactable = unlocked && rank > 0;
             equipText.text = active ? "СНЯТЬ СТИХИЮ" : "ПРИМЕНИТЬ";
-            if (unlocked && rank < 3 && !buy.interactable) state.text = "Не хватает " + (WeaponElements.Cost(rank) - MetaProgress.Currency) + " деталей";
+            if (WeaponElements.Locked) { if (unlocked) buyText.text = "ЗАКРЫТО"; equip.gameObject.SetActive(false); }
+            else             if (unlocked && rank < 3 && !buy.interactable) state.text = "Не хватает " + (WeaponElements.Cost(rank) - MetaProgress.Currency) + " деталей";
         }
         if (state.text.StartsWith("Не хватает") || state.text.StartsWith("Сначала")) state.color = Gold;
     }

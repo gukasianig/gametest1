@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum ArenaEventKind { MeteorShower, MagneticStorm, RepairField, SupplyDrop, HoldPoint, Ambush, ToxicPools }
+public enum ArenaEventKind { MeteorShower, MagneticStorm, RepairField, SupplyDrop, HoldPoint, Ambush, ToxicPools, Wildfire }
 
 // Random map events: every minute or so something changes on the arena for a short time.
 // Meteor shower (telegraphed blasts hurt everyone), magnetic storm (faster enemies, double experience),
@@ -77,7 +77,7 @@ public class ArenaEvents : MonoBehaviour
     {
         ArenaEventKind kind;
         int guard = 0;
-        do kind = (ArenaEventKind)Random.Range(0, 7);
+        do kind = (ArenaEventKind)Random.Range(0, System.Enum.GetValues(typeof(ArenaEventKind)).Length);
         while (hasLast && kind == last && ++guard < 8);
         return kind;
     }
@@ -134,9 +134,85 @@ public class ArenaEvents : MonoBehaviour
                 SpawnPools();
                 title = "ТОКСИЧНЫЕ ЛУЖИ — вредят и вам, и врагам";
                 break;
+            case ArenaEventKind.Wildfire:
+                SpawnWildfire();
+                title = "ПОЖАР — очаги разрастаются, обходи огонь";
+                break;
         }
-        GameSession session = GameSession.Instance;
-        if (session != null) session.Announce(title, 4f);
+        // Вместо текстового анонса — баннер (см. AnimateBanner); title остаётся для логов и старых вызовов.
+        bannerAt = Time.unscaledTime;
+        bannerTitle = title;
+    }
+
+    // --- Баннер события: въезжает слева по центру экрана, цвет по типу (опасно/полезно), ~3 с,
+    // затем уезжает вверх, а событие остаётся в компактной плашке справа сверху.
+    private const float BannerIn = 0.3f, BannerHold = 2.6f, BannerOut = 0.45f;
+    private float bannerAt = -100f;
+    private string bannerTitle = "";
+    private RectTransform banner;
+    private Image bannerBack, bannerStripe, plateStripe;
+    private Text bannerName, bannerHint;
+    private CanvasGroup bannerGroup;
+
+    public static bool Dangerous(ArenaEventKind kind)
+    {
+        return kind == ArenaEventKind.MeteorShower || kind == ArenaEventKind.Ambush ||
+               kind == ArenaEventKind.ToxicPools || kind == ArenaEventKind.Wildfire;
+    }
+
+    public static Color Tone(ArenaEventKind kind)
+    {
+        if (Dangerous(kind)) return new Color(1f, 0.4f, 0.28f);
+        if (kind == ArenaEventKind.MagneticStorm) return new Color(1f, 0.82f, 0.3f);
+        return new Color(0.35f, 0.95f, 0.55f);
+    }
+
+    public bool BannerVisible => banner != null && banner.gameObject.activeSelf;
+
+    private void BuildBanner()
+    {
+        banner = GameUi.Box(hudCanvas.transform, "Event Banner", new Vector2(0f, 0.6f), new Vector2(1f, 0.76f), new Color(0.02f, 0.03f, 0.045f, 0.88f));
+        bannerBack = banner.GetComponent<Image>();
+        bannerGroup = banner.gameObject.AddComponent<CanvasGroup>();
+        bannerGroup.blocksRaycasts = false;
+        bannerStripe = GameUi.Box(banner, "Stripe", new Vector2(0f, 0f), new Vector2(1f, 0.05f), Color.white).GetComponent<Image>();
+        GameUi.Box(banner, "Stripe Top", new Vector2(0f, 0.95f), new Vector2(1f, 1f), new Color(1f, 1f, 1f, 0.15f));
+        GameUi.Label(banner, "СОБЫТИЕ АРЕНЫ", new Vector2(0.2f, 0.74f), new Vector2(0.8f, 0.94f), 14, new Color(0.65f, 0.72f, 0.8f));
+        bannerName = GameUi.Readable(GameUi.Label(banner, "", new Vector2(0.1f, 0.34f), new Vector2(0.9f, 0.78f), 40), 2f);
+        bannerName.fontStyle = FontStyle.Bold;
+        bannerHint = GameUi.Readable(GameUi.Label(banner, "", new Vector2(0.1f, 0.07f), new Vector2(0.9f, 0.36f), 21, new Color(0.93f, 0.95f, 0.97f)), 1f);
+        banner.gameObject.SetActive(false);
+    }
+
+    private void AnimateBanner()
+    {
+        float age = Time.unscaledTime - bannerAt;
+        bool visible = Active && age < BannerIn + BannerHold + BannerOut;
+        banner.gameObject.SetActive(visible);
+        if (!visible) return;
+        Color tone = Tone(Current);
+        bannerStripe.color = tone;
+        bannerName.color = tone;
+        bannerName.text = Title(Current);
+        bannerHint.text = Hint(Current);
+        float width = ((RectTransform)hudCanvas.transform).rect.width;
+        float x = 0f, y = 0f, alpha = 1f;
+        if (age < BannerIn)
+        {
+            float k = 1f - Mathf.Pow(1f - age / BannerIn, 3f);
+            x = Mathf.Lerp(-width, 0f, k);
+        }
+        else if (age > BannerIn + BannerHold)
+        {
+            float k = (age - BannerIn - BannerHold) / BannerOut;
+            y = k * k * 140f;
+            alpha = 1f - k;
+        }
+        banner.anchoredPosition = new Vector2(x, y);
+        bannerGroup.alpha = alpha;
+        // Короткая вспышка фона при появлении.
+        float flash = Mathf.Clamp01(1f - age / 0.5f);
+        bannerBack.color = Color.Lerp(new Color(0.02f, 0.03f, 0.045f, 0.88f), new Color(tone.r * 0.5f, tone.g * 0.5f, tone.b * 0.5f, 0.92f), flash);
     }
 
     public void End(bool announce)
@@ -147,6 +223,9 @@ public class ArenaEvents : MonoBehaviour
         ResetFactors();
         ClearProps();
         poolCentres.Clear();
+        // Огонь не исчезает мгновенно: языки опускаются, нагар держится ~2,5 с.
+        foreach (GroundFireZone fire in fires) if (fire != null) fire.Extinguish();
+        fires.Clear();
         bool lost = Current == ArenaEventKind.HoldPoint && !holdWon;
         nextAt = clock + Random.Range(minGap, maxGap);
         GameSession session = GameSession.Instance;
@@ -167,6 +246,7 @@ public class ArenaEvents : MonoBehaviour
             case ArenaEventKind.SupplyDrop: return "СБРОС ПРИПАСОВ";
             case ArenaEventKind.HoldPoint: return "УДЕРЖИ ТОЧКУ";
             case ArenaEventKind.Ambush: return "ЗАСАДА";
+            case ArenaEventKind.Wildfire: return "ПОЖАР";
             default: return "ТОКСИЧНЫЕ ЛУЖИ";
         }
     }
@@ -179,15 +259,108 @@ public class ArenaEvents : MonoBehaviour
         {
             if (!show) return;
             hudCanvas = GameUi.Canvas("Event HUD", 78);
-            RectTransform box = GameUi.Box(hudCanvas.transform, "Event", new Vector2(0.3f, 0.855f), new Vector2(0.7f, 0.905f), GameUi.Background);
-            hudText = GameUi.Label(box, "", Vector2.zero, Vector2.one, 20, GameUi.Accent);
+            // Компактная плашка справа сверху: название с таймером и что делать; цветная полоса слева — тип.
+            RectTransform box = GameUi.Box(hudCanvas.transform, "Event", new Vector2(0.735f, 0.8f), new Vector2(0.99f, 0.935f),
+                new Color(0.02f, 0.035f, 0.05f, 0.85f));
+            UiArtwork.Round(box.GetComponent<Image>());
+            plateStripe = GameUi.Box(box, "Tone", new Vector2(0.015f, 0.12f), new Vector2(0.035f, 0.88f), GameUi.Accent).GetComponent<Image>();
+            hudText = GameUi.Readable(GameUi.Label(box, "", new Vector2(0.05f, 0.52f), new Vector2(0.98f, 0.96f), 20, GameUi.Accent), 1f);
+            hudText.alignment = TextAnchor.MiddleLeft;
+            hudText.fontStyle = FontStyle.Bold;
+            hudHint = GameUi.Label(box, "", new Vector2(0.05f, 0.04f), new Vector2(0.98f, 0.54f), 15, new Color(0.92f, 0.94f, 0.96f));
+            hudHint.alignment = TextAnchor.UpperLeft;
+            hudHint.horizontalOverflow = HorizontalWrapMode.Wrap;
+            BuildBanner();
+            arrow = GameUi.Label(hudCanvas.transform, "►", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 44, new Color(1f, 0.85f, 0.25f));
+            arrow.rectTransform.sizeDelta = new Vector2(70f, 70f);
+            arrowDistance = GameUi.Label(hudCanvas.transform, "", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 18, new Color(1f, 0.85f, 0.25f));
+            arrowDistance.rectTransform.sizeDelta = new Vector2(110f, 30f);
         }
         hudCanvas.enabled = show || (Active && session != null && session.State == GameRunState.Paused);
-        if (!Active) return;
+        if (!Active)
+        {
+            if (banner != null && banner.gameObject.activeSelf) banner.gameObject.SetActive(false);
+            return;
+        }
         string line = Title(Current) + "  " + Mathf.CeilToInt(Remaining) + " с";
         if (Current == ArenaEventKind.HoldPoint)
             line = holdWon ? "ТОЧКА УДЕРЖАНА" : "УДЕРЖИ ТОЧКУ  " + Mathf.FloorToInt(holdProgress) + " / " + Mathf.RoundToInt(holdSeconds) + " с  •  осталось " + Mathf.CeilToInt(Remaining) + " с";
         hudText.text = line;
+        hudText.color = Tone(Current);
+        plateStripe.color = Tone(Current);
+        hudHint.text = Hint(Current);
+        AnimateBanner();
+        UpdateArrow();
+    }
+
+    // --- Подсказка «что делать» под названием события и стрелка к цели (круг, маяк).
+    private Text hudHint, arrow, arrowDistance;
+    private Vector3 supplyCentre;
+
+    public static string Hint(ArenaEventKind kind)
+    {
+        switch (kind)
+        {
+            case ArenaEventKind.MeteorShower: return "Уходи с красных кругов — туда падают метеориты";
+            case ArenaEventKind.MagneticStorm: return "Враги быстрее, но опыт ×2 — собирай кристаллы";
+            case ArenaEventKind.RepairField: return "Иди по стрелке и встань в зелёный круг — он лечит";
+            case ArenaEventKind.SupplyDrop: return "Иди по стрелке к жёлтому маяку и собери кристаллы";
+            case ArenaEventKind.HoldPoint: return "Иди по стрелке и стой в золотом круге, пока идёт счёт";
+            case ArenaEventKind.Ambush: return "Враги появятся вокруг тебя — будь готов к рывку";
+            case ArenaEventKind.Wildfire: return "Огонь разрастается — не заходи в него, заманивай врагов";
+            default: return "Не стой в зелёной кислоте — она жжёт и врагов";
+        }
+    }
+
+    // Цель, к которой надо идти; у опасных событий цели нет.
+    public bool TryGetTarget(out Vector3 target)
+    {
+        target = Vector3.zero;
+        if (!Active) return false;
+        switch (Current)
+        {
+            case ArenaEventKind.RepairField: target = fieldCenter; return true;
+            case ArenaEventKind.SupplyDrop: target = supplyCentre; return true;
+            case ArenaEventKind.HoldPoint: target = holdCentre; return !holdWon;
+            default: return false;
+        }
+    }
+
+    private void UpdateArrow()
+    {
+        Camera view = Camera.main;
+        bool visible = view != null && player != null && TryGetTarget(out Vector3 target);
+        arrow.gameObject.SetActive(visible);
+        arrowDistance.gameObject.SetActive(visible);
+        if (!visible) return;
+
+        TryGetTarget(out target);
+        float metres = WeaponTargets.Flat(player.position, target);
+        RectTransform canvasRect = (RectTransform)hudCanvas.transform;
+        Vector2 size = canvasRect.rect.size;
+        Vector3 screen = view.WorldToScreenPoint(target + Vector3.up * 1.5f);
+        Vector2 local = new Vector2(screen.x / Screen.width * size.x - size.x * 0.5f, screen.y / Screen.height * size.y - size.y * 0.5f);
+        if (screen.z < 0f) local = -local;
+        Vector2 half = size * 0.5f - new Vector2(60f, 60f);
+        bool onScreen = screen.z > 0f && Mathf.Abs(local.x) <= half.x && Mathf.Abs(local.y) <= half.y;
+        float angle;
+        if (onScreen)
+        {
+            // Цель на экране: стрелка висит над ней и смотрит вниз, мягко покачиваясь.
+            local.y += 40f + 8f * Mathf.Sin(Time.unscaledTime * 6f);
+            angle = -90f;
+        }
+        else
+        {
+            // Цель за экраном: стрелка у края экрана в её сторону.
+            angle = Mathf.Atan2(local.y, local.x) * Mathf.Rad2Deg;
+            float scale = Mathf.Min(half.x / Mathf.Max(0.01f, Mathf.Abs(local.x)), half.y / Mathf.Max(0.01f, Mathf.Abs(local.y)));
+            local *= scale;
+        }
+        arrow.rectTransform.anchoredPosition = local;
+        arrow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, angle);
+        arrowDistance.rectTransform.anchoredPosition = local + (onScreen ? new Vector2(0f, 45f) : -local.normalized * 55f);
+        arrowDistance.text = Mathf.RoundToInt(metres) + " м";
     }
 
     private void FindPlayer()
@@ -223,6 +396,7 @@ public class ArenaEvents : MonoBehaviour
         }
         else if (Current == ArenaEventKind.ToxicPools)
         {
+            if (clock <= poolsActiveAt + 0.1f) SpreadPools();
             if (tick > 0f) return;
             tick = 0.5f;
             TickPools();
@@ -245,9 +419,12 @@ public class ArenaEvents : MonoBehaviour
         {
             Vector2 circle = Random.insideUnitCircle.normalized * Random.Range(minDistance, maxDistance);
             Vector3 point = new Vector3(centre.x + circle.x, 0f, centre.z + circle.y);
+            point.y = GroundHeight.At(point);
             if (ArenaLayout.Instance == null || ArenaLayout.Instance.IsWalkable(point, radius)) return point;
         }
-        return new Vector3(centre.x, 0f, centre.z);
+        Vector3 fallback = new Vector3(centre.x, 0f, centre.z);
+        fallback.y = GroundHeight.At(fallback);
+        return fallback;
     }
 
     private void SpawnField(Vector3 centre)
@@ -266,6 +443,7 @@ public class ArenaEvents : MonoBehaviour
     private void SupplyDrop()
     {
         Vector3 centre = FindSpot(18f, 30f, 3f);
+        supplyCentre = centre;
         GameObject beam = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         beam.name = "Supply beacon";
         Destroy(beam.GetComponent<Collider>());
@@ -349,8 +527,46 @@ public class ArenaEvents : MonoBehaviour
         {
             Vector3 centre = FindSpot(4f + i * 4f, 14f + i * 6f, PoolRadius);
             poolCentres.Add(centre);
-            props.Add(Flat("Toxic pool", centre, PoolRadius * 2f, new Color(0.25f, 0.5f, 0.1f), 0.04f));
+            props.Add(AcidPool(centre));
         }
+    }
+
+    // Модель AcidPuddle (радиус ~2,7 м при масштабе 1) растягивается по XZ до PoolRadius. Пока идёт
+    // предупреждение, лужа растекается от трети размера; без модели остаётся прежний зелёный диск.
+    private const float AcidModelRadius = 2.7f;
+    private static GameObject acidModel;
+    private static bool acidMissing;
+
+    private GameObject AcidPool(Vector3 centre)
+    {
+        if (acidModel == null && !acidMissing)
+        {
+            acidModel = Resources.Load<GameObject>("Hazards/AcidPuddle");
+            acidMissing = acidModel == null;
+            if (acidMissing) Debug.LogWarning("ArenaEvents: Resources/Hazards/AcidPuddle not found; toxic pools use plain discs.");
+        }
+        if (acidModel == null) return Flat("Toxic pool", centre, PoolRadius * 2f, new Color(0.25f, 0.5f, 0.1f), 0.04f);
+        GameObject pool = Instantiate(acidModel, new Vector3(centre.x, GroundHeight.At(centre) + 0.01f, centre.z), Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
+        pool.name = "Toxic pool";
+        foreach (Collider collider in pool.GetComponentsInChildren<Collider>()) Destroy(collider);
+        foreach (Renderer renderer in pool.GetComponentsInChildren<Renderer>())
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        pool.transform.localScale = PoolScale(0.35f);
+        return pool;
+    }
+
+    private static Vector3 PoolScale(float share)
+    {
+        float s = PoolRadius / AcidModelRadius * share;
+        return new Vector3(s, 1f, s);
+    }
+
+    private void SpreadPools()
+    {
+        if (acidModel == null) return;
+        float share = Mathf.Lerp(0.35f, 1f, Mathf.Clamp01(1f - (poolsActiveAt - clock) / 1.5f));
+        foreach (GameObject prop in props)
+            if (prop != null && prop.name == "Toxic pool") prop.transform.localScale = PoolScale(share);
     }
 
     private void TickPools()
@@ -366,6 +582,23 @@ public class ArenaEvents : MonoBehaviour
         }
     }
 
+    // --- Wildfire: three hearths start small and spread to 4.5 m; they burn the player and enemies alike.
+    private readonly List<GroundFireZone> fires = new List<GroundFireZone>();
+    private const float FireStartRadius = 1.2f, FireMaxRadius = 4.5f, FireGrowSeconds = 12f;
+    public int FireCount { get { fires.RemoveAll(f => f == null); return fires.Count; } }
+
+    private void SpawnWildfire()
+    {
+        fires.Clear();
+        for (int i = 0; i < 3; i++)
+        {
+            // Ищем место под полный размер, чтобы разросшийся огонь не уходил в стены.
+            Vector3 centre = FindSpot(6f + i * 4f, 14f + i * 6f, FireMaxRadius);
+            fires.Add(GroundFireZone.Spawn(centre, FireStartRadius, FireMaxRadius, FireGrowSeconds,
+                eventSeconds + 5f, health => health.TakeDamage(12), 5));
+        }
+    }
+
     // Damage used by meteors: enemies and the player take it, so staying in the circle is never free.
     public void Blast(Vector3 centre, float radius, int enemyDamage, int playerDamage)
     {
@@ -375,7 +608,8 @@ public class ArenaEvents : MonoBehaviour
                 health.TakeDamage(enemyDamage);
         FindPlayer();
         if (playerHealth != null && WeaponTargets.Flat(centre, player.position) <= radius) playerHealth.TakeDamage(playerDamage);
-        ExpandingSphere.Create(centre, radius, new Color(1f, 0.5f, 0.12f), 0.35f);
+        EnemyFx.Explosion(new Vector3(centre.x, GroundHeight.At(centre), centre.z), radius * 0.85f, 0.8f);
+        GameAudio.Play(Sfx.Explosion, 0.7f);
     }
 
     internal static GameObject Flat(string name, Vector3 centre, float diameter, Color colour, float height)
@@ -383,7 +617,8 @@ public class ArenaEvents : MonoBehaviour
         GameObject disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         disc.name = name;
         Destroy(disc.GetComponent<Collider>());
-        disc.transform.position = new Vector3(centre.x, height, centre.z);
+        // На аренах с рельефом земля выше нуля: без этого круги событий оказывались под землёй.
+        disc.transform.position = new Vector3(centre.x, GroundHeight.At(centre) + height, centre.z);
         disc.transform.localScale = new Vector3(diameter, 0.01f, diameter);
         Paint(disc, colour);
         return disc;
@@ -420,6 +655,12 @@ public class Meteor : MonoBehaviour
         meteor.fill = inner.transform;
     }
 
+    // Камень падает с неба наискосок за последние FallTime секунд предупреждения и оставляет огненный след.
+    private const float FallTime = 0.8f, FallHeight = 26f;
+    private Transform rock;
+    private Vector3 fallFrom;
+    private float trail;
+
     private void Update()
     {
         age += Time.deltaTime;
@@ -429,8 +670,39 @@ public class Meteor : MonoBehaviour
             float scale = Mathf.Max(0.05f, t) * Radius * 2f / Mathf.Max(0.01f, transform.localScale.x);
             fill.localScale = new Vector3(scale, 1f, scale);
         }
+        Vector3 ground = new Vector3(transform.position.x, GroundHeight.At(transform.position), transform.position.z);
+        if (age >= Delay - FallTime && age < Delay) AnimateRock(ground, 1f - (Delay - age) / FallTime);
         if (age < Delay) return;
-        if (owner != null) owner.Blast(transform.position, Radius, 60, 15);
+        if (owner != null) owner.Blast(ground, Radius, 60, 15);
+        if (rock != null) Destroy(rock.gameObject);
         Destroy(gameObject);
+    }
+
+    private void AnimateRock(Vector3 ground, float k)
+    {
+        if (rock == null)
+        {
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            body.name = "Meteor rock";
+            Destroy(body.GetComponent<Collider>());
+            ArenaEvents.Paint(body, new Color(0.32f, 0.16f, 0.1f));
+            body.transform.localScale = new Vector3(1.3f, 1.1f, 1.2f);
+            rock = body.transform;
+            Vector2 side = Random.insideUnitCircle.normalized * 9f;
+            fallFrom = ground + new Vector3(side.x, FallHeight, side.y);
+        }
+        float eased = k * k;
+        rock.position = Vector3.Lerp(fallFrom, ground + Vector3.up * 0.6f, eased);
+        rock.Rotate(new Vector3(1f, 0.4f, 0.2f), 600f * Time.deltaTime, Space.Self);
+        trail -= Time.deltaTime;
+        if (trail > 0f) return;
+        trail = 0.035f;
+        EnemyFx.Puff(rock.position + Random.insideUnitSphere * 0.3f, new Color(1f, 0.55f, 0.15f), 0.9f, 0.35f, Vector3.up * 0.5f);
+        EnemyFx.Puff(rock.position + Random.insideUnitSphere * 0.4f, new Color(0.35f, 0.3f, 0.3f), 1.1f, 0.6f, Vector3.up * 1f);
+    }
+
+    private void OnDestroy()
+    {
+        if (rock != null) Destroy(rock.gameObject);
     }
 }

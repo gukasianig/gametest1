@@ -31,14 +31,14 @@ public static class WorkshopTreeChecks
     {
         Directory.CreateDirectory("Logs");
         File.WriteAllText(Request, "batch");
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         EditorApplication.isPlaying = true;
     }
     public static void RunFocusedBatch()
     {
         Directory.CreateDirectory("Logs");
         File.WriteAllText(Request, "focused");
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         EditorApplication.isPlaying = true;
     }
     private static void Begin()
@@ -79,7 +79,7 @@ public static class WorkshopTreeChecks
     private static IEnumerator ReloadMenu()
     {
         PlayerProgression previous = PlayerProgression.Instance;
-        SceneManager.LoadScene("SampleScene");
+        SceneManager.LoadScene("GreenArenaPlay");
         double deadline = EditorApplication.timeSinceStartup + 30;
         while (PlayerProgression.Instance == null || PlayerProgression.Instance == previous ||
             !PlayerProgression.Instance.GetComponent<StartMenu>().WaitingForWeapon)

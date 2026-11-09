@@ -1,0 +1,1291 @@
+{
+  "ground": [
+    {
+      "name": "grass_lush",
+      "meters": 8,
+      "size": 2048,
+      "maps": [
+        "color",
+        "normal",
+        "rough"
+      ],
+      "target_srgb": "#4c7f34"
+    },
+    {
+      "name": "grass_dark",
+      "meters": 8,
+      "size": 2048,
+      "maps": [
+        "color",
+        "normal",
+        "rough"
+      ],
+      "target_srgb": "#2f5a2c"
+    },
+    {
+      "name": "dirt_path",
+      "meters": 10,
+      "size": 2048,
+      "maps": [
+        "color",
+        "normal",
+        "rough",
+        "height"
+      ],
+      "target_srgb": "#7a5c3e"
+    },
+    {
+      "name": "dirt_rich",
+      "meters": 10,
+      "size": 2048,
+      "maps": [
+        "color",
+        "normal",
+        "rough",
+        "height"
+      ],
+      "target_srgb": "#4e3a28"
+    },
+    {
+      "name": "sand_fine",
+      "meters": 10,
+      "size": 2048,
+      "maps": [
+        "color",
+        "normal",
+        "rough"
+      ],
+      "target_srgb": "#d1be8c"
+    },
+    {
+      "name": "rock_gray",
+      "meters": 12,
+      "size": 2048,
+      "maps": [
+        "color",
+        "normal",
+        "rough",
+        "height"
+      ],
+      "target_srgb": "#77757a"
+    },
+    {
+      "name": "rock_mossy",
+      "meters": 12,
+      "size": 2048,
+      "maps": [
+        "color",
+        "normal",
+        "rough",
+        "height"
+      ],
+      "target_srgb": "#5e6e54"
+    },
+    {
+      "name": "leaf_litter",
+      "meters": 8,
+      "size": 2048,
+      "maps": [
+        "color",
+        "normal",
+        "rough"
+      ],
+      "target_srgb": "#7b5a30"
+    }
+  ],
+  "effects": {
+    "sprites": [
+      "dust_puff",
+      "leaf_particle"
+    ],
+    "skies": [
+      "morning"
+    ]
+  },
+  "models": [
+    {
+      "file": "terrain/hill_round_M.fbx",
+      "category": "terrain",
+      "name": "hill_round_M",
+      "triangles": 1550,
+      "budget": 1600,
+      "blender_bounds": [
+        [
+          -20.0,
+          -20.0,
+          -0.5
+        ],
+        [
+          20.0,
+          20.0,
+          8.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "terrain/hill_round_L.fbx",
+      "category": "terrain",
+      "name": "hill_round_L",
+      "triangles": 2030,
+      "budget": 2500,
+      "blender_bounds": [
+        [
+          -35.0,
+          -35.0,
+          -0.5
+        ],
+        [
+          35.0,
+          35.0,
+          14.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "terrain/cliff_wall_straight.fbx",
+      "category": "terrain",
+      "name": "cliff_wall_straight",
+      "triangles": 1904,
+      "budget": 2000,
+      "blender_bounds": [
+        [
+          -20.0,
+          -3.0,
+          -0.5
+        ],
+        [
+          20.0,
+          3.0,
+          14.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "terrain/crater_dry.fbx",
+      "category": "terrain",
+      "name": "crater_dry",
+      "triangles": 1134,
+      "budget": 1200,
+      "blender_bounds": [
+        [
+          -15.0,
+          -15.0,
+          -0.5
+        ],
+        [
+          15.0,
+          15.0,
+          4.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "terrain/mountain_far_01.fbx",
+      "category": "terrain",
+      "name": "mountain_far_01",
+      "triangles": 782,
+      "budget": 800,
+      "blender_bounds": [
+        [
+          -75.0,
+          -30.0,
+          -0.5
+        ],
+        [
+          75.0,
+          30.0,
+          60.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "terrain/mountain_far_02.fbx",
+      "category": "terrain",
+      "name": "mountain_far_02",
+      "triangles": 782,
+      "budget": 800,
+      "blender_bounds": [
+        [
+          -75.0,
+          -30.0,
+          -0.5
+        ],
+        [
+          75.0,
+          30.0,
+          60.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "water/pond_M.fbx",
+      "category": "water",
+      "name": "pond_M",
+      "triangles": 160,
+      "budget": 1000,
+      "blender_bounds": [
+        [
+          -9.0,
+          -9.0,
+          -0.07000000029802322
+        ],
+        [
+          9.0,
+          9.0,
+          0.4099999964237213
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas",
+        "ArenaGreen_Water"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "water/river_straight_20.fbx",
+      "category": "water",
+      "name": "river_straight_20",
+      "triangles": 280,
+      "budget": 800,
+      "blender_bounds": [
+        [
+          -5.0,
+          -10.0,
+          0.0
+        ],
+        [
+          5.0,
+          10.0,
+          0.3499999940395355
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas",
+        "ArenaGreen_Water"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "water/river_curve_90.fbx",
+      "category": "water",
+      "name": "river_curve_90",
+      "triangles": 336,
+      "budget": 1000,
+      "blender_bounds": [
+        [
+          -10.0,
+          -10.0,
+          0.0
+        ],
+        [
+          10.0,
+          10.0,
+          0.3499999940395355
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas",
+        "ArenaGreen_Water"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "water/puddle_01.fbx",
+      "category": "water",
+      "name": "puddle_01",
+      "triangles": 130,
+      "budget": 200,
+      "blender_bounds": [
+        [
+          -0.6000000238418579,
+          -0.3799999952316284,
+          0.0
+        ],
+        [
+          0.6000000238418579,
+          0.3799999952316284,
+          0.03500000014901161
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas",
+        "ArenaGreen_Water"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "water/puddle_02.fbx",
+      "category": "water",
+      "name": "puddle_02",
+      "triangles": 130,
+      "budget": 200,
+      "blender_bounds": [
+        [
+          -0.9549999833106995,
+          -0.6349999904632568,
+          0.0
+        ],
+        [
+          0.9549999833106995,
+          0.6349999904632568,
+          0.03500000014901161
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas",
+        "ArenaGreen_Water"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "water/puddle_03.fbx",
+      "category": "water",
+      "name": "puddle_03",
+      "triangles": 130,
+      "budget": 200,
+      "blender_bounds": [
+        [
+          -1.309999942779541,
+          -0.8899999856948853,
+          0.0
+        ],
+        [
+          1.309999942779541,
+          0.8899999856948853,
+          0.03500000014901161
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas",
+        "ArenaGreen_Water"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "bridges/bridge_wood_S.fbx",
+      "category": "bridges",
+      "name": "bridge_wood_S",
+      "triangles": 328,
+      "budget": 900,
+      "blender_bounds": [
+        [
+          -1.0,
+          -3.0,
+          0.0
+        ],
+        [
+          1.0,
+          3.0,
+          1.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "bridges/bridge_stone_arch.fbx",
+      "category": "bridges",
+      "name": "bridge_stone_arch",
+      "triangles": 444,
+      "budget": 2400,
+      "blender_bounds": [
+        [
+          -2.5,
+          -6.0,
+          0.0
+        ],
+        [
+          2.5,
+          6.0,
+          3.5
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "buildings/house_wood_small.fbx",
+      "category": "buildings",
+      "name": "house_wood_small",
+      "triangles": 642,
+      "budget": 2500,
+      "blender_bounds": [
+        [
+          -3.0,
+          -3.0,
+          0.0
+        ],
+        [
+          3.0,
+          3.0,
+          5.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas",
+        "ArenaGreen_Glass"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "buildings/barn.fbx",
+      "category": "buildings",
+      "name": "barn",
+      "triangles": 666,
+      "budget": 3500,
+      "blender_bounds": [
+        [
+          -6.0,
+          -4.0,
+          0.0
+        ],
+        [
+          6.0,
+          4.0,
+          7.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas",
+        "ArenaGreen_Glass"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "buildings/windmill.fbx",
+      "category": "buildings",
+      "name": "windmill",
+      "triangles": 808,
+      "budget": 3500,
+      "blender_bounds": [
+        [
+          -3.0,
+          -3.2300000190734863,
+          0.0
+        ],
+        [
+          3.0,
+          3.0,
+          14.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 2,
+      "minimum": true
+    },
+    {
+      "file": "buildings/tower_watch_wood.fbx",
+      "category": "buildings",
+      "name": "tower_watch_wood",
+      "triangles": 510,
+      "budget": 2000,
+      "blender_bounds": [
+        [
+          -2.0,
+          -2.0,
+          0.0
+        ],
+        [
+          2.0,
+          2.0,
+          10.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "buildings/well_stone.fbx",
+      "category": "buildings",
+      "name": "well_stone",
+      "triangles": 574,
+      "budget": 600,
+      "blender_bounds": [
+        [
+          -0.800000011920929,
+          -0.800000011920929,
+          0.0
+        ],
+        [
+          0.800000011920929,
+          0.800000011920929,
+          2.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "buildings/ruins_wall_set_01.fbx",
+      "category": "buildings",
+      "name": "ruins_wall_set_01",
+      "triangles": 600,
+      "budget": 700,
+      "blender_bounds": [
+        [
+          -1.0,
+          -0.25,
+          0.0
+        ],
+        [
+          1.0,
+          0.25,
+          1.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "buildings/ruins_wall_set_02.fbx",
+      "category": "buildings",
+      "name": "ruins_wall_set_02",
+      "triangles": 588,
+      "budget": 700,
+      "blender_bounds": [
+        [
+          -1.5,
+          -0.25,
+          0.0
+        ],
+        [
+          1.5,
+          0.25,
+          1.4800000190734863
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "buildings/ruins_wall_set_03.fbx",
+      "category": "buildings",
+      "name": "ruins_wall_set_03",
+      "triangles": 564,
+      "budget": 700,
+      "blender_bounds": [
+        [
+          -2.0,
+          -0.25,
+          0.0
+        ],
+        [
+          2.0,
+          0.25,
+          1.9600000381469727
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "buildings/ruins_wall_set_04.fbx",
+      "category": "buildings",
+      "name": "ruins_wall_set_04",
+      "triangles": 588,
+      "budget": 700,
+      "blender_bounds": [
+        [
+          -2.5,
+          -0.25,
+          0.0
+        ],
+        [
+          2.5,
+          0.25,
+          2.440000057220459
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "buildings/ruins_wall_set_05.fbx",
+      "category": "buildings",
+      "name": "ruins_wall_set_05",
+      "triangles": 552,
+      "budget": 700,
+      "blender_bounds": [
+        [
+          -3.0,
+          -0.25,
+          0.0
+        ],
+        [
+          3.0,
+          0.25,
+          2.9200000762939453
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "structures/fence_wood_straight.fbx",
+      "category": "structures",
+      "name": "fence_wood_straight",
+      "triangles": 48,
+      "budget": 300,
+      "blender_bounds": [
+        [
+          -1.5,
+          -0.10000000149011612,
+          0.0
+        ],
+        [
+          1.5,
+          0.10000000149011612,
+          1.2000000476837158
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "structures/fence_wood_corner.fbx",
+      "category": "structures",
+      "name": "fence_wood_corner",
+      "triangles": 84,
+      "budget": 300,
+      "blender_bounds": [
+        [
+          -0.800000011920929,
+          -0.800000011920929,
+          0.0
+        ],
+        [
+          0.800000011920929,
+          0.800000011920929,
+          1.2000000476837158
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "structures/fence_stone_low.fbx",
+      "category": "structures",
+      "name": "fence_stone_low",
+      "triangles": 180,
+      "budget": 300,
+      "blender_bounds": [
+        [
+          -1.5,
+          -0.30000001192092896,
+          0.0
+        ],
+        [
+          1.5,
+          0.30000001192092896,
+          1.0
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/grass_clump_short_01.fbx",
+      "category": "plants",
+      "name": "grass_clump_short_01",
+      "triangles": 90,
+      "budget": 250,
+      "blender_bounds": [
+        [
+          -0.2502500116825104,
+          -0.27000001072883606,
+          0.0
+        ],
+        [
+          0.2502500116825104,
+          0.27000001072883606,
+          0.3199999928474426
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/grass_clump_short_02.fbx",
+      "category": "plants",
+      "name": "grass_clump_short_02",
+      "triangles": 90,
+      "budget": 250,
+      "blender_bounds": [
+        [
+          -0.2658333480358124,
+          -0.27000001072883606,
+          0.0
+        ],
+        [
+          0.2658333480358124,
+          0.27000001072883606,
+          0.3766666650772095
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/fern_01.fbx",
+      "category": "plants",
+      "name": "fern_01",
+      "triangles": 130,
+      "budget": 500,
+      "blender_bounds": [
+        [
+          -0.5005000233650208,
+          -0.5,
+          0.0
+        ],
+        [
+          0.5005000233650208,
+          0.5,
+          0.6299999952316284
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/bush_leafy_01.fbx",
+      "category": "plants",
+      "name": "bush_leafy_01",
+      "triangles": 660,
+      "budget": 1200,
+      "blender_bounds": [
+        [
+          -0.7735000252723694,
+          -0.75,
+          0.0
+        ],
+        [
+          0.7735000252723694,
+          0.75,
+          1.0199999809265137
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/bush_leafy_02.fbx",
+      "category": "plants",
+      "name": "bush_leafy_02",
+      "triangles": 660,
+      "budget": 1200,
+      "blender_bounds": [
+        [
+          -0.8096250295639038,
+          -0.75,
+          0.0
+        ],
+        [
+          0.8096250295639038,
+          0.75,
+          1.2100000381469727
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/bush_leafy_03.fbx",
+      "category": "plants",
+      "name": "bush_leafy_03",
+      "triangles": 660,
+      "budget": 1200,
+      "blender_bounds": [
+        [
+          -0.8457499742507935,
+          -0.75,
+          0.0
+        ],
+        [
+          0.8457499742507935,
+          0.75,
+          1.399999976158142
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/flower_single_set_01.fbx",
+      "category": "plants",
+      "name": "flower_single_set_01",
+      "triangles": 56,
+      "budget": 200,
+      "blender_bounds": [
+        [
+          -0.14104999601840973,
+          -0.15000000596046448,
+          0.0
+        ],
+        [
+          0.14104999601840973,
+          0.15000000596046448,
+          0.3100000023841858
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/flower_single_set_02.fbx",
+      "category": "plants",
+      "name": "flower_single_set_02",
+      "triangles": 56,
+      "budget": 200,
+      "blender_bounds": [
+        [
+          -0.14632000029087067,
+          -0.15000000596046448,
+          0.0
+        ],
+        [
+          0.14632000029087067,
+          0.15000000596046448,
+          0.3659999966621399
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/flower_single_set_03.fbx",
+      "category": "plants",
+      "name": "flower_single_set_03",
+      "triangles": 56,
+      "budget": 200,
+      "blender_bounds": [
+        [
+          -0.1515900045633316,
+          -0.15000000596046448,
+          0.0
+        ],
+        [
+          0.1515900045633316,
+          0.15000000596046448,
+          0.421999990940094
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/flower_single_set_04.fbx",
+      "category": "plants",
+      "name": "flower_single_set_04",
+      "triangles": 56,
+      "budget": 200,
+      "blender_bounds": [
+        [
+          -0.15685999393463135,
+          -0.15000000596046448,
+          0.0
+        ],
+        [
+          0.15685999393463135,
+          0.15000000596046448,
+          0.4779999852180481
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/flower_single_set_05.fbx",
+      "category": "plants",
+      "name": "flower_single_set_05",
+      "triangles": 56,
+      "budget": 200,
+      "blender_bounds": [
+        [
+          -0.16212999820709229,
+          -0.15000000596046448,
+          0.0
+        ],
+        [
+          0.16212999820709229,
+          0.15000000596046448,
+          0.5339999794960022
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/flower_single_set_06.fbx",
+      "category": "plants",
+      "name": "flower_single_set_06",
+      "triangles": 56,
+      "budget": 200,
+      "blender_bounds": [
+        [
+          -0.16740000247955322,
+          -0.15000000596046448,
+          0.0
+        ],
+        [
+          0.16740000247955322,
+          0.15000000596046448,
+          0.5899999737739563
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/reed_clump_01.fbx",
+      "category": "plants",
+      "name": "reed_clump_01",
+      "triangles": 174,
+      "budget": 450,
+      "blender_bounds": [
+        [
+          -0.35945001244544983,
+          -0.375,
+          0.0
+        ],
+        [
+          0.35945001244544983,
+          0.375,
+          1.0499999523162842
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/tree_birch_01.fbx",
+      "category": "plants",
+      "name": "tree_birch_01",
+      "triangles": 1042,
+      "budget": 3000,
+      "blender_bounds": [
+        [
+          -1.9565000534057617,
+          -2.049999952316284,
+          0.0
+        ],
+        [
+          1.9565000534057617,
+          2.049999952316284,
+          8.5
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "plants/tree_willow_01.fbx",
+      "category": "plants",
+      "name": "tree_willow_01",
+      "triangles": 1822,
+      "budget": 3500,
+      "blender_bounds": [
+        [
+          -3.2304999828338623,
+          -3.299999952316284,
+          0.0
+        ],
+        [
+          3.2304999828338623,
+          3.299999952316284,
+          8.300000190734863
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "rocks/rock_small_01.fbx",
+      "category": "rocks",
+      "name": "rock_small_01",
+      "triangles": 96,
+      "budget": 400,
+      "blender_bounds": [
+        [
+          -0.2752000093460083,
+          -0.2750000059604645,
+          0.0
+        ],
+        [
+          0.2752000093460083,
+          0.2750000059604645,
+          0.41830000281333923
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "rocks/rock_small_02.fbx",
+      "category": "rocks",
+      "name": "rock_small_02",
+      "triangles": 96,
+      "budget": 400,
+      "blender_bounds": [
+        [
+          -0.29183998703956604,
+          -0.2750000059604645,
+          0.0
+        ],
+        [
+          0.29183998703956604,
+          0.2750000059604645,
+          0.43615999817848206
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "rocks/rock_small_03.fbx",
+      "category": "rocks",
+      "name": "rock_small_03",
+      "triangles": 96,
+      "budget": 400,
+      "blender_bounds": [
+        [
+          -0.30847999453544617,
+          -0.2750000059604645,
+          0.0
+        ],
+        [
+          0.30847999453544617,
+          0.2750000059604645,
+          0.4540199935436249
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "rocks/rock_medium_01.fbx",
+      "category": "rocks",
+      "name": "rock_medium_01",
+      "triangles": 96,
+      "budget": 1000,
+      "blender_bounds": [
+        [
+          -0.7009000182151794,
+          -0.7200000286102295,
+          0.0
+        ],
+        [
+          0.7009000182151794,
+          0.7200000286102295,
+          1.0146000385284424
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "rocks/rock_medium_02.fbx",
+      "category": "rocks",
+      "name": "rock_medium_02",
+      "triangles": 96,
+      "budget": 1000,
+      "blender_bounds": [
+        [
+          -0.7538750171661377,
+          -0.7200000286102295,
+          0.0
+        ],
+        [
+          0.7538750171661377,
+          0.7200000286102295,
+          1.068750023841858
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "rocks/rock_large_01.fbx",
+      "category": "rocks",
+      "name": "rock_large_01",
+      "triangles": 288,
+      "budget": 1800,
+      "blender_bounds": [
+        [
+          -1.7630000114440918,
+          -1.600000023841858,
+          0.0
+        ],
+        [
+          1.7630000114440918,
+          1.600000023841858,
+          2.3406999111175537
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    },
+    {
+      "file": "rocks/rock_mossy_medium_01.fbx",
+      "category": "rocks",
+      "name": "rock_mossy_medium_01",
+      "triangles": 96,
+      "budget": 1000,
+      "blender_bounds": [
+        [
+          -0.7610999941825867,
+          -0.7450000047683716,
+          0.0
+        ],
+        [
+          0.7610999941825867,
+          0.7450000047683716,
+          1.1124999523162842
+        ]
+      ],
+      "material_slots": [
+        "ArenaGreen_Atlas"
+      ],
+      "meshes": 1,
+      "minimum": true
+    }
+  ]
+}

@@ -28,7 +28,7 @@ public static class WorkshopLayoutChecks
     {
         Directory.CreateDirectory("Logs");
         File.WriteAllText(Request, "batch");
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         EditorApplication.isPlaying = true;
     }
     private static void Begin()
@@ -171,5 +171,84 @@ public static class WorkshopLayoutChecks
                 "Resizing hid the selected last module in the rendered UI");
         });
         Pass("Final weapon/module is reachable and selecting an offscreen node reveals its whole label");
+
+        // Картинки оружия остаются после выхода из мастерской и повторного входа, а также после перезагрузки сцены
+        // (возврат в меню после забега). Раньше OnDestroy уничтожал общие иконки Resources.
+        Find(tree.transform, "‹  НАЗАД").GetComponent<Button>().onClick.Invoke();
+        yield return null;
+        menu.ShowWorkshop();
+        yield return null;
+        CheckPictures(tree, workshopShooter, "after reopening");
+        UnityEngine.SceneManagement.Scene scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        PlayerProgression previous = PlayerProgression.Instance;
+        UnityEngine.SceneManagement.SceneManager.LoadScene(scene.name);
+        double deadline = EditorApplication.timeSinceStartup + 30;
+        while (PlayerProgression.Instance == null || PlayerProgression.Instance == previous ||
+            !PlayerProgression.Instance.GetComponent<StartMenu>().WaitingForWeapon)
+        {
+            Check(EditorApplication.timeSinceStartup < deadline, "Menu did not reload");
+            yield return null;
+        }
+        yield return null;
+        menu = PlayerProgression.Instance.GetComponent<StartMenu>();
+        menu.ShowWorkshop();
+        tree = UnityEngine.Object.FindObjectOfType<WorkshopTree>();
+        yield return null;
+        CheckPictures(tree, PlayerProgression.Instance.GetComponent<AutoShoter>(), "after scene reload");
+        WorkshopTreeChecks.Capture(tree.GetComponentInParent<Canvas>(), "Logs/workshop-after-reload.png", 1600, 900, null);
+        Pass("Weapon pictures stay visible after reopening the workshop and after reloading the scene");
+
+        // Новые модели оружия в руке: модель есть, дуло впереди героя и не ниже кисти; лист кадров 5×2.
+        AutoShoter hero = PlayerProgression.Instance.GetComponent<AutoShoter>();
+        var sheet = new Texture2D(5 * 320, 2 * 320, TextureFormat.RGB24, false);
+        RenderTexture shot = RenderTexture.GetTemporary(320, 320, 24);
+        Camera look = new GameObject("Weapon check camera").AddComponent<Camera>();
+        look.targetTexture = shot;
+        look.fieldOfView = 32f;
+        int slot = 0;
+        var report = new List<string>();
+        for (int w = 0; w < hero.weapons.Length; w++)
+        {
+            if (hero.weapons[w] == null || !hero.weapons[w].IsSelectable) continue;
+            Check(hero.SelectWeapon(w), "Cannot select weapon " + w);
+            yield return null;
+            yield return null;
+            Transform socket = Find(hero.transform, "WeaponSocket");
+            Check(socket != null && socket.Find("SkinModel") != null, "No weapon model in hand: " + w);
+            Check(ModelSkins.TryGetMuzzle(out Vector3 muzzle), "No muzzle for weapon " + w);
+            Vector3 local = hero.transform.InverseTransformPoint(muzzle);
+            Vector3 hand = hero.transform.InverseTransformPoint(socket.position);
+            report.Add(w + " " + ModelSkins.WeaponKey(hero.weapons[w], w) + " muzzle " + local.ToString("0.00") + " hand " + hand.ToString("0.00"));
+            Check(local.z > hand.z + 0.15f, "Muzzle is not in front of the hand: weapon " + w + " " + local + " / " + hand);
+            Vector3 target = socket.position + hero.transform.forward * 0.25f;
+            look.transform.position = target + hero.transform.right * 1.5f + hero.transform.forward * 0.5f + Vector3.up * 0.45f;
+            look.transform.LookAt(target);
+            look.Render();
+            RenderTexture.active = shot;
+            sheet.ReadPixels(new Rect(0, 0, 320, 320), slot % 5 * 320, (1 - slot / 5) * 320);
+            RenderTexture.active = null;
+            slot++;
+        }
+        sheet.Apply();
+        File.WriteAllBytes("Logs/weapon-models-in-hand.png", sheet.EncodeToPNG());
+        File.WriteAllLines("Logs/weapon-models-in-hand.txt", report);
+        UnityEngine.Object.Destroy(look.gameObject);
+        RenderTexture.ReleaseTemporary(shot);
+        Pass(slot + " weapon models in hand: muzzle in front of the hand (sheet Logs/weapon-models-in-hand.png)");
+    }
+
+    private static void CheckPictures(WorkshopTree tree, AutoShoter shooter, string when)
+    {
+        for (int weapon = 0; weapon < shooter.weapons.Length; weapon++)
+        {
+            if (shooter.weapons[weapon] == null || !shooter.weapons[weapon].IsSelectable) continue;
+            Transform node = Find(tree.transform, "Node weapon:" + weapon);
+            Check(node != null, "Weapon node missing " + when + ": " + weapon);
+            Image picture = null;
+            foreach (Image image in node.GetComponentsInChildren<Image>(true))
+                if (image.transform.parent == node && image.name == "Artwork") { picture = image; break; }
+            Check(picture != null && picture.enabled && picture.sprite != null && picture.sprite.texture != null,
+                "Weapon picture missing " + when + ": " + weapon);
+        }
     }
 }

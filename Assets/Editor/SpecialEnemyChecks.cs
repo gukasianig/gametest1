@@ -31,7 +31,7 @@ public static class SpecialEnemyChecks
                 File.WriteAllText("Logs/special-enemies-report.txt", "FAIL: save or preserve unsaved scene changes before this check.\n");
                 return;
             }
-            EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+            EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
             File.WriteAllText(Request, "run");
             EditorApplication.isPlaying = true;
             return;

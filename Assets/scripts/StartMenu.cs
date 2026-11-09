@@ -85,6 +85,13 @@ public class StartMenu : MonoBehaviour
         System.Action refreshArena = () => { if (arenaLabel != null) arenaLabel.text = "Арена:  " + ArenaThemes.Names[(int)ArenaThemes.Current] + "   ►"; };
         refreshArena();
         arenaButton.onClick.AddListener(() => { ArenaThemes.Set(ArenaThemes.Next(ArenaThemes.Current)); ArenaThemes.Apply(); refreshArena(); });
+        // Зелёная арена (открытое поле) — единственная карта: темы Завод/Пещера/Ледник к ней не относятся, кнопку прячем.
+        if (ArenaLayout.Instance != null && ArenaLayout.Instance.openField) arenaButton.gameObject.SetActive(false);
+        // Выход из игры: справа внизу, над номером версии.
+        Button quitButton = MenuButton("Выход", 0.137f, 0.062f, QuitGame, new Color(1f, 0.42f, 0.32f), 22);
+        RectTransform quitRect = (RectTransform)quitButton.transform;
+        quitRect.anchorMin = new Vector2(0.79f, quitRect.anchorMin.y);
+        quitRect.anchorMax = new Vector2(0.95f, quitRect.anchorMax.y);
         Text version = GameUi.Label(home, "v" + Application.version, new Vector2(0.7f, 0.025f), new Vector2(0.97f, 0.06f), 14,
             new Color(0.45f, 0.52f, 0.58f));
         version.alignment = TextAnchor.MiddleRight;
@@ -97,6 +104,7 @@ public class StartMenu : MonoBehaviour
         intro.Add(subtitle, 0.24f, 40f);
         Button[] column = { start, workshopButton, modifiersButton, statsButton, settingsButton, testButton, arenaButton };
         for (int i = 0; i < column.Length; i++) intro.Add(column[i], 0.32f + 0.055f * i, 60f);
+        intro.Add(quitButton, 0.7f, 0f);
         intro.Add(version, 0.72f, 0f);
         BuildWorkshop(background);
         BuildModifiers(background);
@@ -155,6 +163,15 @@ public class StartMenu : MonoBehaviour
         home.gameObject.SetActive(false);
         RefreshWorkshop();
         workshop.gameObject.SetActive(true);
+    }
+
+    public static void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     public void ShowStatistics()

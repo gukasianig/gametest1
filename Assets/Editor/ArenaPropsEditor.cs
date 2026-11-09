@@ -1,3 +1,4 @@
+// 09.11.2026: SampleScene (заводская арена) удалена; эти пакетные методы больше не работают — оставлены для истории.
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;

@@ -29,7 +29,7 @@ public static class MetaProgressChecks
     public static void RunBatch()
     {
         File.WriteAllText(Request, "batch");
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         EditorApplication.isPlaying = true;
     }
 

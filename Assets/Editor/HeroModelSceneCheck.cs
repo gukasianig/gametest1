@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-// Короткая проверка подключения модели героя: SampleScene (статически) и GreenArenaPlay (Play Mode).
+// Короткая проверка подключения модели героя: GreenArenaPlay статически и в Play Mode (SampleScene удалена 09.11.2026).
 // Модель — вложенный Operator.fbx под Capsule; подошвы должны стоять на земле, оружие — в сокете правой руки.
 // Результат: Logs/hero-model-check.txt. Запуск: -executeMethod HeroModelSceneCheck.RunBatch (без -quit).
 [InitializeOnLoad]
@@ -36,8 +36,8 @@ public static class HeroModelSceneCheck
     public static void RunBatch()
     {
         log.Clear();
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
-        bool ok = Describe("SampleScene (edit)", false);
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
+        bool ok = Describe("GreenArenaPlay (edit)", false);
         File.WriteAllText(Report, log.ToString());
         File.WriteAllText(Marker, ok ? "1" : "0");
         EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");

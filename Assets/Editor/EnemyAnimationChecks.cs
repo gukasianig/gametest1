@@ -44,7 +44,7 @@ public static class EnemyAnimationChecks
     {
         Directory.CreateDirectory("Logs");
         File.WriteAllText(Request, "batch");
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         EditorApplication.isPlaying = true;
     }
 

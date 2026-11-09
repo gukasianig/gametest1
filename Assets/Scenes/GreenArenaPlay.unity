@@ -92885,12 +92885,12 @@ MonoBehaviour:
       type: 3}
     fireRate: 0.4
     damage: 20
-    range: 0
+    range: 10
     useAutomaticShotSound: 0
     pelletCount: 1
     spreadAngle: 2
     bulletSpeed: 20
-    bulletLifeTime: 2
+    bulletLifeTime: 0.55
     userGrenade: 0
     grenadePrefab: {fileID: 0}
     grenadeCooldown: 0
@@ -92917,14 +92917,14 @@ MonoBehaviour:
     WeaponType: 0
     bulletPrefab: {fileID: 4356683562315364062, guid: 07a6d8aa78146e54e82b3abe6d13d3c7,
       type: 3}
-    fireRate: 0.1
-    damage: 6
-    range: 0
+    fireRate: 0.13
+    damage: 8
+    range: 11
     useAutomaticShotSound: 1
     pelletCount: 1
     spreadAngle: 6
     bulletSpeed: 22
-    bulletLifeTime: 1.5
+    bulletLifeTime: 0.55
     userGrenade: 0
     grenadePrefab: {fileID: 0}
     grenadeCooldown: 0
@@ -92953,12 +92953,12 @@ MonoBehaviour:
       type: 3}
     fireRate: 0.9
     damage: 8
-    range: 0
+    range: 6.5
     useAutomaticShotSound: 0
     pelletCount: 6
     spreadAngle: 25
     bulletSpeed: 18
-    bulletLifeTime: 1.2
+    bulletLifeTime: 0.4
     userGrenade: 0
     grenadePrefab: {fileID: 0}
     grenadeCooldown: 0
@@ -92987,12 +92987,12 @@ MonoBehaviour:
       type: 3}
     fireRate: 1.5
     damage: 80
-    range: 0
+    range: 15
     useAutomaticShotSound: 0
     pelletCount: 1
     spreadAngle: 0
     bulletSpeed: 40
-    bulletLifeTime: 3
+    bulletLifeTime: 0.41
     userGrenade: 0
     grenadePrefab: {fileID: 0}
     grenadeCooldown: 0
@@ -93020,7 +93020,7 @@ MonoBehaviour:
     bulletPrefab: {fileID: 0}
     fireRate: 1.4
     damage: 22
-    range: 14
+    range: 10
     useAutomaticShotSound: 0
     pelletCount: 1
     spreadAngle: 0
@@ -93088,7 +93088,7 @@ MonoBehaviour:
     bulletPrefab: {fileID: 0}
     fireRate: 1.8
     damage: 55
-    range: 20
+    range: 13
     useAutomaticShotSound: 0
     pelletCount: 1
     spreadAngle: 0
@@ -93122,7 +93122,7 @@ MonoBehaviour:
     bulletPrefab: {fileID: 0}
     fireRate: 0.7
     damage: 14
-    range: 12
+    range: 8
     useAutomaticShotSound: 0
     pelletCount: 1
     spreadAngle: 0
@@ -93156,7 +93156,7 @@ MonoBehaviour:
     bulletPrefab: {fileID: 0}
     fireRate: 0.15
     damage: 4
-    range: 7
+    range: 5
     useAutomaticShotSound: 0
     pelletCount: 1
     spreadAngle: 0
@@ -93190,7 +93190,7 @@ MonoBehaviour:
     bulletPrefab: {fileID: 0}
     fireRate: 1
     damage: 12
-    range: 16
+    range: 11
     useAutomaticShotSound: 0
     pelletCount: 1
     spreadAngle: 0
@@ -93224,7 +93224,7 @@ MonoBehaviour:
     bulletPrefab: {fileID: 0}
     fireRate: 1.6
     damage: 60
-    range: 28
+    range: 16
     useAutomaticShotSound: 0
     pelletCount: 1
     spreadAngle: 0

@@ -196,6 +196,7 @@ public class UpgradeIcon : MaskableGraphic
                 Line(new Vector2(0f, -0.3f), new Vector2(0.15f, -0.95f), 0.08f);
                 break;
             case UpgradeEffect.ExperienceGain:
+            case UpgradeEffect.ChestXp:
                 Fill(new Vector2(0f, 0.9f), new Vector2(0.55f, 0f), new Vector2(0f, -0.9f), new Vector2(-0.55f, 0f));
                 break;
             case UpgradeEffect.CursedGlass:

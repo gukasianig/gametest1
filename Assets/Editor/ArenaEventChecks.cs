@@ -264,6 +264,30 @@ public static class ArenaEventChecks
         events.End(false);
         Pass("Event line shows the running event and its time left.");
 
+        // 5f. Guard the chest: chest in the arena centre, timer fills, it opens and offers three special upgrades.
+        events.chestSeconds = 3f;
+        events.Begin(ArenaEventKind.GuardChest);
+        GameObject chest = GameObject.Find("Guard chest");
+        Require(chest != null && events.Active, "Guard chest did not appear.");
+        Require(WeaponTargets.Flat(chest.transform.position, Vector3.zero) < 12f, "Chest is not near the arena centre: " + chest.transform.position);
+        double chestStart = EditorApplication.timeSinceStartup;
+        while (!PlayerProgression.Instance.ChestChoosing && EditorApplication.timeSinceStartup - chestStart < 20) yield return null;
+        Require(events.ChestOpened && PlayerProgression.Instance.ChestChoosing, "Chest did not open and offer a reward.");
+        Require(PlayerProgression.Instance.Offered.Count == 3, "Chest offers: " + PlayerProgression.Instance.Offered.Count);
+        foreach (UpgradeDefinition offer in PlayerProgression.Instance.Offered)
+            Require(offer.rarity == UpgradeRarity.Special, "Chest offer is not special: " + offer.title);
+        string taken = PlayerProgression.Instance.Offered[0].title;
+        int pending = PlayerProgression.Instance.PendingChoices;
+        Require(PlayerProgression.Instance.SelectOfferedUpgrade(0), "Chest reward could not be taken.");
+        Require(!PlayerProgression.Instance.Choosing && session.State == GameRunState.Playing, "Game did not resume after the chest reward.");
+        Require(PlayerProgression.Instance.Rank(PlayerProgression.ChestUpgrades[0].id) +
+                PlayerProgression.Instance.Rank(PlayerProgression.ChestUpgrades[1].id) + PlayerProgression.Instance.Level >= 1, "Chest reward rank missing.");
+        events.End(false);
+        events.chestSeconds = 35f;
+        yield return Wait(0.3f);
+        Require(GameObject.Find("Guard chest") == null, "Chest not removed.");
+        Pass("Guard chest: appears near the centre, opens when the timer runs out, offers 3 special upgrades (took \"" + taken + "\"), game resumes, chest removed.");
+
         // 6. The timer starts events by itself.
         int started = events.StartedCount;
         events.firstEventAt = 0.1f;

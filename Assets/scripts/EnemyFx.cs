@@ -20,6 +20,39 @@ public static class EnemyFx
         return m;
     }
 
+    // Полупрозрачный Unlit (обычное альфа-смешение) — для кругов-предупреждений врагов. Как в LightningFx.Additive.
+    public static Material SeeThrough(Color color, float alpha)
+    {
+        var m = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { name = "Fx see-through" };
+        color.a = alpha;
+        m.SetColor("_BaseColor", color);
+        m.SetFloat("_Surface", 1f);
+        m.SetFloat("_Blend", 0f);
+        m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        m.SetFloat("_ZWrite", 0f);
+        m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        m.SetOverrideTag("RenderType", "Transparent");
+        m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+        return m;
+    }
+
+    // Заливка круга-предупреждения: плоский диск на земле растёт от центра до края ровно к моменту удара.
+    public static TelegraphFill Fill(Vector3 center, float radius, float seconds, Material material)
+    {
+        // По склону: наклон по нормали земли и подъём, чтобы край не уходил в рельеф.
+        center.y = Mathf.Max(center.y, GroundHeight.At(center) + 0.1f) + GroundHeight.Lift(center, radius);
+        GameObject go = Prim(PrimitiveType.Cylinder, center, Color.white);
+        go.transform.rotation = GroundHeight.Tilt(center);
+        go.name = "Telegraph fill";
+        go.GetComponent<Renderer>().sharedMaterial = material;
+        TelegraphFill fill = go.AddComponent<TelegraphFill>();
+        fill.radius = radius;
+        fill.seconds = Mathf.Max(0.05f, seconds);
+        go.transform.localScale = new Vector3(0.01f, 0.004f, 0.01f);
+        return fill;
+    }
+
     // Ступени цвета от a к b (для смены цвета по жизни частицы без новых материалов).
     public static Material[] Ramp(params Color[] keys)
     {
@@ -83,8 +116,10 @@ public static class EnemyFx
     // Плоское пятно на земле (лужа, ожог): быстро растекается и медленно сжимается.
     public static void GroundSplat(Vector3 position, float radius, Color color, float life)
     {
-        GameObject go = Prim(PrimitiveType.Cylinder, new Vector3(position.x, position.y + 0.02f, position.z), color);
-        go.transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+        // На склоне пятно ложится по наклону и чуть поднимается — иначе половина уходила под землю.
+        float ground = Mathf.Max(position.y, GroundHeight.At(position)) + 0.03f + GroundHeight.Lift(position, radius);
+        GameObject go = Prim(PrimitiveType.Cylinder, new Vector3(position.x, ground, position.z), color);
+        go.transform.rotation = GroundHeight.Tilt(position, Random.Range(0f, 360f));
         FxPiece p = go.AddComponent<FxPiece>();
         p.life = life;
         p.size = radius * 2f;
@@ -98,7 +133,8 @@ public static class EnemyFx
     public static void Ring(Vector3 position, float radius, Color color, float life, float width = 0.35f)
     {
         var go = new GameObject("Fx ring");
-        go.transform.position = position;
+        position.y = Mathf.Max(position.y, GroundHeight.At(position) + 0.08f) + GroundHeight.Lift(position, radius);
+        go.transform.SetPositionAndRotation(position, GroundHeight.Tilt(position));
         FxRing ring = go.AddComponent<FxRing>();
         ring.Init(radius, color, life, width);
     }
@@ -341,5 +377,21 @@ public static class ScreenShake
         seed += dt * 22f;
         float s = trauma * trauma * MaxOffset;
         return new Vector3(Mathf.PerlinNoise(seed, 0.3f) - 0.5f, 0f, Mathf.PerlinNoise(0.7f, seed) - 0.5f) * 2f * s;
+    }
+}
+
+// Растущая заливка круга-предупреждения (EnemyFx.Fill). Время идёт только в бою (пауза и окно улучшений её держат).
+public sealed class TelegraphFill : MonoBehaviour
+{
+    public float radius, seconds;
+    float age;
+
+    void Update()
+    {
+        if (Time.deltaTime <= 0f) return;
+        age += Time.deltaTime;
+        float t = Mathf.Clamp01(age / seconds);
+        float size = radius * 2f * Mathf.Lerp(0.05f, 1f, t);
+        transform.localScale = new Vector3(size, 0.004f, size);
     }
 }

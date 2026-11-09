@@ -4,7 +4,8 @@ using UnityEngine;
 
 public enum UpgradeEffect { Damage, AttackSpeed, Movement, Pickup, GrenadeDamage, OrbitDamage, GrenadeRadius, MaxHealth, OrbitCount, CritChance, CritPower, Pierce, Ricochet, DroneCount, DroneDamage, TurretCount, TurretDamage,
     Armor, Regeneration, Vampirism, DashCooldown, DashDistance, ExtraPellets, ExplosiveBullets, EliteDamage, WeaponRange,
-    OrbitSpeed, OrbitCrit, PickupSpeed, Luck, ExperienceGain, CursedGlass, CursedHaste, CursedGreed, MineCount }
+    OrbitSpeed, OrbitCrit, PickupSpeed, Luck, ExperienceGain, CursedGlass, CursedHaste, CursedGreed, MineCount,
+    ChestXp }
 public enum UpgradeRarity { Common, Rare, Special }
 
 [Serializable]

@@ -293,6 +293,8 @@ private float currentSpread;
 
     // Дуло модели оружия, если она есть; иначе прежний firePoint.
     Vector3 ShotOrigin { get { return ModelSkins.TryGetMuzzle(out Vector3 m) ? m : firePoint.position; } }
+    // Длина модели пули (bullet.cs, ProjectileModels.Skin): 09.11.2026 уменьшена 0,4 → 0,25 м по просьбе владельца.
+    public const float BulletLength = 0.25f;
 
     void Shoot(Transform target)
 {
@@ -304,7 +306,12 @@ private float currentSpread;
     float kick = shotSound == Sfx.Shotgun ? 0.45f : Mathf.Clamp(baseWeapon.fireRate * 0.6f, 0.12f, 0.4f);
     PlayWeaponRecoil(kick, true);
     Vector3 origin = ShotOrigin;
-    Vector3 dir = (target.position - origin).normalized;
+    // Цель — центр тела врага, а не его опорная точка у земли: иначе пули шли от дула вниз под углом и казалось,
+    // что они вылетают не из ствола (09.11.2026). Пуля появляется на срезе ствола, а не серединой внутри оружия.
+    Collider body = target.GetComponentInChildren<Collider>();
+    Vector3 aim = body != null ? body.bounds.center : target.position + Vector3.up * 0.6f;
+    Vector3 dir = (aim - origin).normalized;
+    origin += dir * BulletLength * 0.5f;
     Quaternion baseRotation = Quaternion.LookRotation(dir);
 
     if (currentPelletCount <= 1)

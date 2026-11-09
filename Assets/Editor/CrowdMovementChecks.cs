@@ -96,7 +96,9 @@ public static class CrowdMovementChecks
                 {
                     Vector3 delta = all[i].transform.position - all[j].transform.position;
                     delta.y = 0f;
-                    float gap = delta.magnitude - radius - (float)Radius.GetValue(all[j]);
+                    float sum = radius + (float)Radius.GetValue(all[j]);
+                    // Допустимое сближение — по EnemyAI.CrowdPacking (враги стоят плотнее суммы радиусов).
+                    float gap = delta.magnitude - sum * EnemyAI.CrowdPacking;
                     minimum = Mathf.Min(minimum, gap);
                     if (gap < -0.12f) throw new Exception("Enemies overlap by " + (-gap).ToString("F3") + " m.");
                 }

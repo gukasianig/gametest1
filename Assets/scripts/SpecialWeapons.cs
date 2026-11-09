@@ -9,7 +9,8 @@ public class SpecialWeapons : MonoBehaviour
     private AutoShoter shooter;
     private WeaponData weapon;
     private readonly List<GameObject> placed = new List<GameObject>();
-    private GameObject flame;
+    private FlameJet flame;   // струя огнемёта из частиц (FlameJet)
+    private float flameRange = -1f;
     private float flameUntil;
     private static readonly List<Health> scratch = new List<Health>();
     private static readonly List<Health> blastBuffer = new List<Health>();
@@ -80,7 +81,7 @@ public class SpecialWeapons : MonoBehaviour
     {
         foreach (GameObject item in placed) if (item != null) Destroy(item);
         placed.Clear();
-        if (flame != null) Destroy(flame);
+        if (flame != null) Destroy(flame.gameObject);
         flame = null;
     }
 
@@ -98,9 +99,9 @@ public class SpecialWeapons : MonoBehaviour
 
     private void Update()
     {
-        if (flame != null && flame.activeSelf && Time.time > flameUntil) flame.SetActive(false);
+        if (flame != null && flame.Emitting && Time.time > flameUntil) flame.Stop();
         // Огнемёт бьёт каждые ~0,15 с: звук - непрерывная петля, пока горит пламя, а не новый звук на каждый тик.
-        if (flame != null && flame.activeSelf && Running) GameAudio.Hold(SfxLoop.Flame, 0.6f);
+        if (flame != null && flame.Emitting && Running) GameAudio.Hold(SfxLoop.Flame, 0.6f);
     }
 
     // Beams, projectiles and blasts start at the hero's centre (like target selection), not at the muzzle,
@@ -217,7 +218,7 @@ public class SpecialWeapons : MonoBehaviour
             case WeaponKind.Rocket: GameAudio.Play(Sfx.Rocket); break;
             case WeaponKind.Ice: GameAudio.Play(Sfx.Ice); break;
             // Только вспышка зажигания, когда пламя загорается заново; дальше звучит петля (Update).
-            case WeaponKind.Flame: if (flame == null || !flame.activeSelf) GameAudio.Play(Sfx.Flame, 0.5f); break;
+            case WeaponKind.Flame: if (flame == null || !flame.Emitting) GameAudio.Play(Sfx.Flame, 0.5f); break;
             case WeaponKind.Boomerang: GameAudio.Play(Sfx.Throw); break;
             case WeaponKind.Turret: if (CountAlive<WeaponTurret>() < TurretLimit) GameAudio.Play(Sfx.Deploy, 0.6f); break;
         }
@@ -295,12 +296,10 @@ public class SpecialWeapons : MonoBehaviour
             finally { Health.HitSoundScale = 1f; }
             BurnEffect.Apply(health, weapon.burnPerSecond, weapon.effectDuration);
         }
-        if (flame == null) flame = Prim(PrimitiveType.Sphere, "Flame", origin, Vector3.one, new Color(1f, 0.5f, 0.1f));
-        float width = Mathf.Clamp(Mathf.Tan(half * Mathf.Deg2Rad) * weapon.range * 0.9f, 0.6f, 5f);
-        flame.transform.position = origin + direction * weapon.range * 0.5f;
-        flame.transform.rotation = Quaternion.LookRotation(direction);
-        flame.transform.localScale = new Vector3(width, 0.5f, weapon.range);
-        flame.SetActive(true);
+        // 09.11.2026: вместо растянутой оранжевой сферы — струя огня из частиц (FlameJet) от сопла.
+        if (flame == null) flame = FlameJet.Create();
+        if (!Mathf.Approximately(flameRange, weapon.range)) { flameRange = weapon.range; flame.Configure(weapon.range, weapon.coneAngle); }
+        flame.Aim(origin, direction);
         flameUntil = Time.time + 0.2f;
         IgniteGround(origin, direction, target);
     }

@@ -17,7 +17,9 @@ public class EnemyAbility : MonoBehaviour
     private EnemyAI ai;
     private Health health;
     private LineRenderer warning;
-    private Material warningMaterial;
+    private Material warningMaterial, fillMaterial;
+    private TelegraphFill fill;
+    private Color warningColor;
     private bool acting;
     private float nextAction;
     public bool Telegraphing => warning != null && warning.enabled;
@@ -64,10 +66,13 @@ public class EnemyAbility : MonoBehaviour
         warning = line.GetComponent<LineRenderer>();
         warning.useWorldSpace = true;
         warning.widthMultiplier = 0.12f;
-        warningMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-        warningMaterial.color = color;
+        // Круги и линии предупреждений полупрозрачные (владелец 09.11.2026), обводка пульсирует, внутри растёт заливка.
+        warningColor = color;
+        warningMaterial = EnemyFx.SeeThrough(color, 0.5f);
+        fillMaterial = EnemyFx.SeeThrough(color, 0.16f);
         warning.sharedMaterial = warningMaterial;
         warning.enabled = false;
+        ClearFill();
         if (role == EnemyRole.Healer)
         {
             Part(PrimitiveType.Cube, new Vector3(0, 0.8f, 0), new Vector3(0.25f, 0.65f, 0.2f));
@@ -131,6 +136,12 @@ public class EnemyAbility : MonoBehaviour
     private float DistanceToTarget => ai.target == null ? float.PositiveInfinity : FlatDistance(transform.position, ai.target.position);
     private void Update()
     {
+        if (warning != null && warning.enabled && Time.deltaTime > 0f)
+        {
+            Color pulse = warningColor;
+            pulse.a = 0.38f + 0.22f * Mathf.Sin(Time.time * 9f);
+            warningMaterial.SetColor("_BaseColor", pulse);
+        }
         if (!Running || ai.target == null || acting || Time.time < nextAction || health.isDead) return;
         if (role == EnemyRole.Shooter && DistanceToTarget <= 15f) StartCoroutine(Shoot());
         else if (role == EnemyRole.Charger && DistanceToTarget <= 13f) StartCoroutine(Charge());
@@ -145,16 +156,38 @@ public class EnemyAbility : MonoBehaviour
     }
 
     // World-space ring at an arbitrary point (mortar shell landing, teleport destination).
-    private void CircleAt(Vector3 center, float radius)
+    // fillSeconds > 0: внутри круга растёт полупрозрачная заливка, заполняя его ровно к моменту удара.
+    private void CircleAt(Vector3 center, float radius, float fillSeconds = 0f)
     {
         warning.loop = true;
         warning.positionCount = 48;
         for (int i = 0; i < 48; i++)
         {
             float angle = i * Mathf.PI * 2 / 48;
-            warning.SetPosition(i, new Vector3(center.x + Mathf.Cos(angle) * radius, 0.08f, center.z + Mathf.Sin(angle) * radius));
+            warning.SetPosition(i, OnGround(center.x + Mathf.Cos(angle) * radius, center.z + Mathf.Sin(angle) * radius));
         }
         warning.enabled = true;
+        ClearFill();
+        if (fillSeconds > 0f)
+        {
+            Vector3 ground = OnGround(center.x, center.z);
+            ground.y -= 0.03f;
+            fill = EnemyFx.Fill(ground, radius, fillSeconds, fillMaterial);
+        }
+    }
+
+    // Точка предупреждения чуть над землёй: на рельефе зелёной арены круг не уходит в склон.
+    private static Vector3 OnGround(float x, float z)
+    {
+        var point = new Vector3(x, 0f, z);
+        point.y = GroundHeight.At(point) + 0.15f;
+        return point;
+    }
+
+    private void ClearFill()
+    {
+        if (fill != null) Destroy(fill.gameObject);
+        fill = null;
     }
 
     public const float MortarRadius = 2.6f;
@@ -164,7 +197,7 @@ public class EnemyAbility : MonoBehaviour
     {
         BeginAction();
         Vector3 impact = ai.target.position;
-        CircleAt(impact, MortarRadius);
+        CircleAt(impact, MortarRadius, 1.5f);   // 0,45 с замах + 1,05 с полёт
         Face(impact - transform.position);
         // Набирает спору (мешок пульсирует), выстреливает её по дуге — она падает в кольцо ровно к моменту урона.
         Anim?.Hold(ModelWalkAnimator.Pose.Aim);
@@ -175,8 +208,15 @@ public class EnemyAbility : MonoBehaviour
         MortarShell.Launch(Muzzle("SporeSac", transform.position + Vector3.up * 1.2f), landing, 1.05f, MortarRadius);
         yield return Wait(1.05f);
         warning.enabled = false;
+        ClearFill();
         if (ai.target != null && FlatDistance(impact, ai.target.position) <= MortarRadius)
+        {
             ai.target.GetComponent<PlayerHealth>()?.TakeDamage(MortarDamage);
+            // Попадание по герою: брызги споры и вспышка на нём (сам взрыв рисует MortarShell).
+            Vector3 hero = ai.target.position;
+            EnemyFx.Blobs(hero + Vector3.up * 1f, new Color(1f, 0.55f, 0.3f), 9, 4f, 0.11f, 0.45f, GroundHeight.At(hero));
+            EnemyFx.LightFlash(hero + Vector3.up * 1.2f, new Color(1f, 0.6f, 0.3f), 5f, 3f, 0.25f);
+        }
         EndAction(4.5f);
     }
 
@@ -194,10 +234,11 @@ public class EnemyAbility : MonoBehaviour
         }
         if (found)
         {
-            CircleAt(destination, 1.0f);
+            CircleAt(destination, 1.0f, 0.7f);
             Anim?.Hold(ModelWalkAnimator.Pose.Blink);   // складывает крылья и исчезает, крутясь
             yield return Wait(0.7f);
             warning.enabled = false;
+            ClearFill();
             Color blink = RoleColor(role);
             EnemyFx.Blobs(transform.position + Vector3.up * 0.5f, blink, 8, 3f, 0.1f, 0.4f, GroundHeight.At(transform.position));
             if (ArenaLayout.Instance.IsWalkable(destination, 0.5f)) transform.position = destination;
@@ -214,7 +255,7 @@ public class EnemyAbility : MonoBehaviour
     private IEnumerator Buff()
     {
         BeginAction();
-        Circle(BuffRadius);
+        Circle(BuffRadius, 0.7f);
         Anim?.Hold(ModelWalkAnimator.Pose.Cast);
         yield return Wait(0.7f);
         CastBurst(BuffRadius);
@@ -240,6 +281,7 @@ public class EnemyAbility : MonoBehaviour
     private void EndAction(float cooldown)
     {
         warning.enabled = false;
+        ClearFill();
         acting = false;
         ai.MovementLocked = false;
         nextAction = Time.time + cooldown;
@@ -256,21 +298,12 @@ public class EnemyAbility : MonoBehaviour
         Vector3 from = start ?? transform.position;
         warning.loop = false;
         warning.positionCount = 2;
-        warning.SetPosition(0, new Vector3(from.x, 0.08f, from.z));
-        warning.SetPosition(1, new Vector3(end.x, 0.08f, end.z));
+        warning.SetPosition(0, OnGround(from.x, from.z));
+        warning.SetPosition(1, OnGround(end.x, end.z));
         warning.enabled = true;
     }
-    private void Circle(float radius)
-    {
-        warning.loop = true;
-        warning.positionCount = 48;
-        for (int i = 0; i < 48; i++)
-        {
-            float angle = i * Mathf.PI * 2 / 48;
-            warning.SetPosition(i, new Vector3(transform.position.x + Mathf.Cos(angle) * radius, 0.08f, transform.position.z + Mathf.Sin(angle) * radius));
-        }
-        warning.enabled = true;
-    }
+    // Круг вокруг самого врага (взрыв подрывника, лечение, усиление, призыв).
+    private void Circle(float radius, float fillSeconds = 0f) { CircleAt(transform.position, radius, fillSeconds); }
     private IEnumerator Shoot()
     {
         BeginAction();
@@ -306,6 +339,7 @@ public class EnemyAbility : MonoBehaviour
                 new Color(0.55f, 0.5f, 0.45f), 0.35f, 0.4f, -direction * 1.5f + Vector3.up);
         }
         warning.enabled = false;
+        ClearFill();
         Anim?.Hold(ModelWalkAnimator.Pose.Dash);
         DashTrail(true);
         float elapsed = 0f, nextDust = 0f;
@@ -351,7 +385,7 @@ public class EnemyAbility : MonoBehaviour
     private IEnumerator Explode()
     {
         BeginAction();
-        Circle(3.5f);
+        Circle(3.5f, 1.2f);
         // Раздувается, мигает красным и дрожит всё быстрее.
         Anim?.Hold(ModelWalkAnimator.Pose.Swell);
         yield return Wait(1.2f);
@@ -367,7 +401,7 @@ public class EnemyAbility : MonoBehaviour
     private IEnumerator HealAllies()
     {
         BeginAction();
-        Circle(7f);
+        Circle(7f, 0.7f);
         Anim?.Hold(ModelWalkAnimator.Pose.Cast);
         yield return Wait(0.7f);
         CastBurst(7f);
@@ -478,7 +512,7 @@ public class EnemyAbility : MonoBehaviour
     private IEnumerator Summon()
     {
         BeginAction();
-        Circle(2.5f);
+        Circle(2.5f, 0.8f);
         Anim?.Hold(ModelWalkAnimator.Pose.Cast);   // мешки с выводком пульсируют
         yield return Wait(0.8f);
         CastBurst(2.5f);
@@ -562,6 +596,7 @@ public class EnemyAbility : MonoBehaviour
         acting = false;
         if (ai != null) ai.MovementLocked = false;
         if (warning != null) warning.enabled = false;
+        ClearFill();
         if (dashTrail != null) dashTrail.emitting = false;
         if (anim != null) anim.Release();
     }
@@ -569,5 +604,7 @@ public class EnemyAbility : MonoBehaviour
     {
         if (health != null) health.Died -= OnDeath;
         if (warningMaterial != null) Destroy(warningMaterial);
+        if (fillMaterial != null) Destroy(fillMaterial);
+        ClearFill();
     }
 }

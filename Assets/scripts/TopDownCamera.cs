@@ -4,13 +4,11 @@ public class TopDownCamera : MonoBehaviour
 {
     public Transform target;
 
+    // Высота и наклон фиксированы (в сцене GreenArenaPlay — 18 м над героем, 6 м позади).
+    // 09.11.2026 по просьбе владельца убрано приближение/отдаление колесом мыши.
     public Vector3 offset = new Vector3(0, 40, -5);
 
     public float smoothSpeed = 5f;
-
-    public float zoomSpeed = 50f;
-    public float minHeight = 10f;
-    public float maxHeight = 60f;
 
     // Позиция без тряски: следование считается от неё, смещение ScreenShake добавляется сверху.
     private Vector3 basePosition;
@@ -29,16 +27,6 @@ public class TopDownCamera : MonoBehaviour
     {
         if (target == null || Time.timeScale <= 0f) return;
 
-        // 🔥 ZOOM
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-
-        if (scroll != 0)
-        {
-            offset.y -= scroll * zoomSpeed;
-            offset.y = Mathf.Clamp(offset.y, minHeight, maxHeight);
-        }
-
-        // 🔥 FOLLOW
         Vector3 desiredPosition = target.position + offset;
 
         if (!baseKnown) { basePosition = transform.position; baseKnown = true; }

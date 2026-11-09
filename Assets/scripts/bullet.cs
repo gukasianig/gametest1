@@ -52,6 +52,7 @@ public class Bullet : MonoBehaviour, IProjectile
         direction.Normalize();
         transform.rotation = Quaternion.LookRotation(direction);
         rb.velocity = direction * speed;
+        expireAt = Mathf.Max(expireAt, Time.time + bestDistance / Mathf.Max(1f, speed) + 0.3f);
         damage = Mathf.Max(1, Mathf.RoundToInt(damage * 0.8f));
         return true;
     }
@@ -77,11 +78,13 @@ public class Bullet : MonoBehaviour, IProjectile
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        ProjectileModels.Skin(gameObject, "bullet", 0.7f);
+        ProjectileModels.Skin(gameObject, "bullet", AutoShoter.BulletLength); // было 0,7 → 0,4 → 0,25 м по просьбе владельца
         rb.velocity = transform.forward * speed;
-        
-        Destroy(gameObject, lifeTime);
+        // Срок жизни считается вручную: рикошет продлевает его до новой цели (иначе короткая пуля гаснет в пути).
+        expireAt = Time.time + lifeTime;
     }
+
+    private float expireAt = float.MaxValue;
 
     
     public void SetDamage(int dmg)
@@ -93,7 +96,29 @@ public class Bullet : MonoBehaviour, IProjectile
     
     void Update()
     {
-      
+        if (Time.time >= expireAt) Destroy(gameObject);
+    }
+
+    // Есть ли ещё враг впереди по ходу пули (узкий конус, до 5 м): только тогда пробивание полезнее рикошета.
+    private bool EnemyAhead(Health hit)
+    {
+        if (rb == null) return false;
+        Vector3 forward = rb.velocity;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f) return false;
+        forward.Normalize();
+        WeaponTargets.Collect(ricochetTargets);
+        foreach (Health candidate in ricochetTargets)
+        {
+            if (candidate == null || candidate == hit || candidate.isDead || pierced.Contains(candidate)) continue;
+            Vector3 to = candidate.transform.position - transform.position;
+            to.y = 0f;
+            float along = Vector3.Dot(to, forward);
+            if (along <= 0f || along > 5f) continue;
+            float side = (to - forward * along).magnitude;
+            if (side <= 0.6f + WeaponTargets.BodyRadius(candidate) * 0.5f) return true;
+        }
+        return false;
     }
 
     void OnTriggerEnter(Collider other)
@@ -119,8 +144,12 @@ public class Bullet : MonoBehaviour, IProjectile
         else dmg.TakeDamage(damage);
         bool enemy = health != null && health.CompareTag("Enemy");
         if (enemy && CombatStats.ExplosionRadius > 0f) Explode(health);
-        if (pierce > 0 && enemy) { pierce--; return; }
+        // Пробивание и рикошет вместе (09.11.2026): раньше пробивание тратилось первым, и если за врагом было пусто,
+        // пуля улетала и рикошет не срабатывал (особенно вплотную). Теперь сквозь — только если впереди есть ещё враг,
+        // иначе рикошет к ближайшему; пробивание без цели впереди — последний вариант.
+        if (pierce > 0 && enemy && EnemyAhead(health)) { pierce--; return; }
         if (ricochet > 0 && enemy && Redirect()) { ricochet--; return; }
+        if (pierce > 0 && enemy) { pierce--; return; }
         hasHit = true;
         Destroy(gameObject);
     }

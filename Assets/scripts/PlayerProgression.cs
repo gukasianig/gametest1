@@ -22,6 +22,7 @@ public class PlayerProgression : MonoBehaviour
     private readonly List<UpgradeDefinition> offered = new List<UpgradeDefinition>();
     private readonly Button[] buttons = new Button[3];
     private Button rerollButton;
+    private Text choicesTitle;
     private readonly Text[] cardText = new Text[3];
     private readonly Image[] icons = new Image[3];
     private readonly UpgradeIcon[] vectorIcons = new UpgradeIcon[3];
@@ -99,8 +100,10 @@ public class PlayerProgression : MonoBehaviour
     {
         // Permanent workshop bonuses count toward the same caps as in-run upgrades.
         float sum = effect == UpgradeEffect.MaxHealth ? 0f : MetaProgress.Bonus(effect);
-        if (catalog == null) return sum;
-        foreach (UpgradeDefinition definition in catalog.entries)
+        if (catalog != null)
+            foreach (UpgradeDefinition definition in catalog.entries)
+                if (definition.effect == effect) sum += definition.amount * Rank(definition.id);
+        foreach (UpgradeDefinition definition in ChestUpgrades)
             if (definition.effect == effect) sum += definition.amount * Rank(definition.id);
         return sum;
     }
@@ -215,6 +218,10 @@ public class PlayerProgression : MonoBehaviour
         if (definition.effect == UpgradeEffect.MaxHealth) GetComponent<PlayerHealth>().IncreaseMaxHealth(Mathf.RoundToInt(definition.amount));
         if (definition.effect == UpgradeEffect.OrbitCount) orbits.UpgradeOrbitCount(Mathf.RoundToInt(definition.amount));
         if (definition.effect == UpgradeEffect.CursedGlass) GetComponent<PlayerHealth>().ReduceMaxHealth(0.3f);
+        if (chestMode && definition.effect == UpgradeEffect.MaxHealth) GetComponent<PlayerHealth>().Heal(GetComponent<PlayerHealth>().maxHP);
+        if (definition.effect == UpgradeEffect.ChestXp)
+            for (int level = 0; level < Mathf.RoundToInt(definition.amount); level++)
+                AddExperience(Mathf.Max(1, settings.ExperienceForLevel(Level) - Experience), true);
         ApplyStats();
         Color rarity = UpgradeCatalog.RarityColor(definition.rarity);
         toastText.text = "<b>" + definition.title + "</b>  •  ранг " + Rank(definition.id);
@@ -229,6 +236,14 @@ public class PlayerProgression : MonoBehaviour
         toastTime = ToastLife;
         toastGroup.alpha = 1f;
         toast.gameObject.SetActive(true);
+        if (chestMode)
+        {
+            // Награда сундука не тратит обычные выборы уровня: закрываем окно и возвращаемся в бой.
+            CloseChoices();
+            if (GameSession.Instance != null) GameSession.Instance.LeaveUpgrade();
+            else Time.timeScale = 1f;
+            return true;
+        }
         PendingChoices--;
         if (PendingChoices > 0)
         {
@@ -239,6 +254,52 @@ public class PlayerProgression : MonoBehaviour
         CloseChoices();
         if (GameSession.Instance != null) GameSession.Instance.LeaveUpgrade();
         else Time.timeScale = 1f;
+        return true;
+    }
+
+    // --- Награда сундука (событие «Защити сундук»): три особых улучшения на выбор, сильнее обычных карточек.
+    private bool chestMode;
+    public bool ChestChoosing { get { return Choosing && chestMode; } }
+
+    public static readonly UpgradeDefinition[] ChestUpgrades =
+    {
+        Chest("chest_rage", "Ядро ярости", UpgradeEffect.Damage, 0.4f),
+        Chest("chest_haste", "Разгон", UpgradeEffect.AttackSpeed, 0.35f),
+        Chest("chest_sniper", "Глаз снайпера", UpgradeEffect.CritChance, 0.25f),
+        Chest("chest_plate", "Броня сундука", UpgradeEffect.Armor, 0.2f),
+        Chest("chest_heart", "Сердце арены (+HP и полное лечение)", UpgradeEffect.MaxHealth, 40f),
+        Chest("chest_vein", "Золотая жила", UpgradeEffect.ChestXp, 2f),
+        Chest("chest_spring", "Живая вода", UpgradeEffect.Regeneration, 2f),
+        Chest("chest_boots", "Сапоги ветра", UpgradeEffect.Movement, 0.3f),
+        Chest("chest_leech", "Кровавая жатва", UpgradeEffect.Vampirism, 2f),
+    };
+
+    private static UpgradeDefinition Chest(string id, string title, UpgradeEffect effect, float amount)
+    {
+        return new UpgradeDefinition { id = id, title = title, effect = effect, amount = amount, rarity = UpgradeRarity.Special, maxRanks = 3 };
+    }
+
+    // Открывает окно выбора из трёх случайных особых улучшений. false — окно открыть нельзя (уже выбирают или нет карточек).
+    public bool OfferChestReward()
+    {
+        if (Choosing || choices == null) return false;
+        var pool = new List<UpgradeDefinition>();
+        foreach (UpgradeDefinition definition in ChestUpgrades) if (Available(definition)) pool.Add(definition);
+        if (pool.Count == 0) return false;
+        offered.Clear();
+        while (offered.Count < 3 && pool.Count > 0)
+        {
+            int pick = Random.Range(0, pool.Count);
+            offered.Add(pool[pick]);
+            pool.RemoveAt(pick);
+        }
+        if (GameSession.Instance != null && !GameSession.Instance.EnterUpgrade()) { offered.Clear(); return false; }
+        chestMode = true;
+        Choosing = true;
+        Time.timeScale = 0f;
+        choicesTitle.text = "СУНДУК ОТКРЫТ!\nВыбери особую награду";
+        choices.gameObject.SetActive(true);
+        RefreshCards();
         return true;
     }
 
@@ -292,6 +353,8 @@ public class PlayerProgression : MonoBehaviour
 
     public void CloseChoices()
     {
+        chestMode = false;
+        if (choicesTitle != null) choicesTitle.text = "НОВЫЙ УРОВЕНЬ\nВыбери улучшение";
         Choosing = false;
         if (choices != null) choices.gameObject.SetActive(false);
     }
@@ -389,6 +452,7 @@ public class PlayerProgression : MonoBehaviour
             case UpgradeEffect.PickupSpeed: return Pair("Скорость притяжения", now * 100f, next * 100f, "%", "0");
             case UpgradeEffect.Luck: return Pair("Шанс аптечек и магнита", now * 100f, next * 100f, "%", "0");
             case UpgradeEffect.ExperienceGain: return Pair("Опыт с кристаллов", now * 100f, next * 100f, "%", "0");
+            case UpgradeEffect.ChestXp: return "Сразу +" + Mathf.RoundToInt(definition.amount) + " уровня (и карточки улучшений)";
             case UpgradeEffect.CursedGlass: return "ПРОКЛЯТИЕ: урон +60%, но максимум HP −30%";
             case UpgradeEffect.CursedHaste: return "ПРОКЛЯТИЕ: темп стрельбы +40%, но враги быстрее на 15%";
             case UpgradeEffect.CursedGreed: return "ПРОКЛЯТИЕ: опыт +50%, но у новых врагов HP +25%";
@@ -401,7 +465,7 @@ public class PlayerProgression : MonoBehaviour
 
     public bool Reroll()
     {
-        if (!Choosing || RerollsLeft <= 0 || (GameSession.Instance != null && GameSession.Instance.State != GameRunState.Upgrade)) return false;
+        if (!Choosing || chestMode || RerollsLeft <= 0 || (GameSession.Instance != null && GameSession.Instance.State != GameRunState.Upgrade)) return false;
         RollOffers();
         if (offered.Count == 0) return false;
         RerollsLeft--;
@@ -413,7 +477,7 @@ public class PlayerProgression : MonoBehaviour
     {
         if (rerollButton != null)
         {
-            rerollButton.gameObject.SetActive(true);
+            rerollButton.gameObject.SetActive(!chestMode);
             rerollButton.interactable = RerollsLeft > 0;
             rerollButton.GetComponentInChildren<Text>().text = "Перебросить карточки (" + RerollsLeft + ")";
         }
@@ -465,7 +529,7 @@ public class PlayerProgression : MonoBehaviour
         levelText = GameUi.Readable(GameUi.Label(levelBadge, "", Vector2.zero, Vector2.one, 22), 1f);
         levelText.fontStyle = FontStyle.Bold;
         choices = GameUi.Box(canvas.transform, "Level Up", Vector2.zero, Vector2.one, GameUi.Background, true);
-        GameUi.Label(choices, "НОВЫЙ УРОВЕНЬ\nВыбери улучшение", new Vector2(0.1f, 0.77f), new Vector2(0.9f, 0.96f), 36);
+        choicesTitle = GameUi.Label(choices, "НОВЫЙ УРОВЕНЬ\nВыбери улучшение", new Vector2(0.1f, 0.77f), new Vector2(0.9f, 0.96f), 36);
         for (int i = 0; i < 3; i++)
         {
             int index = i;

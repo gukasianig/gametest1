@@ -52,19 +52,20 @@ public class EnemyHealthDisplay : MonoBehaviour
     public void Register(Health health)
     {
         if (bars.ContainsKey(health)) return;
-        RectTransform root = Rect("Enemy HP", canvasRect, new Vector2(82, 28));
+        RectTransform root = Rect("Enemy HP", canvasRect, new Vector2(56, 19)); // было 82×28 и шрифт 14 — меньше по просьбе владельца
         Image background = root.gameObject.AddComponent<Image>();
         background.color = new Color(0.03f, 0.04f, 0.06f, 0.95f);
         background.raycastTarget = false;
         RectTransform fill = Rect("Fill", root, Vector2.zero);
         fill.anchorMin = new Vector2(0, 0);
         fill.anchorMax = new Vector2(1, 0.3f);
-        fill.offsetMin = new Vector2(2, 2);
+        fill.offsetMin = new Vector2(1.5f, 1.5f);
         fill.offsetMax = new Vector2(-2, -1);
         Image image = fill.gameObject.AddComponent<Image>();
         image.raycastTarget = false;
-        Text label = TextLabel(root, "HP", 14);
-        label.rectTransform.anchoredPosition = new Vector2(0, 4);
+        Text label = TextLabel(root, "HP", 10);
+        label.horizontalOverflow = HorizontalWrapMode.Overflow; // «1200 / 1200» не переносится на вторую строку
+        label.rectTransform.anchoredPosition = new Vector2(0, 3);
         Collider body = health.GetComponentInChildren<Collider>();
         float height = body != null ? body.bounds.max.y - health.transform.position.y + 0.45f : 1.5f;
         bars.Add(health, new HealthBar { root = root, fill = fill, image = image, label = label, height = height });
@@ -78,7 +79,7 @@ public class EnemyHealthDisplay : MonoBehaviour
         if (!bars.TryGetValue(health, out HealthBar bar)) return;
         float fraction = Mathf.Clamp01((float)health.CurrentHealth / Mathf.Max(1, health.maxHealth));
         bar.fill.anchorMax = new Vector2(fraction, 0.3f);
-        bar.fill.offsetMax = new Vector2(2 - 4 * fraction, -1);
+        bar.fill.offsetMax = new Vector2(1.5f - 3f * fraction, -1);
         bar.image.enabled = fraction > 0;
         bar.image.color = Color.Lerp(new Color(1f, 0.25f, 0.2f), new Color(0.3f, 0.9f, 0.55f), fraction);
         bar.label.text = health.CurrentHealth + " / " + health.maxHealth;

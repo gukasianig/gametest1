@@ -55,7 +55,8 @@ public static class CameraSpawnChecks
             follow.target = originalTarget;
             WaveManager waves = UnityEngine.Object.FindObjectOfType<WaveManager>();
             int checkedPositions = 0;
-            foreach (float height in new[] { follow.minHeight, originalOffset.y, follow.maxHeight })
+            // Зум убран 09.11.2026: проверяем рабочую высоту и запас ±50% (на случай будущей смены высоты).
+            foreach (float height in new[] { originalOffset.y * 0.5f, originalOffset.y, originalOffset.y * 1.5f })
             foreach (float aspect in new[] { 1f, 16f / 9f })
             {
                 camera.aspect = aspect;

@@ -183,6 +183,11 @@ public sealed class MortarShell : MonoBehaviour
         if (t >= 1f)
         {
             Vector3 ground = new Vector3(to.x, to.y, to.z);
+            // Взрыв споры (09.11.2026 владелец: «нет эффекта попадания и взрыва»): огненный шар, дым, ударное кольцо,
+            // свет и звук — облегчённый EnemyFx.Explosion, сверху споровые брызги цвета мортиры.
+            EnemyFx.Explosion(ground, EnemyAbility.MortarRadius * 0.8f, 0.55f, false);
+            EnemyFx.LightFlash(ground + Vector3.up * 1f, SporeColor, EnemyAbility.MortarRadius * 3f, 4f, 0.3f);
+            GameAudio.Play(Sfx.Explosion, 0.7f);
             EnemyFx.Blobs(ground + Vector3.up * 0.3f, SporeColor, 10, 5f, 0.14f, 0.55f, to.y);
             EnemyFx.Blobs(ground + Vector3.up * 0.3f, SporeGlow, 6, 3.5f, 0.1f, 0.5f, to.y);
             for (int i = 0; i < 4; i++)

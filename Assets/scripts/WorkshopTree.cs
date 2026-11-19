@@ -2,14 +2,16 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-// Screen layout follows the approved top-down constellation concept. All interaction is real UI.
-public class WorkshopTree : MonoBehaviour
+// Workshop map and inspection pages share the same purchase state and real UI interaction.
+public partial class WorkshopTree : MonoBehaviour
 {
     private class Node
     {
         public int weapon = -1;
         public MetaUpgrade body;
+        public string project;
         public WeaponElement element;
         public Button button;
         public WorkshopDiamond diamond;
@@ -18,14 +20,11 @@ public class WorkshopTree : MonoBehaviour
         public Text state;
         public Text badge;
         public RectTransform rect;
+        public WorkshopPlatform platform;
         public string title;
         public bool owned, affordable;
     }
 
-    // Each branch line follows the state of the node it leads to: lit and pulsing when owned, soft when
-    // purchasable, dim when out of reach.
-    private readonly List<KeyValuePair<int, Node>> links = new List<KeyValuePair<int, Node>>();
-    private WorkshopTreeLines treeLines;
     private readonly List<Node> nodes = new List<Node>();
     private readonly Dictionary<string, Sprite> art = new Dictionary<string, Sprite>();
     private AutoShoter shooter;
@@ -37,15 +36,32 @@ public class WorkshopTree : MonoBehaviour
     private RectTransform content, board;
     private float boardHeight, previousWidth;
     private float scrollProgress = 1f;
-    private const float zoom = 1f; // масштаб фиксирован: доска всегда во всю ширину (колесо только прокручивает)
+    private float zoom = 1f, horizontalProgress, rootY;
+    private bool fitMode, centerMode;
+    private Text zoomLabel, goalLabel;
+    private Button projectOption;
+    private Text projectOptionText;
+    private int projectRevision;
+    private readonly List<Image> weaponGroups = new List<Image>();
+    private CanvasGroup detailGroup, entrance;
+    private RectTransform detailPanel;
+    private Node detailNode;
+    private float detailAge = 1f, entranceAge, navigationAge;
+    private bool motionReady, navigationMoving;
+    private Vector2 navigationFrom, navigationTo;
+    private float navigationFromZoom, navigationToZoom;
+    private Image rootPicture;
+    public bool AnimateNavigation { get; set; } = true;
+    public bool NavigationMoving => navigationMoving;
+    private const float NavigationDuration = .48f;
     private readonly List<Sprite> created = new List<Sprite>(); // только свои Sprite.Create; ассеты Resources не уничтожаем
     private bool panning;
     private Vector2 lastMouse;
-    private const float BoardWidth = 1600f;
-    private const float Top = 295f, RootX = 240f, BodyX = 70f, BodyStep = 135f, WeaponRowStep = 260f, TrunkX = 410f;
-    // Оружие — ровная сетка 5 × 2 (10 выбираемых): центр первого столбца, шаг, ширина группы, шаг узлов стихий.
-    private const float WeaponX = 538f, WeaponPitch = 235f, GroupWidth = 226f, ElementStep = 52f;
-    private const int WeaponColumns = 5;
+    private const float BoardWidth = 1800f;
+    private const float RootX = BoardWidth * .5f;
+    private const float WeaponX = 1140f, WeaponPitch = 258f, GroupWidth = 242f, ElementStep = 55f;
+    private const float WeaponTop = 100f, WeaponRowStep = 260f;
+    private const int WeaponColumns = 3;
     public ScrollRect Scroll { get; private set; }
     public int NodeCount { get { return nodes.Count; } }
     public string SelectedTitle { get { return selected != null ? selected.title : ""; } }
@@ -55,14 +71,6 @@ public class WorkshopTree : MonoBehaviour
     private static readonly Color Dim = new Color(.34f, .41f, .48f);
     private static readonly Color Gold = new Color(1f, .74f, .32f);
 
-    private int SelectableWeapons()
-    {
-        int n = 0;
-        for (int i = 0; shooter.weapons != null && i < shooter.weapons.Length; i++)
-            if (shooter.weapons[i] != null && shooter.weapons[i].IsSelectable) n++;
-        return n;
-    }
-
     public void Build(AutoShoter owner, Action returnHome)
     {
         shooter = owner;
@@ -71,18 +79,20 @@ public class WorkshopTree : MonoBehaviour
         backdrop.sprite = Art("tree_background");
         if (backdrop.sprite == null) backdrop.color = new Color(.025f, .045f, .075f);
         GameUi.Box(transform, "Header shade", new Vector2(0, .88f), Vector2.one, new Color(.02f, .04f, .07f, .85f));
-        GameUi.Label(transform, "МАСТЕРСКАЯ", new Vector2(.22f, .91f), new Vector2(.7f, .99f), 34, new Color(.78f, .94f, 1f));
-        GameUi.Label(transform, "ДЕРЕВО ТЕХНОЛОГИЙ", new Vector2(.22f, .875f), new Vector2(.7f, .92f), 14, Dim * 1.7f);
+        GameUi.Label(transform, GameText.Source("workshoptree.458"), new Vector2(.22f, .91f), new Vector2(.7f, .99f), 34, new Color(.78f, .94f, 1f));
+        GameUi.Label(transform, GameText.Source("workshoptree.459"), new Vector2(.22f, .875f), new Vector2(.7f, .92f), 14, Dim * 1.7f);
         currency = GameUi.Label(transform, "", new Vector2(.73f, .92f), new Vector2(.99f, .99f), 22, GameUi.Accent);
-        Button exit = GameUi.Button(transform, "‹  НАЗАД", new Vector2(.02f, .92f), new Vector2(.17f, .985f), () => back());
+        Button exit = GameUi.Button(transform, GameText.Source("workshoptree.460"), new Vector2(.02f, .92f), new Vector2(.17f, .985f), () => back());
         UiArtwork.Round(exit.GetComponent<Image>());
 
-        RectTransform viewport = GameUi.Box(transform, "Tree viewport", new Vector2(.015f, .095f), new Vector2(.715f, .875f), Color.clear, true);
+        RectTransform viewport = GameUi.Box(transform, "Tree viewport", new Vector2(.015f, .16f), new Vector2(.69f, .82f), Color.clear, true);
         viewport.gameObject.AddComponent<RectMask2D>();
-        Scroll = viewport.gameObject.AddComponent<ScrollRect>();
+        var navigation = viewport.gameObject.AddComponent<WorkshopScrollRect>();
+        navigation.Tree = this;
+        Scroll = navigation;
         Scroll.viewport = viewport;
         Scroll.horizontal = true;
-        Scroll.scrollSensitivity = 40f; // колесо прокручивает вверх-вниз, приближения нет
+        Scroll.scrollSensitivity = 40f;
         Scroll.elasticity = .08f;
         Scroll.movementType = ScrollRect.MovementType.Clamped;
         Scroll.inertia = true;
@@ -97,86 +107,36 @@ public class WorkshopTree : MonoBehaviour
         content.anchorMin = new Vector2(0, 1);
         content.anchorMax = new Vector2(0, 1);
         content.pivot = new Vector2(0, 1);
-        int weapons = shooter.weapons != null ? shooter.weapons.Length : 0;
-        boardHeight = Mathf.Max(Top + (MetaProgress.Catalog.Length - 1) * BodyStep + 100,
-            Top + (Mathf.CeilToInt(SelectableWeapons() / (float)WeaponColumns) - 1) * WeaponRowStep + 170);
-        Scroll.content = content;
-        board = Fixed("Tree board", content, 0, 0, BoardWidth, boardHeight);
-        board.pivot = new Vector2(0, 1);
-        board.anchoredPosition = Vector2.zero;
-        WorkshopTreeLines lines = new GameObject("Branch connections", typeof(RectTransform), typeof(WorkshopTreeLines)).GetComponent<WorkshopTreeLines>();
-        lines.transform.SetParent(board, false);
-        RectTransform lineRect = (RectTransform)lines.transform;
-        lineRect.anchorMin = Vector2.zero;
-        lineRect.anchorMax = Vector2.one;
-        lineRect.offsetMin = lineRect.offsetMax = Vector2.zero;
-        lineRect.pivot = new Vector2(0, 1);
-        lines.raycastTarget = false;
-        treeLines = lines;
-        WorkshopTreePulses pulses = new GameObject("Branch pulses", typeof(RectTransform), typeof(WorkshopTreePulses)).GetComponent<WorkshopTreePulses>();
-        pulses.transform.SetParent(board, false);
-        RectTransform pulseRect = (RectTransform)pulses.transform;
-        pulseRect.anchorMin = Vector2.zero;
-        pulseRect.anchorMax = Vector2.one;
-        pulseRect.offsetMin = pulseRect.offsetMax = Vector2.zero;
-        pulseRect.pivot = new Vector2(0, 1);
-        pulses.raycastTarget = false;
-        pulses.Source = lines;
+        BuildEquipmentMap();
 
-        RectTransform auraRect = Fixed("Root aura", board, RootX, 90, 300, 300);
-        auraRect.gameObject.AddComponent<WorkshopRootAura>().raycastTarget = false;
-        Image root = Fixed("Root", board, RootX, 90, 140, 140).gameObject.AddComponent<Image>();
-        root.sprite = Art("root_workshop");
-        root.preserveAspect = true;
-        root.raycastTarget = false;
-        Header(board, "ГЕРОЙ", BodyX, 200, 120, GameUi.Accent);
-        Header(board, "ОРУЖИЕ", TrunkX, 200, 150, Gold);
-        lines.Connect(new Vector2(RootX, 150), new Vector2(BodyX, 186), GameUi.Accent);
-        lines.Connect(new Vector2(RootX, 150), new Vector2(TrunkX, 186), Gold);
-        // Category rails feed siblings. No lines run from one independent purchase through another.
-        lines.Connect(new Vector2(BodyX, 215), new Vector2(BodyX, Top + (MetaProgress.Catalog.Length - 1) * BodyStep), GameUi.Accent * .6f);
-        lines.Connect(new Vector2(TrunkX, 215), new Vector2(TrunkX, Top + (Mathf.CeilToInt(SelectableWeapons() / (float)WeaponColumns) - 1) * WeaponRowStep), Gold * .6f);
-
-        for (int i = 0; i < MetaProgress.Catalog.Length; i++)
+        string[] sectionIds = { "hero", "weapons", "projects" };
+        for (int i = 0; i < 3; i++)
         {
-            MetaUpgrade upgrade = MetaProgress.Catalog[i];
-            float y = Top + i * BodyStep;
-            int bodyLink = lines.Connect(new Vector2(BodyX, y), new Vector2(112, y), GameUi.Accent);
-            Node node = new Node { body = upgrade, title = upgrade.title };
-            AddNode(node, 150, y, 76, UiArtwork.Upgrade(upgrade.effect), board);
-            links.Add(new KeyValuePair<int, Node>(bodyLink, node));
+            string section = sectionIds[i];
+            var shortcut = GameUi.Button(transform, GameText.Source(section == "hero" ? "challengescreen.076" : section == "weapons" ? "weaponselectscreen.439" : "projects.nav.projects"), new Vector2(.015f + i * .225f, .835f), new Vector2(.23f + i * .225f, .88f), () => FocusSection(section));
+            shortcut.name = "Workshop section " + section;
+            shortcut.GetComponentInChildren<Text>().resizeTextMaxSize = 16;
+            UiArtwork.Round(shortcut.GetComponent<Image>());
         }
-
-        int weaponSlot = 0;
-        for (int i = 0; i < weapons; i++)
+        var centre = GameUi.Button(transform, GameText.Source("workshop.layout.center"), new Vector2(.015f, .095f), new Vector2(.15f, .14f), CenterRoot);
+        centre.name = "Workshop centre";
+        centre.GetComponentInChildren<Text>().resizeTextMaxSize = 14;
+        GameUi.Button(transform, "−", new Vector2(.42f, .095f), new Vector2(.465f, .14f), () => ZoomAt(-1f, ViewCentre()));
+        zoomLabel = GameUi.Label(transform, "", new Vector2(.465f, .095f), new Vector2(.545f, .14f), 15);
+        GameUi.Button(transform, "+", new Vector2(.545f, .095f), new Vector2(.59f, .14f), () => ZoomAt(1f, ViewCentre()));
+        var fit = GameUi.Button(transform, GameText.Source("projects.fit"), new Vector2(.60f, .095f), new Vector2(.69f, .14f), FitTree);
+        fit.name = "Workshop fit";
+        fit.GetComponentInChildren<Text>().resizeTextMaxSize = 14;
+        var goal = GameUi.Button(transform, "", new Vector2(.015f, .04f), new Vector2(.69f, .09f), () =>
         {
-            WeaponData weapon = shooter.weapons[i];
-            if (weapon == null || !weapon.IsSelectable) continue;
-            int column = weaponSlot % WeaponColumns;
-            float x = WeaponX + column * WeaponPitch;
-            float y = Top + weaponSlot / WeaponColumns * WeaponRowStep; weaponSlot++;
-            float from = column == 0 ? TrunkX : x - WeaponPitch + 38;
-            int weaponLink = lines.Connect(new Vector2(from, y), new Vector2(x - 38, y), Gold * .55f);
-            RectTransform group = Fixed("Weapon group " + i, board, x, y + 60, GroupWidth, 180);
-            Image groupShade = group.gameObject.AddComponent<Image>();
-            groupShade.color = new Color(.02f, .06f, .09f, .32f);
-            groupShade.raycastTarget = false;
-            UiArtwork.Round(groupShade);
-            Node node = new Node { weapon = i, title = WeaponTitle(i) };
-            AddNode(node, GroupWidth * .5f, 30, 76, WeaponIcon(i), group);
-            links.Add(new KeyValuePair<int, Node>(weaponLink, node));
-            for (int e = 1; e <= 4; e++)
-            {
-                WeaponElement element = (WeaponElement)e;
-                float offset = (e - 2.5f) * ElementStep;
-                int elementLink = lines.Connect(new Vector2(x, y + 38), new Vector2(x + offset, y + 55), WeaponElements.Colors[e] * .7f);
-                Node elementNode = new Node { weapon = i, element = element, title = node.title + ": " + WeaponElements.Names[e] };
-                AddNode(elementNode, GroupWidth * .5f + offset, 108, 46, Art(WeaponElements.Icons[e]), group);
-                links.Add(new KeyValuePair<int, Node>(elementLink, elementNode));
-            }
-        }
+            if (WorkshopProjects.Target >= 0) FocusProject(WorkshopProjects.Ids[WorkshopProjects.Target]);
+        });
+        goal.name = "Workshop tracked goal";
+        goalLabel = goal.GetComponentInChildren<Text>();
+        goalLabel.resizeTextMaxSize = 14;
+        UiArtwork.Round(goal.GetComponent<Image>());
 
-        RectTransform track = GameUi.Box(transform, "Tree scroll track", new Vector2(.727f, .105f), new Vector2(.735f, .865f), new Color(.15f, .25f, .3f, .55f), true);
+        RectTransform track = GameUi.Box(transform, "Tree scroll track", new Vector2(.697f, .16f), new Vector2(.705f, .82f), new Color(.15f, .25f, .3f, .55f), true);
         Scrollbar scrollbar = track.gameObject.AddComponent<Scrollbar>();
         RectTransform handle = GameUi.Box(track, "Scroll thumb", Vector2.zero, Vector2.one, GameUi.Accent, true);
         scrollbar.handleRect = handle;
@@ -184,9 +144,23 @@ public class WorkshopTree : MonoBehaviour
         scrollbar.direction = Scrollbar.Direction.BottomToTop;
         Scroll.verticalScrollbar = scrollbar;
         Scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+        RectTransform horizontalTrack = GameUi.Box(transform, "Tree horizontal track", new Vector2(.015f, .145f), new Vector2(.69f, .155f), new Color(.15f, .25f, .3f, .55f), true);
+        var horizontalBar = horizontalTrack.gameObject.AddComponent<Scrollbar>();
+        var horizontalHandle = GameUi.Box(horizontalTrack, "Horizontal thumb", Vector2.zero, Vector2.one, GameUi.Accent, true);
+        horizontalBar.handleRect = horizontalHandle;
+        horizontalBar.targetGraphic = horizontalHandle.GetComponent<Image>();
+        horizontalBar.direction = Scrollbar.Direction.LeftToRight;
+        Scroll.horizontalScrollbar = horizontalBar;
+        Scroll.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
 
-        RectTransform panel = GameUi.Box(transform, "Upgrade details", new Vector2(.755f, .09f), new Vector2(.985f, .86f), new Color(.025f, .065f, .1f, .94f), true);
+        RectTransform panel = GameUi.Box(transform, "Upgrade details", new Vector2(.725f, .09f), new Vector2(.985f, .86f), new Color(.025f, .065f, .1f, .94f), true);
+        detailPanel = panel;
+        detailGroup = panel.gameObject.AddComponent<CanvasGroup>();
         UiArtwork.Round(panel.GetComponent<Image>());
+        var panelBorder = panel.gameObject.AddComponent<Outline>();
+        panelBorder.effectDistance = new Vector2(1f, -1f);
+        panelBorder.effectColor = new Color(.24f, .64f, .73f, .3f);
+        GameUi.Box(panel, "Detail accent", new Vector2(.04f, .965f), new Vector2(.14f, .97f), new Color(.3f, .85f, .9f, .65f));
         category = GameUi.Label(panel, "", new Vector2(.025f, .925f), new Vector2(.975f, .995f), 13, GameUi.Accent);
         preview = UiArtwork.Picture(panel, null, new Vector2(.12f, .70f), new Vector2(.88f, .92f));
         elementPreview = UiArtwork.Picture(panel, null, new Vector2(.67f, .685f), new Vector2(.98f, .81f));
@@ -203,12 +177,26 @@ public class WorkshopTree : MonoBehaviour
         equipText = equip.GetComponentInChildren<Text>();
         equipText.resizeTextMaxSize = 17;
         UiArtwork.Round(equip.GetComponent<Image>());
-        GameUi.Label(transform, "Колесо — прокрутка  ·  Правая кнопка мыши — двигать  ·  Стихии связаны только со своим оружием", new Vector2(.015f, .012f), new Vector2(.735f, .075f), 14, new Color(.53f, .66f, .75f));
+        projectOption = GameUi.Button(panel, "", new Vector2(.07f, .225f), new Vector2(.93f, .30f), () =>
+        {
+            if (selected != null && selected.project != null) { WorkshopProjects.CycleOption(selected.project); Refresh(); }
+        });
+        projectOption.name = "Workshop project option";
+        projectOptionText = projectOption.GetComponentInChildren<Text>();
+        projectOptionText.resizeTextMaxSize = 14;
+        UiArtwork.Round(projectOption.GetComponent<Image>());
+        projectOption.gameObject.SetActive(false);
+        GameUi.Label(transform, GameText.Source("workshoptree.461"), new Vector2(.015f, .002f), new Vector2(.705f, .037f), 12, new Color(.53f, .66f, .75f));
+        BuildEquipmentPanel(panel);
         selected = nodes.Count > 0 ? nodes[0] : null;
         Refresh();
         Canvas.ForceUpdateCanvases();
         RefreshLayout();
-        Scroll.verticalNormalizedPosition = 1f;
+        FitTree();
+        entrance = gameObject.AddComponent<CanvasGroup>();
+        foreach (Button button in GetComponentsInChildren<Button>(true))
+            if (button.GetComponent<WorkshopDiamond>() == null) button.gameObject.AddComponent<WorkshopButtonMotion>();
+        motionReady = true;
     }
 
     public void RefreshLayout()
@@ -216,14 +204,182 @@ public class WorkshopTree : MonoBehaviour
         if (Scroll == null || board == null) return;
         float width = Scroll.viewport.rect.width;
         if (width <= 0f) return;
+        bool resized = !Mathf.Approximately(previousWidth, width);
+        if (navigationMoving && !resized) return;
+        if (resized && navigationMoving) { zoom = navigationToZoom; navigationMoving = false; }
+        if (fitMode) zoom = Mathf.Clamp(Mathf.Min(1f, Scroll.viewport.rect.height / boardHeight / (width / BoardWidth)), .3f, 5f);
         float scale = width / BoardWidth * zoom;
-        board.localScale = Vector3.one * scale;
-        content.sizeDelta = new Vector2(BoardWidth * scale, boardHeight * scale);
+        ApplyBoardScale(scale);
         previousWidth = width;
         Scroll.verticalNormalizedPosition = scrollProgress;
+        Scroll.horizontalNormalizedPosition = horizontalProgress;
+        if (zoomLabel != null) zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
         Scroll.StopMovement();
         // После смены размера окна выбранный узел остаётся на экране (он может быть в середине доски, а не у края).
-        if (selected != null) Reveal(selected);
+        if (centerMode) CenterRootImmediate();
+        else if (selected != null && !fitMode) Reveal(selected);
+    }
+
+    public float Zoom => zoom;
+    private Vector2 ViewCentre()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+        return RectTransformUtility.WorldToScreenPoint(camera, Scroll.viewport.TransformPoint(Scroll.viewport.rect.center));
+    }
+
+    public void ZoomAt(float steps, Vector2 screenPoint)
+    {
+        if (board == null || Scroll.viewport.rect.width <= 0f) return;
+        CancelNavigation();
+        fitMode = false;
+        centerMode = false;
+        Canvas canvas = GetComponentInParent<Canvas>();
+        Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(Scroll.viewport, screenPoint, camera, out Vector2 local)) return;
+        Vector2 mouse = local - new Vector2(Scroll.viewport.rect.xMin, Scroll.viewport.rect.yMax);
+        float oldScale = board.localScale.x;
+        Vector2 point = (mouse - content.anchoredPosition - board.anchoredPosition) / Mathf.Max(.001f, oldScale);
+        zoom = Mathf.Clamp(zoom * Mathf.Pow(1.15f, steps), .3f, 5f);
+        float scale = Scroll.viewport.rect.width / BoardWidth * zoom;
+        ApplyBoardScale(scale);
+        content.anchoredPosition = mouse - point * scale - board.anchoredPosition;
+        ClampContent();
+        zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
+        RememberScrollPosition();
+    }
+
+    public void FitTree()
+    {
+        Vector2 from = content.anchoredPosition;
+        float fromZoom = zoom;
+        CancelNavigation();
+        fitMode = true;
+        centerMode = false;
+        zoom = Mathf.Clamp(Mathf.Min(1f, Scroll.viewport.rect.height / boardHeight / (Scroll.viewport.rect.width / BoardWidth)), .3f, 5f);
+        float scale = Scroll.viewport.rect.width / BoardWidth * zoom;
+        ApplyBoardScale(scale);
+        content.anchoredPosition = Vector2.zero;
+        ClampContent();
+        zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
+        RememberScrollPosition();
+        BeginNavigation(from, fromZoom);
+    }
+
+    public void CenterRoot()
+    {
+        if (Scroll == null) return;
+        Vector2 from = content.anchoredPosition;
+        float fromZoom = zoom;
+        CancelNavigation();
+        CenterRootImmediate();
+        BeginNavigation(from, fromZoom);
+    }
+
+    private void CenterRootImmediate()
+    {
+        if (Scroll == null || Scroll.viewport.rect.width <= 0f) return;
+        fitMode = false;
+        centerMode = true;
+        zoom = Mathf.Max(zoom, 2.4f);
+        float scale = Scroll.viewport.rect.width / BoardWidth * zoom;
+        ApplyBoardScale(scale);
+        content.anchoredPosition = new Vector2(Scroll.viewport.rect.width * .5f - RootX * scale, rootY * scale - Scroll.viewport.rect.height * .5f) - board.anchoredPosition;
+        ClampContent();
+        zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
+        RememberScrollPosition();
+    }
+
+    public void FocusSection(string section)
+    {
+        Node node = nodes.Find(n => section == "projects" ? n.project != null : section == "hero" ? n.body != null : n.project == null && n.body == null && n.element == WeaponElement.None);
+        if (node == null) return;
+        Vector2 from = content.anchoredPosition;
+        float fromZoom = zoom;
+        CancelNavigation();
+        centerMode = fitMode = false;
+        selected = node;
+        Refresh();
+        zoom = Mathf.Max(zoom, 2.4f);
+        RefreshLayout();
+        CenterMapPoint(section == "hero" ? 410f : section == "weapons" ? WeaponX + WeaponPitch : 510f,
+            section == "hero" ? 330f : section == "weapons" ? 370f : 920f);
+        BeginNavigation(from, fromZoom);
+    }
+
+    public void FocusProject(string id)
+    {
+        Node node = nodes.Find(n => n.project == id);
+        if (node == null) return;
+        Vector2 from = content.anchoredPosition;
+        float fromZoom = zoom;
+        CancelNavigation();
+        centerMode = fitMode = false;
+        selected = node;
+        Refresh();
+        zoom = Mathf.Max(zoom, 2.4f);
+        RefreshLayout();
+        BeginNavigation(from, fromZoom);
+    }
+
+    public void CancelNavigation() { navigationMoving = false; }
+
+    private void BeginNavigation(Vector2 from, float fromZoom)
+    {
+        if (!motionReady || !AnimateNavigation || !isActiveAndEnabled) return;
+        navigationTo = content.anchoredPosition;
+        navigationToZoom = zoom;
+        if ((navigationTo - from).sqrMagnitude < 1f && Mathf.Abs(zoom - fromZoom) < .001f) return;
+        navigationFrom = from; navigationFromZoom = fromZoom;
+        navigationAge = 0f; navigationMoving = true;
+        zoom = fromZoom;
+        ApplyBoardScale(Scroll.viewport.rect.width / BoardWidth * zoom);
+        content.anchoredPosition = from;
+        ClampContent();
+    }
+
+    public void CompletePresentation()
+    {
+        if (navigationMoving)
+        {
+            zoom = navigationToZoom;
+            ApplyBoardScale(Scroll.viewport.rect.width / BoardWidth * zoom);
+            content.anchoredPosition = navigationTo;
+            ClampContent();
+            navigationMoving = false;
+        }
+        entranceAge = detailAge = 1f;
+        if (entrance != null) entrance.alpha = 1f;
+        if (detailGroup != null) detailGroup.alpha = 1f;
+        if (detailPanel != null) detailPanel.anchoredPosition = Vector2.zero;
+        if (zoomLabel != null) zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
+        RememberScrollPosition();
+    }
+
+    private void ClampContent()
+    {
+        Vector2 position = content.anchoredPosition;
+        content.anchoredPosition = new Vector2(Mathf.Clamp(position.x, Mathf.Min(0f, Scroll.viewport.rect.width - content.rect.width), 0f),
+            Mathf.Clamp(position.y, 0f, Mathf.Max(0f, content.rect.height - Scroll.viewport.rect.height)));
+        Scroll.StopMovement();
+    }
+
+    private void CenterMapPoint(float x, float y)
+    {
+        float scale = board.localScale.x;
+        content.anchoredPosition = new Vector2(Scroll.viewport.rect.width * .5f - x * scale, y * scale - Scroll.viewport.rect.height * .5f) - board.anchoredPosition;
+        ClampContent();
+        RememberScrollPosition();
+    }
+
+    private void ApplyBoardScale(float scale)
+    {
+        Vector2 drawing = new Vector2(BoardWidth * scale, boardHeight * scale);
+        Vector2 view = Scroll.viewport.rect.size;
+        board.localScale = Vector3.one * scale;
+        content.sizeDelta = new Vector2(Mathf.Max(view.x, drawing.x), Mathf.Max(view.y, drawing.y));
+        // A small overview is centred inside a viewport-sized scroll surface.
+        board.anchoredPosition = new Vector2(Mathf.Max(0f, (view.x - drawing.x) * .5f), -Mathf.Max(0f, (view.y - drawing.y) * .5f));
     }
 
     private void PanWithMouse()
@@ -242,17 +398,67 @@ public class WorkshopTree : MonoBehaviour
         }
         Vector2 delta = (mouse - lastMouse) / (canvas != null ? canvas.scaleFactor : 1f);
         lastMouse = mouse;
-        float minX = Mathf.Min(0f, view.rect.width - content.sizeDelta.x);
-        float maxY = Mathf.Max(0f, content.sizeDelta.y - view.rect.height);
-        Vector2 position = content.anchoredPosition + delta;
-        content.anchoredPosition = new Vector2(Mathf.Clamp(position.x, minX, 0f), Mathf.Clamp(position.y, 0f, maxY));
-        Scroll.StopMovement();
+        Pan(delta);
+    }
+
+    public void Pan(Vector2 delta)
+    {
+        CancelNavigation();
+        centerMode = false;
+        content.anchoredPosition += delta;
+        ClampContent();
+        RememberScrollPosition();
     }
 
     private void Update()
     {
         if (Scroll == null || board == null) return;
         PanWithMouse();
+        if (projectRevision != WorkshopProjects.Revision) Refresh();
+        TickPresentation();
+    }
+
+    private void TickPresentation()
+    {
+        float dt = Time.unscaledDeltaTime;
+        entranceAge += dt;
+        if (entrance != null) entrance.alpha = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(entranceAge / .35f));
+        detailAge += dt;
+        float detail = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(detailAge / .24f));
+        if (detailGroup != null) detailGroup.alpha = Mathf.Lerp(.3f, 1f, detail);
+        if (detailPanel != null) detailPanel.anchoredPosition = new Vector2(0f, -7f * (1f - detail));
+        if (preview != null) preview.rectTransform.localScale = Vector3.one * Mathf.Lerp(.92f, 1f, detail);
+        if (rootPicture != null)
+        {
+            rootPicture.rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.unscaledTime * .65f) * 2f);
+            rootPicture.rectTransform.localScale = Vector3.one * (1f + .025f * Mathf.Sin(Time.unscaledTime * 1.4f));
+        }
+        foreach (Image group in weaponGroups)
+        {
+            bool chosen = selected != null && selected.rect.parent == group.transform;
+            Color target = chosen ? new Color(.04f, .14f, .18f, .78f) : new Color(.02f, .06f, .09f, .32f);
+            group.color = Color.Lerp(group.color, target, 1f - Mathf.Exp(-9f * dt));
+            var outline = group.GetComponentInChildren<WorkshopCardBorder>();
+            outline.color = Color.Lerp(outline.color, chosen ? new Color(.4f, .9f, .95f, .8f) : new Color(.3f, .6f, .7f, .3f), 1f - Mathf.Exp(-9f * dt));
+        }
+        if (!navigationMoving) return;
+        navigationAge += dt;
+        float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(navigationAge / NavigationDuration));
+        zoom = Mathf.Lerp(navigationFromZoom, navigationToZoom, t);
+        ApplyBoardScale(Scroll.viewport.rect.width / BoardWidth * zoom);
+        content.anchoredPosition = Vector2.Lerp(navigationFrom, navigationTo, t);
+        ClampContent();
+        if (zoomLabel != null) zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
+        if (navigationAge >= NavigationDuration) navigationMoving = false;
+        RememberScrollPosition();
+    }
+
+    private void OnEnable() { entranceAge = 0f; }
+
+    private void OnDisable()
+    {
+        CancelNavigation();
+        if (detailPanel != null) detailPanel.anchoredPosition = Vector2.zero;
     }
 
     private void LateUpdate()
@@ -263,7 +469,11 @@ public class WorkshopTree : MonoBehaviour
 
     public void RememberScrollPosition()
     {
-        if (Scroll != null) scrollProgress = Scroll.verticalNormalizedPosition;
+        if (Scroll != null)
+        {
+            scrollProgress = Scroll.verticalNormalizedPosition;
+            horizontalProgress = Scroll.horizontalNormalizedPosition;
+        }
     }
 
     private static RectTransform Fixed(string name, Transform parent, float x, float y, float width, float height)
@@ -294,7 +504,7 @@ public class WorkshopTree : MonoBehaviour
 
     private void AddNode(Node node, float x, float y, float size, Sprite sprite, RectTransform parent)
     {
-        string id = node.body != null ? node.body.id : "weapon:" + node.weapon + (node.element == WeaponElement.None ? "" : ":" + node.element);
+        string id = node.project != null ? "project:" + node.project : node.body != null ? node.body.id : "weapon:" + node.weapon + (node.element == WeaponElement.None ? "" : ":" + node.element);
         RectTransform rect = Fixed("Node " + id, parent, x, y, size, size);
         node.rect = rect;
         node.diamond = rect.gameObject.AddComponent<WorkshopDiamond>();
@@ -302,10 +512,16 @@ public class WorkshopTree : MonoBehaviour
         node.button = rect.gameObject.AddComponent<Button>();
         node.button.targetGraphic = node.diamond;
         node.button.transition = Selectable.Transition.None;
-        node.button.onClick.AddListener(() => { selected = node; Refresh(); Reveal(node); });
+        node.button.onClick.AddListener(() => { centerMode = false; selected = node; Refresh(); Reveal(node, true); });
         node.picture = UiArtwork.Picture(rect, sprite, new Vector2(.04f, .04f), new Vector2(.96f, .96f));
+        node.diamond.Picture = node.picture.rectTransform;
+        node.diamond.HoverChanged = RefreshBranchActivity;
+        RectTransform baseRect = Fixed("Holographic base", rect, size * .5f, size * .9f, size * 1.12f, size * .38f);
+        baseRect.SetAsFirstSibling();
+        node.platform = baseRect.gameObject.AddComponent<WorkshopPlatform>();
+        node.platform.raycastTarget = false;
         if (sprite == null) node.picture.enabled = false;
-        if (node.element != WeaponElement.None && WeaponElements.Locked)
+        if (node.element != WeaponElement.None && WeaponElements.IsLocked(node.weapon))
         {
             node.keyIcon = UiArtwork.Picture(rect, KeySprite(), new Vector2(.05f, .05f), new Vector2(.95f, .95f));
             node.keyIcon.raycastTarget = false;
@@ -313,12 +529,15 @@ public class WorkshopTree : MonoBehaviour
         }
         string caption = node.element != WeaponElement.None ? WeaponElements.Names[(int)node.element] : node.title;
         bool module = node.element != WeaponElement.None;
-        Text captionText = LabelAt(rect, caption, size * .5f, module ? size + 11 : size * .5f - 54,
-            module ? 50 : node.body != null ? 185 : 222, module ? 18 : 28, module ? 12 : 15, new Color(.84f, .9f, .94f));
+        bool weapon = node.body == null && node.project == null && !module;
+        float captionY = module ? size + 12f : weapon ? -20f : size * .5f - 75f;
+        Text captionText = LabelAt(rect, caption, size * .5f, captionY,
+            module ? 52f : weapon ? 230f : 240f, module ? 22f : 32f, module ? 14 : 22, new Color(.84f, .9f, .94f));
         captionText.transform.parent.name = "Node caption";
+        captionText.resizeTextMinSize = module ? 8 : 12;
         captionText.rectTransform.offsetMin = captionText.rectTransform.offsetMax = Vector2.zero;
-        node.state = LabelAt(rect, "", module ? size * .5f : size + 44,
-            module ? size + 31 : size * .5f + 22, module ? 50 : 72, module ? 16 : 28, 12, GameUi.Accent);
+        node.state = LabelAt(rect, "", size * .5f, module ? size + 36f : weapon ? size + 13f : size + 25f,
+            module ? 52f : 160f, module ? 18f : 26f, module ? 12 : 16, GameUi.Accent);
         node.state.transform.parent.name = "Node state";
         node.state.rectTransform.offsetMin = node.state.rectTransform.offsetMax = Vector2.zero;
         node.badge = LabelAt(rect, "", size - 3, 1, 36, 18, 10, GameUi.Accent);
@@ -359,24 +578,31 @@ public class WorkshopTree : MonoBehaviour
         return keySprite;
     }
 
-    private void Reveal(Node node)
+    private void Reveal(Node node, bool animate = false)
     {
+        Vector2 from = content.anchoredPosition;
+        float fromZoom = zoom;
+        CancelNavigation();
         Canvas.ForceUpdateCanvases();
         Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(Scroll.viewport, node.rect);
         Rect visible = Scroll.viewport.rect;
         float delta = bounds.max.y > visible.yMax - 12 ? visible.yMax - 12 - bounds.max.y :
             bounds.min.y < visible.yMin + 64 ? visible.yMin + 64 - bounds.min.y : 0f;
         content.anchoredPosition += Vector2.up * delta;
+        float horizontal = bounds.min.x < visible.xMin + 10f ? visible.xMin + 10f - bounds.min.x :
+            bounds.max.x > visible.xMax - 10f ? visible.xMax - 10f - bounds.max.x : 0f;
+        content.anchoredPosition += Vector2.right * horizontal;
         float limit = Mathf.Max(0, content.rect.height - visible.height);
         float limitX = Mathf.Min(0f, visible.width - content.rect.width);
         content.anchoredPosition = new Vector2(Mathf.Clamp(content.anchoredPosition.x, limitX, 0), Mathf.Clamp(content.anchoredPosition.y, 0, limit));
         Scroll.StopMovement();
         RememberScrollPosition();
+        if (animate) BeginNavigation(from, fromZoom);
     }
 
     private string WeaponTitle(int index)
     {
-        string[] basic = { "Пистолет", "Автомат", "Дробовик", "Тяжёлая винтовка" };
+        string[] basic = { GameText.Source("weaponselectscreen.433"), GameText.Source("weaponselectscreen.434"), GameText.Source("metaprogress.179"), GameText.Source("metaprogress.180") };
         return index < 4 ? basic[index] : !string.IsNullOrEmpty(shooter.weapons[index].title) ? shooter.weapons[index].title : shooter.weapons[index].weaponName;
     }
 
@@ -427,12 +653,22 @@ public class WorkshopTree : MonoBehaviour
     public void Refresh()
     {
         if (currency == null) return;
-        currency.text = "ДЕТАЛИ  " + MetaProgress.Currency;
+        projectRevision = WorkshopProjects.Revision;
+        currency.text = GameText.Source("workshoptree.462") + MetaProgress.Currency;
+        if (goalLabel != null) goalLabel.text = GameText.Source("projects.goal.prefix") + WorkshopProjects.Goal;
         foreach (Node node in nodes)
         {
             bool owned = false, affordable = false;
             node.badge.text = "";
-            if (node.body != null)
+            if (node.project != null)
+            {
+                int rank = WorkshopProjects.Rank(node.project);
+                owned = rank > 0;
+                affordable = WorkshopProjects.CanBuy(node.project);
+                node.state.text = rank + " / 3";
+                if (WorkshopProjects.Target >= 0 && WorkshopProjects.Ids[WorkshopProjects.Target] == node.project) node.badge.text = GameText.Source("projects.target");
+            }
+            else if (node.body != null)
             {
                 int rank = MetaProgress.Rank(node.body.id);
                 owned = rank > 0;
@@ -444,97 +680,142 @@ public class WorkshopTree : MonoBehaviour
                 owned = MetaProgress.IsWeaponUnlocked(node.weapon);
                 MetaUnlock unlock = MetaProgress.FindUnlock(MetaProgress.WeaponKey(node.weapon));
                 affordable = !owned && unlock != null && MetaProgress.Currency >= unlock.cost;
-                node.state.text = owned ? "Открыто" : unlock != null ? unlock.cost + "\nдеталей" : "Закрыто";
+                node.state.text = owned ? GameText.Source("tuning.level.short") + WeaponTuning.Rank(node.weapon) + " / 5" : unlock != null ? unlock.cost + GameText.Source("workshoptree.464") : GameText.Source("workshoptree.465");
+                affordable = owned ? WeaponTuning.CanBuy(node.weapon) : affordable;
             }
             else
             {
                 int rank = WeaponElements.Rank(node.weapon, node.element);
                 owned = rank > 0;
                 affordable = WeaponElements.CanBuy(node.weapon, node.element);
-                node.state.text = WeaponElements.Locked || !MetaProgress.IsWeaponUnlocked(node.weapon) ? "Закрыто" :
+                node.state.text = WeaponElements.IsLocked(node.weapon) || !MetaProgress.IsWeaponUnlocked(node.weapon) ? GameText.Source("workshoptree.465") :
                     rank + "/3";
-                if (rank > 0 && WeaponElements.Equipped(node.weapon) == node.element) node.badge.text = "ВКЛ";
+                if (rank > 0 && WeaponElements.Equipped(node.weapon) == node.element) node.badge.text = GameText.Source("workshoptree.466");
             }
-            Color accent = node.element == WeaponElement.None ? node.body != null ? GameUi.Accent : Gold : WeaponElements.Colors[(int)node.element];
+            Color accent = node.element == WeaponElement.None ? node.body != null || node.project != null ? GameUi.Accent : Gold : WeaponElements.Colors[(int)node.element];
             node.state.color = owned ? GameUi.Accent : affordable ? Gold : new Color(.55f, .62f, .68f);
             node.diamond.Edge = node == selected ? Gold : owned ? accent : affordable ? accent * .7f : Dim;
             node.diamond.Selected = node == selected;
             node.diamond.Glow = affordable;
             node.diamond.SetVerticesDirty();
             node.picture.color = owned || affordable || node == selected ? Color.white : new Color(.4f, .45f, .5f, .7f);
-            if (node.keyIcon != null) { node.keyIcon.enabled = WeaponElements.Locked; if (WeaponElements.Locked) node.picture.color = new Color(.35f, .4f, .45f, .55f); }
+            if (node.keyIcon != null) { bool keyed = WeaponElements.IsLocked(node.weapon); node.keyIcon.enabled = keyed; if (keyed) node.picture.color = new Color(.35f, .4f, .45f, .55f); }
+            if (node.platform != null) { node.platform.Tint = node.element == WeaponElement.None ? GameUi.Accent : accent; node.platform.Active = node == selected || owned; }
             node.owned = owned;
             node.affordable = affordable;
         }
-        if (treeLines != null)
-            foreach (KeyValuePair<int, Node> link in links)
-                treeLines.SetBrightness(link.Key, link.Value.owned ? 1.35f : link.Value.affordable ? .9f : .45f);
+        RefreshBranchActivity();
         RefreshDetails();
+    }
+
+    private void RefreshBranchActivity()
+    {
+        foreach (Node node in nodes)
+            if (node.platform != null) node.platform.Active = node == selected || node.owned || node.diamond.Hovered;
     }
 
     private void RefreshDetails()
     {
         if (selected == null) return;
+        if (detailNode != selected) { detailNode = selected; detailAge = 0f; }
+        bool equipment = selected.weapon >= 0;
+        SetEquipmentPage(equipment);
+        if (equipment) { RefreshEquipmentDetails(); return; }
         title.text = selected.title;
         state.color = GameUi.Accent;
+        bool project = selected.project != null;
+        projectOption.gameObject.SetActive(false);
+        description.rectTransform.anchorMin = new Vector2(.04f, project ? .36f : .305f);
+        description.rectTransform.anchorMax = new Vector2(.96f, project ? .66f : .585f);
+        title.rectTransform.anchorMin = new Vector2(.025f, project ? .67f : .59f);
+        title.rectTransform.anchorMax = new Vector2(.975f, project ? .77f : .70f);
+        preview.rectTransform.anchorMin = new Vector2(.12f, project ? .77f : .70f);
+        state.rectTransform.anchorMin = new Vector2(.03f, project ? .31f : .225f);
+        state.rectTransform.anchorMax = new Vector2(.97f, project ? .36f : .30f);
+        description.resizeTextMaxSize = project ? 14 : 17;
         bool module = selected.element != WeaponElement.None;
         preview.sprite = module ? WeaponIcon(selected.weapon) : selected.picture.sprite;
         elementPreview.sprite = module ? selected.picture.sprite : null;
         elementPreview.gameObject.SetActive(module);
-        category.text = selected.body != null ? "ПОСТОЯННОЕ УЛУЧШЕНИЕ" : module ? "СТИХИЯ ОРУЖИЯ" : "ОТКРЫТИЕ ОРУЖИЯ";
+        category.text = project ? GameText.Source("projects.category") : selected.body != null ? GameText.Source("workshoptree.467") : module
+            ? GameText.Source(WeaponElements.IsBranch(selected.element) ? "workshop.branch.caption" : "workshoptree.468")
+            : GameText.Source("workshoptree.469");
         equip.gameObject.SetActive(selected.element != WeaponElement.None);
         buy.interactable = false;
-        if (selected.body != null)
+        if (project)
+        {
+            string id = selected.project;
+            int rank = WorkshopProjects.Rank(id);
+            string details = "";
+            for (int stage = 0; stage < 3; stage++) details += (stage > 0 ? "\n" : "") + (stage < rank ? "✓ " : "○ ") + WorkshopProjects.Reward(id, stage);
+            description.text = details + "\n\n" + (id == "weapons" ? WorkshopProjects.MasteryText(shooter.WeaponIndex) + "\n" + GameText.Source("projects.mastery.bonus") : WorkshopProjects.OptionDescription(id));
+            state.text = WorkshopProjects.Requirement(id);
+            buyText.text = rank == 3 ? GameText.Source("projects.complete") : GameText.Source("projects.assemble") + WorkshopProjects.Cost(id);
+            buy.interactable = WorkshopProjects.CanBuy(id);
+            equip.gameObject.SetActive(true);
+            equip.interactable = true;
+            equipText.text = WorkshopProjects.Target >= 0 && WorkshopProjects.Ids[WorkshopProjects.Target] == id ? GameText.Source("projects.untrack") : GameText.Source("projects.track");
+            projectOption.gameObject.SetActive(rank > 0 && (id == "relics" || id == "drones" || id == "scanner"));
+            projectOptionText.text = WorkshopProjects.Option(id) + "  →";
+        }
+        else if (selected.body != null)
         {
             MetaUpgrade upgrade = selected.body;
             int rank = MetaProgress.Rank(upgrade.id);
-            description.text = upgrade.description + "\n\nСейчас: " + MetaProgress.EffectText(upgrade, rank) +
-                (rank < upgrade.maxRank ? "\nСледующий: " + MetaProgress.EffectText(upgrade, rank + 1) : "");
-            state.text = "Ранг " + rank + " / " + upgrade.maxRank;
-            buyText.text = rank == upgrade.maxRank ? "МАКСИМУМ" : "УЛУЧШИТЬ · " + upgrade.Cost(rank);
+            description.text = upgrade.description + GameText.Source("workshoptree.470") + MetaProgress.EffectText(upgrade, rank) +
+                (rank < upgrade.maxRank ? GameText.Source("workshoptree.471") + MetaProgress.EffectText(upgrade, rank + 1) : "");
+            state.text = GameText.Source("workshoptree.472") + rank + " / " + upgrade.maxRank;
+            buyText.text = rank == upgrade.maxRank ? GameText.Source("workshoptree.473") : GameText.Source("workshoptree.474") + upgrade.Cost(rank);
             buy.interactable = MetaProgress.CanBuy(upgrade);
-            if (!buy.interactable && rank < upgrade.maxRank) state.text = "Не хватает " + (upgrade.Cost(rank) - MetaProgress.Currency) + " деталей";
+            if (!buy.interactable && rank < upgrade.maxRank) state.text = GameText.Source("workshoptree.475") + (upgrade.Cost(rank) - MetaProgress.Currency) + GameText.Source("workshoptree.476");
         }
         else if (selected.element == WeaponElement.None)
         {
             bool owned = MetaProgress.IsWeaponUnlocked(selected.weapon);
             MetaUnlock unlock = MetaProgress.FindUnlock(MetaProgress.WeaponKey(selected.weapon));
-            description.text = "Четыре узла под оружием — его стихии.\n\nОдна активная стихия на оружие. Купленные варианты переключаются бесплатно.\n\nДругие оружия покупать не требуется.";
-            state.text = owned ? "Оружие открыто" : "Нужно открыть оружие";
-            buyText.text = owned ? "ОТКРЫТО" : "ОТКРЫТЬ · " + (unlock != null ? unlock.cost : 0);
+            description.text = GameText.Source(WeaponElements.HasBranches(selected.weapon) ? "workshop.branch.description" : "workshoptree.477");
+            state.text = owned ? GameText.Source("workshoptree.478") : GameText.Source("workshoptree.479");
+            buyText.text = owned ? GameText.Source("workshoptree.480") : GameText.Source("workshoptree.481") + (unlock != null ? unlock.cost : 0);
             buy.interactable = !owned && unlock != null && MetaProgress.Currency >= unlock.cost;
-            if (!owned && unlock != null && !buy.interactable) state.text = "Не хватает " + (unlock.cost - MetaProgress.Currency) + " деталей";
+            if (!owned && unlock != null && !buy.interactable) state.text = GameText.Source("workshoptree.475") + (unlock.cost - MetaProgress.Currency) + GameText.Source("workshoptree.476");
         }
         else
         {
             int rank = WeaponElements.Rank(selected.weapon, selected.element);
             bool unlocked = MetaProgress.IsWeaponUnlocked(selected.weapon);
             bool active = WeaponElements.Equipped(selected.weapon) == selected.element;
-            description.text = (rank == 0 ? "После открытия:\n" : "Сейчас:\n") + Summary(selected.element, Mathf.Max(1, rank)) +
-                (rank > 0 && rank < 3 ? "\n\nРанг " + (rank + 1) + ":\n" + Summary(selected.element, rank + 1) : "") +
-                "\n\nТолько для этого оружия.";
-            state.text = !unlocked ? "Сначала открой оружие" : rank == 0 ? "Стихия не открыта" : "Ранг " + rank + "/3" + (active ? " · активна" : " · не активна");
-            if (WeaponElements.Locked && unlocked) state.text = "Улучшения оружия временно закрыты";
-            buyText.text = rank == 3 ? "МАКСИМУМ" : (rank == 0 ? "ОТКРЫТЬ · " : "УЛУЧШИТЬ · ") + WeaponElements.Cost(rank);
-            if (!unlocked) buyText.text = "ОРУЖИЕ ЗАКРЫТО";
+            description.text = (rank == 0 ? GameText.Source("workshoptree.482") : GameText.Source("workshoptree.483")) + Summary(selected.element, Mathf.Max(1, rank)) +
+                (rank > 0 && rank < 3 ? GameText.Source("workshoptree.484") + (rank + 1) + ":\n" + Summary(selected.element, rank + 1) : "") +
+                GameText.Source("workshoptree.485");
+            state.text = !unlocked ? GameText.Source("workshoptree.486") : rank == 0 ? GameText.Source("workshoptree.487") : GameText.Source("workshoptree.472") + rank + "/3" + (active ? GameText.Source("workshoptree.488") : GameText.Source("workshoptree.489"));
+            bool keyedWeapon = WeaponElements.IsLocked(selected.weapon);
+            if (keyedWeapon && unlocked) state.text = GameText.Source("workshoptree.490");
+            buyText.text = rank == 3 ? GameText.Source("workshoptree.473") : (rank == 0 ? GameText.Source("workshoptree.481") : GameText.Source("workshoptree.474")) + WeaponElements.Cost(rank);
+            if (!unlocked) buyText.text = GameText.Source("workshoptree.491");
             buy.interactable = WeaponElements.CanBuy(selected.weapon, selected.element);
             equip.gameObject.SetActive(rank > 0 && unlocked);
             equip.interactable = unlocked && rank > 0;
-            equipText.text = active ? "СНЯТЬ СТИХИЮ" : "ПРИМЕНИТЬ";
-            if (WeaponElements.Locked) { if (unlocked) buyText.text = "ЗАКРЫТО"; equip.gameObject.SetActive(false); }
-            else             if (unlocked && rank < 3 && !buy.interactable) state.text = "Не хватает " + (WeaponElements.Cost(rank) - MetaProgress.Currency) + " деталей";
+            equipText.text = active ? GameText.Source(WeaponElements.IsBranch(selected.element) ? "workshop.branch.unequip" : "workshoptree.492") : GameText.Source("workshoptree.493");
+            if (keyedWeapon) { if (unlocked) buyText.text = GameText.Source("workshoptree.494"); equip.gameObject.SetActive(false); }
+            else             if (unlocked && rank < 3 && !buy.interactable) state.text = GameText.Source("workshoptree.475") + (WeaponElements.Cost(rank) - MetaProgress.Currency) + GameText.Source("workshoptree.476");
         }
-        if (state.text.StartsWith("Не хватает") || state.text.StartsWith("Сначала")) state.color = Gold;
+        if (((LocalizedUiText)state).SourceText.StartsWith(GameText.Source("workshoptree.495")) || ((LocalizedUiText)state).SourceText.StartsWith(GameText.Source("workshoptree.496"))) state.color = Gold;
     }
 
     private static string Summary(WeaponElement element, int rank)
     {
         switch (element)
         {
-            case WeaponElement.Fire: return "Горение " + rank * 8 + "% урона/с · 3 с\nОбновление без стаков; Страж: ×0.5";
-            case WeaponElement.Frost: return "Замедление " + (10 + rank * 10) + "% · 2 с\nНа Стража вдвое слабее";
-            case WeaponElement.Lightning: return "Соседей: " + rank + " · радиус 5 м\n30% урона, затухание ×0.65 · 0.4 с";
-            case WeaponElement.Poison: return "Яд " + rank * 5 + "% урона/с · 4 с\nДо 3 стаков; Страж: ×0.5";
+            case WeaponElement.Fire: return GameText.Source("workshoptree.497") + rank * 8 + GameText.Source("workshoptree.498");
+            case WeaponElement.Frost: return GameText.Source("workshoptree.499") + (10 + rank * 10) + GameText.Source("workshoptree.500");
+            case WeaponElement.Lightning: return GameText.Source("workshoptree.501") + rank + GameText.Source("workshoptree.502");
+            case WeaponElement.Poison: return GameText.Source("workshoptree.503") + rank * 5 + GameText.Source("workshoptree.504");
+            case WeaponElement.Revolver:
+            case WeaponElement.Dual:
+            case WeaponElement.Sticky:
+            case WeaponElement.Assault:
+            case WeaponElement.Minigun:
+            case WeaponElement.Heavy: return WeaponElements.Description(element, rank);
             default: return "";
         }
     }
@@ -542,18 +823,21 @@ public class WorkshopTree : MonoBehaviour
     public void PurchaseSelected()
     {
         if (selected == null) return;
+        if (selected.weapon >= 0) { if (selected.element == WeaponElement.None) PurchaseWeaponTuning(); else PurchaseEquipmentBranch(); return; }
         Node bought = selected;
         int before = MetaProgress.Currency;
-        if (selected.body != null) MetaProgress.Buy(selected.body.id);
+        if (selected.project != null) WorkshopProjects.Buy(selected.project);
+        else if (selected.body != null) MetaProgress.Buy(selected.body.id);
         else if (selected.element == WeaponElement.None) MetaProgress.TryUnlock(MetaProgress.WeaponKey(selected.weapon));
         else WeaponElements.Buy(selected.weapon, selected.element);
         Refresh();
-        if (MetaProgress.Currency < before && bought.rect != null) Burst(bought);
+        if (MetaProgress.Currency < before && bought.rect != null) { detailAge = 0f; Burst(bought); }
     }
 
     // Expanding ring around a node that was just bought.
     private void Burst(Node node)
     {
+        if (node.platform != null) node.platform.Celebrate();
         WorkshopBurst burst = new GameObject("Purchase burst", typeof(RectTransform), typeof(WorkshopBurst)).GetComponent<WorkshopBurst>();
         RectTransform rect = (RectTransform)burst.transform;
         rect.SetParent(node.rect, false);
@@ -566,7 +850,9 @@ public class WorkshopTree : MonoBehaviour
 
     public void EquipSelected()
     {
-        if (selected == null || selected.element == WeaponElement.None) return;
+        if (selected == null) return;
+        if (selected.project != null) { WorkshopProjects.Track(selected.project); Refresh(); return; }
+        if (selected.element == WeaponElement.None) return;
         WeaponElements.Equip(selected.weapon, WeaponElements.Equipped(selected.weapon) == selected.element ? WeaponElement.None : selected.element);
         Refresh();
     }
@@ -580,15 +866,33 @@ public class WorkshopTree : MonoBehaviour
 }
 
 [RequireComponent(typeof(CanvasRenderer))]
-public class WorkshopDiamond : MaskableGraphic
+public class WorkshopDiamond : MaskableGraphic, IPointerEnterHandler, IPointerExitHandler
 {
     public Color Edge = GameUi.Accent;
     public bool Selected, Glow;
+    public RectTransform Picture;
+    public System.Action HoverChanged;
+    public bool Hovered { get; private set; }
+    private float emphasis;
+
+    public void OnPointerEnter(PointerEventData data) { Hovered = true; HoverChanged?.Invoke(); }
+    public void OnPointerExit(PointerEventData data) { Hovered = false; HoverChanged?.Invoke(); }
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        Hovered = false;
+        emphasis = 0f;
+        if (Picture != null) Picture.localScale = Vector3.one;
+    }
 
     // Nodes that can be bought right now breathe with a soft halo.
     private void Update()
     {
-        if (Glow) SetVerticesDirty();
+        float target = Hovered || Selected ? 1f : 0f;
+        float previous = emphasis;
+        emphasis = Mathf.Lerp(emphasis, target, 1f - Mathf.Exp(-12f * Time.unscaledDeltaTime));
+        if (Picture != null) Picture.localScale = Vector3.one * (1f + emphasis * .06f);
+        if (Glow || Selected || !Mathf.Approximately(previous, emphasis)) SetVerticesDirty();
     }
 
     protected override void OnPopulateMesh(VertexHelper mesh)
@@ -602,17 +906,17 @@ public class WorkshopDiamond : MaskableGraphic
         for (int i = 0; i < 4; i++) mesh.AddVert(corners[i] * .94f, new Color(.035f, .1f, .15f, .92f), Vector2.zero);
         for (int i = 0; i < 4; i++) mesh.AddTriangle(0, i + 1, (i + 1) % 4 + 1);
         var outline = new List<Vector2>(corners);
-        if (Glow)
+        if (Glow || emphasis > .01f)
         {
             Color halo = Edge;
-            halo.a = .16f + .2f * (.5f + .5f * Mathf.Sin(Time.unscaledTime * 3.2f));
+            halo.a = .12f + emphasis * .2f + (Glow ? .14f * (.5f + .5f * Mathf.Sin(Time.unscaledTime * 2.4f)) : 0f);
             WorkshopTreeLines.Strip(mesh, outline, 10f, 6f, halo, true);
         }
         WorkshopTreeLines.Strip(mesh, outline, 2f, 1f, Edge, true);
         if (Selected)
         {
             var halo = new List<Vector2>();
-            foreach (Vector2 corner in corners) halo.Add(corner * 1.12f);
+            foreach (Vector2 corner in corners) halo.Add(corner * (1.12f + .018f * Mathf.Sin(Time.unscaledTime * 2f)));
             WorkshopTreeLines.Strip(mesh, halo, 1.5f, 1f, Edge, true);
         }
     }
@@ -621,7 +925,7 @@ public class WorkshopDiamond : MaskableGraphic
 [RequireComponent(typeof(CanvasRenderer))]
 public class WorkshopTreeLines : MaskableGraphic
 {
-    private struct Path { public Vector2 a, b; public Color color; public float brightness; }
+    private struct Path { public Vector2 a, b; public Color color; public float brightness; public bool active; }
     private readonly List<Path> paths = new List<Path>();
 
     public int Connect(Vector2 a, Vector2 b, Color tint)
@@ -640,9 +944,17 @@ public class WorkshopTreeLines : MaskableGraphic
         SetVerticesDirty();
     }
 
+    public void SetActivity(int index, bool active)
+    {
+        if (index < 0 || index >= paths.Count || paths[index].active == active) return;
+        Path path = paths[index]; path.active = active; paths[index] = path;
+        SetVerticesDirty();
+    }
+
     private static Vector2 Point(Path path, float t)
     {
         Vector2 a = new Vector2(path.a.x, -path.a.y), b = new Vector2(path.b.x, -path.b.y);
+        if (Mathf.Approximately(a.x, b.x) || Mathf.Approximately(a.y, b.y)) return Vector2.Lerp(a, b, t);
         Vector2 c = a + Vector2.down * Mathf.Abs(b.y - a.y) * .6f;
         Vector2 d = b + Vector2.up * Mathf.Abs(b.y - a.y) * .6f;
         float u = 1f - t;
@@ -655,15 +967,15 @@ public class WorkshopTreeLines : MaskableGraphic
         for (int i = 0; i < paths.Count; i++)
         {
             Path path = paths[i];
-            if (path.brightness < 1.2f) continue;
-            float lead = Mathf.Repeat(time * .32f + i * .173f, 1.7f);
+            if (path.brightness < 1.2f && !path.active) continue;
+            float lead = Mathf.Repeat(time * (path.active ? .65f : .32f) + i * .173f, path.active ? 1.25f : 1.7f);
             for (int tail = 0; tail < 4; tail++)
             {
                 float t = lead - tail * .04f;
                 if (t < 0f || t > 1f) continue;
                 Color tint = Color.Lerp(path.color, Color.white, .65f);
                 tint.a = .95f - tail * .22f;
-                Dot(mesh, Point(path, t), 4f - tail * .7f, tint);
+                Dot(mesh, Point(path, t), (path.active ? 6f : 4f) - tail * .7f, tint);
             }
         }
     }
@@ -678,13 +990,13 @@ public class WorkshopTreeLines : MaskableGraphic
             Vector2 d = b + Vector2.up * Mathf.Abs(b.y - a.y) * .6f;
             Color lineColor = path.color;
             lineColor.a = Mathf.Clamp01(lineColor.a * path.brightness);
+            if (path.active) lineColor = Color.Lerp(lineColor, new Color(.65f, .95f, 1f, .95f), .55f);
             // One continuous strip per curve (no per-segment overlaps, so no beads at the joints) with
             // feathered edges: the outer vertices fade to transparent, which gives smooth anti-aliasing.
             var points = new List<Vector2>(33);
             for (int i = 0; i <= 32; i++)
             {
-                float t = i / 32f, u = 1f - t;
-                points.Add(u * u * u * a + 3 * u * u * t * c + 3 * u * t * t * d + t * t * t * b);
+                points.Add(Point(path, i / 32f));
             }
             Color glow = lineColor; glow.a *= .16f * Mathf.Max(1f, path.brightness);
             Strip(mesh, points, 7f, 4f, glow, false);
@@ -786,7 +1098,7 @@ public class WorkshopTreePulses : MaskableGraphic
 public class WorkshopBurst : MaskableGraphic
 {
     public Color Tint = Color.white;
-    private const float Duration = .65f;
+    private const float Duration = .95f;
     private float age;
 
     private void Update()
@@ -812,6 +1124,20 @@ public class WorkshopBurst : MaskableGraphic
             points.Add(rect.center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius);
         }
         WorkshopTreeLines.Strip(mesh, points, 3f * (1f - progress) + 1f, 2f, ring, true);
+        if (progress < .65f)
+        {
+            for (int i = 0; i < points.Count; i++) points[i] = rect.center + (points[i] - rect.center) * .78f;
+            Color inner = Color.Lerp(Tint, Color.white, .65f); inner.a = (1f - progress / .65f) * .7f;
+            WorkshopTreeLines.Strip(mesh, points, 2f, 1f, inner, true);
+        }
+        for (int i = 0; i < 10; i++)
+        {
+            float angle = i * Mathf.PI * 2f / 10f + .2f;
+            Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            Color spark = Color.Lerp(Tint, Color.white, .55f); spark.a = (1f - progress) * .85f;
+            WorkshopTreeLines.Strip(mesh, new List<Vector2> { rect.center + direction * radius,
+                rect.center + direction * (radius + 10f * (1f - progress)) }, 2f, 1f, spark, false);
+        }
     }
 }
 
@@ -881,6 +1207,14 @@ public class WorkshopRootAura : MaskableGraphic
         Vector2 center = rectTransform.rect.center;
         float pulse = .5f + .5f * Mathf.Sin(time * 1.6f);
         WorkshopTreeLines.Dot(mesh, center, 62f + pulse * 10f, new Color(.4f, .85f, 1f, .22f + pulse * .12f));
+        for (int tick = 0; tick < 36; tick++)
+        {
+            float angle = tick * Mathf.PI * 2f / 36f;
+            Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            float shimmer = .18f + .28f * Mathf.Pow(.5f + .5f * Mathf.Cos(angle - time * .5f), 6f);
+            WorkshopTreeLines.Strip(mesh, new List<Vector2> { center + direction * 123f,
+                center + direction * (tick % 3 == 0 ? 130f : 126f) }, 1.2f, .8f, new Color(.4f, .85f, 1f, shimmer), false);
+        }
         for (int ring = 0; ring < 2; ring++)
         {
             float radius = 84f + ring * 26f;

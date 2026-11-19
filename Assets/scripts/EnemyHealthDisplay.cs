@@ -155,7 +155,7 @@ public class EnemyHealthDisplay : MonoBehaviour
     private Text TextLabel(RectTransform parent, string value, int size)
     {
         RectTransform rect = Rect("Label", parent, parent.sizeDelta);
-        Text text = rect.gameObject.AddComponent<Text>();
+        Text text = rect.gameObject.AddComponent<LocalizedUiText>();
         text.font = font;
         text.fontSize = size;
         text.alignment = TextAnchor.MiddleCenter;

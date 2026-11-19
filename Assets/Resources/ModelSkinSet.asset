@@ -286,6 +286,174 @@ MonoBehaviour:
     stretch: 0
     centerOnHand: 0
     muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: XP Crystal
+    model: {fileID: 919132149155446097, guid: 024ba30572ad0f34cad73bd94bd58df2, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1.15
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Repair kit
+    model: {fileID: 919132149155446097, guid: 8317a2405e203ca43a9b4cdf77ea4ef6, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Magnet
+    model: {fileID: 919132149155446097, guid: fef0db0238d23fa4b9274d9c0a65ebc0, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Mine
+    model: {fileID: 919132149155446097, guid: 32640cd5be7891a4b90a585556f26939, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Turret
+    model: {fileID: 919132149155446097, guid: 807ab04f38264e5439eb675c2fb83916, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1.3
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Drone
+    model: {fileID: 919132149155446097, guid: b4470cfa0bba3324092920c7cac1f037, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 2.4
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Saw
+    model: {fileID: 919132149155446097, guid: 9ee697eb48fbcf947a0bf29f0e2a7dff, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Small chest
+    model: {fileID: 919132149155446097, guid: d2ddd12b832743348b7da7b54553ea3c, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Guard chest
+    model: {fileID: 919132149155446097, guid: f1313f634ce3a004da2235092fb590c8, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Supply crate
+    model: {fileID: 919132149155446097, guid: 0663c2fcda2e78e4887c39af97e0b2dd, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Elite crown
+    model: {fileID: 919132149155446097, guid: 573a01cadfdb60942ae201628f4f976d, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1.3
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Elite crown explosive
+    model: {fileID: 919132149155446097, guid: 6efe7dcd10deece40822c167292756d4, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1.3
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Acid shot
+    model: {fileID: 919132149155446097, guid: e36190f9e626c1a469c22f4e423c70e3, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1.1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Bone quill
+    model: {fileID: 919132149155446097, guid: 05a923a2a258f134aa8a5b323ce669a3, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Hostile orb
+    model: {fileID: 919132149155446097, guid: ab152565a188a634193d42e45b747538, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1.15
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Mortar spore
+    model: {fileID: 919132149155446097, guid: b7314ebc608844b42be837c5d07b7ca8, type: 3}
+    eulerOffset: {x: 0, y: 0, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Swarm queen
+    model: {fileID: 919132149155446097, guid: 954a76ee2a48f8a47a6c3f353c0cc153, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1.5
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Storm sniper
+    model: {fileID: 919132149155446097, guid: d795fa4f3bae3a44f9f8a3163d41f20d, type: 3}
+    eulerOffset: {x: 0, y: 180, z: 0}
+    sizeMultiplier: 1.35
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 0
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Rifle_Assault
+    model: {fileID: 919132149155446097, guid: e11bc3383860abf4a9e4799051b4ab07, type: 3}
+    eulerOffset: {x: 270.01978, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Rifle_Minigun
+    model: {fileID: 919132149155446097, guid: 9c710b84789e54c408903bbe7971c42d, type: 3}
+    eulerOffset: {x: 270.01978, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
+  - key: Rifle_Heavy
+    model: {fileID: 919132149155446097, guid: 97fd7b015eb9fb149a6375f54ca04dec, type: 3}
+    eulerOffset: {x: 270.01978, y: 180, z: 0}
+    sizeMultiplier: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    stretch: 0
+    centerOnHand: 1
+    muzzleOffset: {x: 0, y: 0, z: 0}
   decor:
   - label: barrel
     model: {fileID: 919132149155446097, guid: 7a5556ad664cbdc49b1e23536e4d271b, type: 3}

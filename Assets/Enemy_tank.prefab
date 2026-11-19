@@ -98,6 +98,11 @@ PrefabInstance:
       propertyPath: maxHealth
       value: 300
       objectReference: {fileID: 0}
+    - target: {fileID: 7085282931238509605, guid: cfe2b73893ae7f34fa2ffbd6b2b24d07,
+        type: 3}
+      propertyPath: experienceReward
+      value: 15
+      objectReference: {fileID: 0}
     - target: {fileID: 7105570210147486190, guid: cfe2b73893ae7f34fa2ffbd6b2b24d07,
         type: 3}
       propertyPath: m_Name

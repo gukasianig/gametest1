@@ -94,11 +94,16 @@ public class Health : MonoBehaviour, IDamagable
     {
         isDead = true;
         if (CompareTag("Enemy")) GameAudio.Play(Sfx.Kill, 0.5f);
+        // Убийство элиты ощущается: стоп-кадр, золотая вспышка, кольцо (CombatFeel).
+        if (CompareTag("Enemy") && name.StartsWith("Elite")) CombatFeel.EliteKilled(transform.position);
         if (CompareTag("Enemy") && RunStatistics.Instance != null)
             RunStatistics.Instance.RecordKill();
-        if (CompareTag("Enemy") && CombatStats.VampirismPerKill > 0f && PlayerProgression.Instance != null)
+        // Вампиризм: в кооперативе лечится ближайший к убитому живой герой (если у него есть эта карточка).
+        Transform killer = CoopMode.Active ? CoopMode.NearestAlive(transform.position)
+            : PlayerProgression.Instance != null ? PlayerProgression.Instance.transform : null;
+        if (CompareTag("Enemy") && killer != null)
         {
-            PlayerHealth hero = PlayerProgression.Instance.GetComponent<PlayerHealth>();
+            PlayerHealth hero = killer.GetComponent<PlayerHealth>();
             if (hero != null) hero.OnEnemyKilled();
         }
         if (CompareTag("Enemy") && experienceReward > 0) DropPickup.TryDrop(transform.position, name.StartsWith("Elite"));

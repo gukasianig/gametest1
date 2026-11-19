@@ -6,6 +6,9 @@ using UnityEngine.UI;
 
 public class OrbitWeapon : MonoBehaviour
 {
+    // Бонусы своего героя (кооператив: у каждого свой набор, CombatStats.Of).
+    private HeroStats heroStats;
+    private HeroStats Stats => heroStats ?? (heroStats = CombatStats.Of(player != null ? player : transform));
     public Transform player;
     public float orbitRadius = 2f;
     public float orbitSpeed = 180f;
@@ -68,7 +71,7 @@ public class OrbitWeapon : MonoBehaviour
         if (dmg != null)
         {
             // Satellites use a share of the hero's crit chance (Critical satellites upgrade).
-            int dealt = CombatStats.Roll(damage, CombatStats.CritChance * Mathf.Min(1f, CombatStats.OrbitCritShare), out bool crit);
+            int dealt = Stats.Roll(damage, Stats.CritChance * Mathf.Min(1f, Stats.OrbitCritShare), out bool crit);
             Health.NextHitCrit = crit;
             dmg.TakeDamage(dealt);
             Health.NextHitCrit = false;

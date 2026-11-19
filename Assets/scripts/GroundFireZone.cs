@@ -18,7 +18,6 @@ public sealed class GroundFireZone : MonoBehaviour
     private float growSpeed, targetRadius;
     private float burnUntil;
     private bool burning = true;
-    private PlayerHealth player;
 
     public float Radius { get; private set; }
     public bool Burning => burning;
@@ -106,10 +105,7 @@ public sealed class GroundFireZone : MonoBehaviour
         }
         if (playerDamage > 0)
         {
-            if (player == null && PlayerProgression.Instance != null)
-                player = PlayerProgression.Instance.GetComponent<PlayerHealth>();
-            if (player != null && WeaponTargets.Flat(centre, player.transform.position) <= Radius)
-                player.TakeDamage(playerDamage);
+            CoopMode.DamageHeroesWithin(centre, Radius, playerDamage, HeroDamageCause.Fire);   // все герои (кооператив)
         }
     }
 }

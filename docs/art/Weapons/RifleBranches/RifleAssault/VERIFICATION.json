@@ -1,0 +1,17 @@
+{
+  "meshParts": 22,
+  "triangles": 1444,
+  "boundsMetersBlenderXYZ": [
+    0.142,
+    1.065,
+    0.4425
+  ],
+  "blenderForward": "+Y (как Kenney)",
+  "sourceMarkers": [
+    "GripPoint",
+    "Muzzle"
+  ],
+  "fbxRoundTrip": "PASS",
+  "closedMeshParts": 22,
+  "degenerateTriangles": 0
+}

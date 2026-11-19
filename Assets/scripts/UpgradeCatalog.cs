@@ -5,7 +5,7 @@ using UnityEngine;
 public enum UpgradeEffect { Damage, AttackSpeed, Movement, Pickup, GrenadeDamage, OrbitDamage, GrenadeRadius, MaxHealth, OrbitCount, CritChance, CritPower, Pierce, Ricochet, DroneCount, DroneDamage, TurretCount, TurretDamage,
     Armor, Regeneration, Vampirism, DashCooldown, DashDistance, ExtraPellets, ExplosiveBullets, EliteDamage, WeaponRange,
     OrbitSpeed, OrbitCrit, PickupSpeed, Luck, ExperienceGain, CursedGlass, CursedHaste, CursedGreed, MineCount,
-    ChestXp }
+    ChestXp, SteelWill, Evolution }
 public enum UpgradeRarity { Common, Rare, Special }
 
 [Serializable]
@@ -40,7 +40,7 @@ public class UpgradeCatalog : ScriptableObject
 
     public static string RarityName(UpgradeRarity rarity)
     {
-        return rarity == UpgradeRarity.Common ? "Обычное" : rarity == UpgradeRarity.Rare ? "Редкое" : "Особое";
+        return rarity == UpgradeRarity.Common ? GameText.Source("upgradecatalog.412") : rarity == UpgradeRarity.Rare ? GameText.Source("upgradecatalog.413") : GameText.Source("upgradecatalog.414");
     }
 
     public static Color RarityColor(UpgradeRarity rarity)

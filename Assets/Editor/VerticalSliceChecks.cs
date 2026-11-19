@@ -292,6 +292,9 @@ public static class VerticalSliceChecks
         }
         Require(warnings[0] && warnings[1] && warnings[2] && sawProjectiles, "Boss attack/telegraph cycle incomplete.");
         boss.Health.TakeDamage(int.MaxValue);
+        // 11.11.2026: смерть Стража — замедленная сцена ~1,7 с (CombatFeel.BossKilled), победа после неё.
+        double victoryBy = EditorApplication.timeSinceStartup + 4.0;
+        while (session.State != GameRunState.Victory && EditorApplication.timeSinceStartup < victoryBy) yield return null;
         Require(session.State == GameRunState.Victory && session.RewardExperience == 200 && Time.timeScale == 0f,
             "Boss defeat did not award victory/reward.");
         Pass("B01/B02/F01-F04: 600s goal boundary, preparation, boss HP, three telegraphed attacks/fan projectiles, death -> +200 XP/victory.");

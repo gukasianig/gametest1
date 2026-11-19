@@ -19,9 +19,13 @@ public class DropPickup : MonoBehaviour
     {
         GameSession session = GameSession.Instance;
         if (session != null && session.State != GameRunState.Playing) return;
-        if (elite) { Spawn(position, PickupKind.Health); return; }
+        // Испытание «Без аптечек»: элита роняет магнит вместо аптечки, обычные враги — только магнит.
+        bool noKits = RunModifiers.NoHealthKits;
+        // Элита иногда роняет малый сундук с особой наградой (10.11.2026).
+        if (elite && Random.value < SmallChest.DropChance) SmallChest.Spawn(position);
+        if (elite) { Spawn(position, noKits ? PickupKind.Magnet : PickupKind.Health); return; }
         float roll = Random.value / (1f + Mathf.Max(0f, CombatStats.DropLuck));
-        if (roll < HealthChance) Spawn(position, PickupKind.Health);
+        if (roll < HealthChance) { if (!noKits) Spawn(position, PickupKind.Health); }
         else if (roll < HealthChance + MagnetChance) Spawn(position, PickupKind.Magnet);
     }
 
@@ -88,31 +92,37 @@ public class DropPickup : MonoBehaviour
             foreach (Renderer renderer in (skin != null ? skin : transform).GetComponentsInChildren<Renderer>()) renderer.enabled = Mathf.FloorToInt(age * 6f) % 2 == 0;
         }
         if (age >= Lifetime) { Destroy(gameObject); return; }
-        PlayerProgression player = PlayerProgression.Instance;
-        if (player == null) return;
-        float reach = Mathf.Max(1.3f, player.CollectionRadius);
-        if (WeaponTargets.Flat(transform.position, player.transform.position) > reach) return;
-        Collect(player);
+        // Подбирает любой живой герой рядом (кооператив); в одиночной игре — единственный герой.
+        foreach (PlayerHealth hero in CoopMode.Heroes)
+        {
+            if (hero == null || hero.IsDead) continue;
+            PlayerProgression player = hero.GetComponent<PlayerProgression>();
+            if (player == null) continue;
+            float reach = Mathf.Max(1.3f, player.CollectionRadius);
+            if (WeaponTargets.Flat(transform.position, player.transform.position) > reach) continue;
+            if (Collect(player)) return;
+        }
     }
 
-    private void Collect(PlayerProgression player)
+    private bool Collect(PlayerProgression player)
     {
         GameSession session = GameSession.Instance;
         if (Kind == PickupKind.Health)
         {
             PlayerHealth health = player.GetComponent<PlayerHealth>();
-            if (health == null) return;
+            if (health == null) return false;
             // A full-health player leaves the kit for later (it still expires).
-            if (health.CurrentHP >= health.maxHP) return;
+            if (health.CurrentHP >= health.maxHP) return false;
             int restored = health.Heal(Mathf.Max(15, Mathf.RoundToInt(health.maxHP * 0.25f)));
-            if (session != null) session.Announce("Ремонт  +" + restored + " HP", 1.5f);
+            if (session != null) session.Announce(GameText.Source("droppickup.115") + restored + " HP", 1.5f);
         }
         else
         {
             ExperiencePickup.ActivateMagnet(3f);
-            if (session != null) session.Announce("МАГНИТ — весь опыт летит к вам", 2f);
+            if (session != null) session.Announce(GameText.Source("droppickup.116"), 2f);
         }
         Destroy(gameObject);
+        return true;
     }
 
     private void OnDestroy() { active.Remove(this); }

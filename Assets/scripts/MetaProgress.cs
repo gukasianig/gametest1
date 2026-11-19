@@ -33,6 +33,7 @@ public class MetaLastRun
     public string modifiers = "";
     public string date = "";
     public bool newBestTime, newBestKills;
+    public RunReport report;
 }
 
 // Everything that survives between runs. Lists of keyed entries (not fixed fields) let later features
@@ -50,6 +51,7 @@ public class MetaSave
     public List<string> unlocked = new List<string>();
     public List<MetaRecord> records = new List<MetaRecord>();
     public List<string> modifiers = new List<string>();   // run modifiers chosen in the menu (RunModifiers)
+    public int bestThreat = -1;   // наибольшая угроза, на которой одержана победа (-1 — побед с испытаниями не было; 10.11.2026)
     // Totals over all counted runs (added 09.11.2026; older saves start them from zero).
     public long totalKills;
     public long totalDamage;
@@ -57,6 +59,15 @@ public class MetaSave
     public int totalLevels;
     public bool hasLastRun;
     public MetaLastRun lastRun = new MetaLastRun();
+    // Бесконечный режим (12.11.2026; у старых сохранений — нули).
+    public float bestEndlessSeconds;
+    public int bestEndlessScore, bestEndlessRound, endlessRuns;
+}
+
+public struct EndlessResult
+{
+    public int reward;
+    public bool newBestTime, newBestScore, newBestRound;
 }
 
 public class MetaUpgrade
@@ -83,23 +94,27 @@ public struct RunReward
     public bool newBestTime, newBestKills;
     public float bestTime;
     public int bestKills;
+    public int threat;            // угроза забега (сумма испытаний)
+    public bool newBestThreat;    // победа на угрозе выше прежнего рекорда
+    public int firstVictoryBonus; // разовый бонус за первую победу (0, если не первая)
 }
 
 public static class MetaProgress
 {
     public const int CurrentVersion = 1;
-    public const string CurrencyName = "Детали";
+    public static readonly string CurrencyName = GameText.Source("metaprogress.170");
+    public const int FirstVictoryBonus = 500;   // разовая награда за первую победу над Стражем (она же открывает «Испытания»)
 
     // To add a permanent upgrade, append an entry; ranks are stored by id.
     public static readonly MetaUpgrade[] Catalog =
     {
-        new MetaUpgrade { id = "meta_health", title = "Усиленный корпус", description = "Больше здоровья в начале забега",
+        new MetaUpgrade { id = "meta_health", title = GameText.Source("metaprogress.171"), description = GameText.Source("metaprogress.172"),
             effect = UpgradeEffect.MaxHealth, amountPerRank = 10f, maxRank = 10, baseCost = 60, costGrowth = 1.35f },
-        new MetaUpgrade { id = "meta_damage", title = "Калибровка оружия", description = "Выше урон пуль",
+        new MetaUpgrade { id = "meta_damage", title = GameText.Source("metaprogress.173"), description = GameText.Source("metaprogress.174"),
             effect = UpgradeEffect.Damage, amountPerRank = 0.04f, maxRank = 10, baseCost = 80, costGrowth = 1.35f },
-        new MetaUpgrade { id = "meta_pickup", title = "Магнитный захват", description = "Больше радиус сбора опыта",
+        new MetaUpgrade { id = "meta_pickup", title = GameText.Source("metaprogress.175"), description = GameText.Source("metaprogress.176"),
             effect = UpgradeEffect.Pickup, amountPerRank = 0.1f, maxRank = 5, baseCost = 50, costGrowth = 1.4f },
-        new MetaUpgrade { id = "meta_speed", title = "Лёгкие приводы", description = "Выше скорость движения",
+        new MetaUpgrade { id = "meta_speed", title = GameText.Source("metaprogress.177"), description = GameText.Source("metaprogress.178"),
             effect = UpgradeEffect.Movement, amountPerRank = 0.03f, maxRank = 5, baseCost = 100, costGrowth = 1.5f },
     };
 
@@ -107,17 +122,17 @@ public static class MetaProgress
     // currency today; a later unlock can instead be granted by code (an achievement) through Unlock(id).
     public static readonly MetaUnlock[] Unlocks =
     {
-        new MetaUnlock { id = "weapon:2", title = "Дробовик", cost = 150 },
-        new MetaUnlock { id = "weapon:3", title = "Тяжёлая винтовка", cost = 300 },
-        new MetaUnlock { id = "weapon:4", title = "Пила-бумеранг", cost = 300 },
-        new MetaUnlock { id = "weapon:5", title = "Сапёрные мины", cost = 250 },
-        new MetaUnlock { id = "weapon:6", title = "Ракетница", cost = 400 },
-        new MetaUnlock { id = "weapon:7", title = "Электродуга", cost = 350 },
-        new MetaUnlock { id = "weapon:8", title = "Огнемёт", cost = 450 },
-        new MetaUnlock { id = "weapon:9", title = "Ледяная пушка", cost = 400 },
-        new MetaUnlock { id = "weapon:10", title = "Рельсовая пушка", cost = 500 },
-        new MetaUnlock { id = "weapon:11", title = "Турель", cost = 500 },
-        new MetaUnlock { id = "weapon:12", title = "Дроны-стрелки", cost = 550 },
+        new MetaUnlock { id = "weapon:2", title = GameText.Source("metaprogress.179"), cost = 150 },
+        new MetaUnlock { id = "weapon:3", title = GameText.Source("metaprogress.180"), cost = 300 },
+        new MetaUnlock { id = "weapon:4", title = GameText.Source("metaprogress.181"), cost = 300 },
+        new MetaUnlock { id = "weapon:5", title = GameText.Source("metaprogress.182"), cost = 250 },
+        new MetaUnlock { id = "weapon:6", title = GameText.Source("metaprogress.183"), cost = 400 },
+        new MetaUnlock { id = "weapon:7", title = GameText.Source("metaprogress.184"), cost = 350 },
+        new MetaUnlock { id = "weapon:8", title = GameText.Source("metaprogress.185"), cost = 450 },
+        new MetaUnlock { id = "weapon:9", title = GameText.Source("metaprogress.186"), cost = 400 },
+        new MetaUnlock { id = "weapon:10", title = GameText.Source("metaprogress.187"), cost = 500 },
+        new MetaUnlock { id = "weapon:11", title = GameText.Source("metaprogress.188"), cost = 500 },
+        new MetaUnlock { id = "weapon:12", title = GameText.Source("metaprogress.189"), cost = 550 },
     };
 
     private static MetaSave data;
@@ -285,12 +300,43 @@ public static class MetaProgress
             Mathf.Max(1, level) * 3 + (victory ? 250 : 0);
     }
 
+    // Бесконечный режим (12.11.2026): открыт после первой победы; свои рекорды; детали как за поражение + 50 за круг.
+    public static bool EndlessUnlocked => Data.victories > 0;
+
+    public static EndlessResult RecordEndless(int weapon, float seconds, int kills, int level, int score, int rounds, long damage, RunReport report = null, int wave = 0)
+    {
+        var result = new EndlessResult { reward = Mathf.RoundToInt(Reward(false, seconds, kills, level) * RunModifiers.RewardMultiplier) + 50 * Mathf.Max(0, rounds) };
+        result.newBestTime = seconds > Data.bestEndlessSeconds;
+        result.newBestScore = score > Data.bestEndlessScore;
+        result.newBestRound = rounds > Data.bestEndlessRound;
+        Data.bestEndlessSeconds = Mathf.Max(Data.bestEndlessSeconds, seconds);
+        Data.bestEndlessScore = Mathf.Max(Data.bestEndlessScore, score);
+        Data.bestEndlessRound = Mathf.Max(Data.bestEndlessRound, rounds);
+        Data.endlessRuns++;
+        Data.currency += result.reward;
+        Data.totalEarned += result.reward;
+        Data.runs++;
+        Data.totalKills += Mathf.Max(0, kills);
+        Data.totalDamage += Math.Max(0L, damage);
+        Data.totalSeconds += Mathf.Max(0f, seconds);
+        Data.totalLevels += Mathf.Max(0, level);
+        Data.hasLastRun = true;
+        Data.lastRun = new MetaLastRun { weapon = weapon, seconds = seconds, kills = kills, level = level,
+            damage = damage, wave = wave, reward = result.reward, report = report,
+            modifiers = RunModifiers.Summary(), date = DateTime.Now.ToString("dd.MM.yyyy HH:mm") };
+        Save();
+        return result;
+    }
+
     public static RunReward RecordRun(int weapon, bool victory, float seconds, int kills, int level,
-        long damage = 0, int wave = 0)
+        long damage = 0, int wave = 0, RunReport report = null)
     {
         float multiplier = RunModifiers.RewardMultiplier;
         RunReward result = new RunReward { multiplier = multiplier,
             amount = Mathf.RoundToInt(Reward(victory, seconds, kills, level) * multiplier) };
+        result.threat = RunModifiers.Threat;
+        if (victory && Data.victories == 0) { result.firstVictoryBonus = FirstVictoryBonus; result.amount += FirstVictoryBonus; }
+        if (victory && result.threat > 0 && result.threat > Data.bestThreat) { result.newBestThreat = true; Data.bestThreat = result.threat; }
         Data.currency += result.amount;
         Data.totalEarned += result.amount;
         Data.runs++;
@@ -318,7 +364,7 @@ public static class MetaProgress
         }
         Data.hasLastRun = true;
         Data.lastRun = new MetaLastRun { weapon = weapon, victory = victory, seconds = seconds, kills = kills, level = level,
-            wave = wave, damage = damage, reward = result.amount, multiplier = multiplier, modifiers = RunModifiers.Summary(),
+            wave = wave, damage = damage, reward = result.amount, multiplier = multiplier, modifiers = RunModifiers.Summary(), report = report,
             date = DateTime.Now.ToString("dd.MM.yyyy HH:mm"), newBestTime = result.newBestTime, newBestKills = result.newBestKills };
         Save();
         return result;

@@ -48,32 +48,49 @@ public class StartMenu : MonoBehaviour
         MenuBackdrop.Build(background, home);
 
         // Заголовок слева: метка, крупное название, акцентная черта, подзаголовок.
-        Text tag = GameUi.Readable(GameUi.Label(home, "A R E N A   /   S U R V I V A L", new Vector2(0.06f, 0.865f), new Vector2(0.6f, 0.905f), 16,
+        Text tag = GameUi.Readable(GameUi.Label(home, GameText.Source("menu.genre"), new Vector2(0.06f, 0.865f), new Vector2(0.6f, 0.905f), 16,
             new Color(1f, 0.62f, 0.25f)), 1f);
         tag.alignment = TextAnchor.MiddleLeft;
-        Text title = GameUi.Readable(GameUi.Label(home, "ВЫЖИВИ\nВ АРЕНЕ", new Vector2(0.06f, 0.655f), new Vector2(0.6f, 0.87f), 74,
+        Text title = GameUi.Readable(GameUi.Label(home, GameText.Source("startmenu.303"), new Vector2(0.06f, 0.655f), new Vector2(0.6f, 0.87f), 74,
             new Color(0.96f, 0.97f, 0.98f)), 2.5f);
         title.alignment = TextAnchor.MiddleLeft;
         title.fontStyle = FontStyle.Bold;
         title.lineSpacing = 0.9f;
         RectTransform titleLine = GameUi.Box(home, "Title Line", new Vector2(0.06f, 0.648f), new Vector2(0.17f, 0.654f), new Color(1f, 0.6f, 0.22f));
-        Text subtitle = GameUi.Readable(GameUi.Label(home, "10 минут выживания. Один Страж. Твоя сборка.", new Vector2(0.06f, 0.595f),
+        Text subtitle = GameUi.Readable(GameUi.Label(home, GameText.Source("startmenu.304"), new Vector2(0.06f, 0.595f),
             new Vector2(0.6f, 0.64f), 19, new Color(0.7f, 0.77f, 0.84f)), 1f);
         subtitle.alignment = TextAnchor.MiddleLeft;
 
         // Кнопки столбиком: «Старт» крупнее и с тёплым акцентом.
         Color warm = new Color(1f, 0.6f, 0.22f);
-        Button start = MenuButton("Старт", 0.555f, 0.085f, ShowWeapons, warm, 32, new Color(0.13f, 0.07f, 0.03f, 0.88f));
+        Button start = MenuButton(GameText.Source("startmenu.305"), 0.555f, 0.085f, () => { CoopMode.Players = 1; GameSession.EndlessMode = false; ShowWeapons(); }, warm, 32, new Color(0.13f, 0.07f, 0.03f, 0.88f));
         start.GetComponent<MenuButtonFx>().pulse = true;
-        Button workshopButton = MenuButton("Мастерская", 0.455f, 0.062f, ShowWorkshop, GameUi.Accent, 24);
-        Button modifiersButton = MenuButton("Испытания", 0.386f, 0.062f, ShowModifiers, GameUi.Accent, 24);
-        Button statsButton = MenuButton("Статистика", 0.317f, 0.062f, ShowStatistics, GameUi.Accent, 24);
-        Button settingsButton = MenuButton("Настройки", 0.248f, 0.062f, () =>
+        // Кооператив на одном ПК: тот же выбор оружия, но в бой выходят два героя (CoopMode).
+        // Закрыт ключом: открывается/закрывается клавишей F9 в меню (флаг хранится в PlayerPrefs).
+        Button coopButton = MenuButton(GameText.Source("startmenu.306"), 0.462f, 0.054f, () =>
+        {
+            if (!CoopMode.Unlocked) return;
+            CoopMode.Players = 2; GameSession.EndlessMode = false; ShowWeapons();
+        }, CoopMode.Colors[1], 24);
+        coopLabel = coopButton.GetComponentInChildren<Text>();
+        RefreshCoopLabel();
+        // Бесконечный режим (12.11.2026): открывается после первой победы над боссом.
+        Button endlessButton = MenuButton(MetaProgress.EndlessUnlocked ? GameText.Source("startmenu.307") : GameText.Source("startmenu.308"), 0.402f, 0.054f, () =>
+        {
+            if (!MetaProgress.EndlessUnlocked) return;
+            CoopMode.Players = 1;
+            GameSession.EndlessMode = true;
+            ShowWeapons();
+        }, new Color(1f, 0.7f, 0.3f), MetaProgress.EndlessUnlocked ? 24 : 18);
+        Button workshopButton = MenuButton(GameText.Source("startmenu.309"), 0.342f, 0.054f, ShowWorkshop, GameUi.Accent, 24);
+        Button modifiersButton = MenuButton(GameText.Source("startmenu.310"), 0.282f, 0.054f, ShowModifiers, GameUi.Accent, 24);
+        Button statsButton = MenuButton(GameText.Source("startmenu.311"), 0.222f, 0.054f, ShowStatistics, GameUi.Accent, 24);
+        Button settingsButton = MenuButton(GameText.Source("gamesession.149"), 0.162f, 0.054f, () =>
         {
             home.gameObject.SetActive(false);
             settingsScreen.gameObject.SetActive(true);
         }, GameUi.Accent, 24);
-        Button testButton = MenuButton("Тест-арена", 0.179f, 0.062f, BeginTestArena, new Color(0.55f, 0.62f, 0.7f), 22);
+        Button testButton = MenuButton(GameText.Source("startmenu.312"), 0.102f, 0.054f, () => { CoopMode.Players = 1; GameSession.EndlessMode = false; BeginTestArena(); }, new Color(0.55f, 0.62f, 0.7f), 22);
         settingsScreen = SettingsPanel.Build(background, () =>
         {
             settingsScreen.gameObject.SetActive(false);
@@ -82,13 +99,13 @@ public class StartMenu : MonoBehaviour
         // Выбор арены: меняет тему сразу (арена пересобирается за меню).
         Button arenaButton = MenuButton("", 0.101f, 0.05f,() => { }, new Color(0.55f, 0.62f, 0.7f), 18);
         Text arenaLabel = arenaButton.GetComponentInChildren<Text>();
-        System.Action refreshArena = () => { if (arenaLabel != null) arenaLabel.text = "Арена:  " + ArenaThemes.Names[(int)ArenaThemes.Current] + "   ►"; };
+        System.Action refreshArena = () => { if (arenaLabel != null) arenaLabel.text = GameText.Source("startmenu.313") + ArenaThemes.Names[(int)ArenaThemes.Current] + "   ►"; };
         refreshArena();
         arenaButton.onClick.AddListener(() => { ArenaThemes.Set(ArenaThemes.Next(ArenaThemes.Current)); ArenaThemes.Apply(); refreshArena(); });
         // Зелёная арена (открытое поле) — единственная карта: темы Завод/Пещера/Ледник к ней не относятся, кнопку прячем.
         if (ArenaLayout.Instance != null && ArenaLayout.Instance.openField) arenaButton.gameObject.SetActive(false);
         // Выход из игры: справа внизу, над номером версии.
-        Button quitButton = MenuButton("Выход", 0.137f, 0.062f, QuitGame, new Color(1f, 0.42f, 0.32f), 22);
+        Button quitButton = MenuButton(GameText.Source("startmenu.314"), 0.137f, 0.062f, QuitGame, new Color(1f, 0.42f, 0.32f), 22);
         RectTransform quitRect = (RectTransform)quitButton.transform;
         quitRect.anchorMin = new Vector2(0.79f, quitRect.anchorMin.y);
         quitRect.anchorMax = new Vector2(0.95f, quitRect.anchorMax.y);
@@ -102,7 +119,7 @@ public class StartMenu : MonoBehaviour
         intro.Add(title, 0.06f, 70f);
         intro.Add(titleLine, 0.2f, 0f, true);
         intro.Add(subtitle, 0.24f, 40f);
-        Button[] column = { start, workshopButton, modifiersButton, statsButton, settingsButton, testButton, arenaButton };
+        Button[] column = { start, coopButton, endlessButton, workshopButton, modifiersButton, statsButton, settingsButton, testButton, arenaButton };
         for (int i = 0; i < column.Length; i++) intro.Add(column[i], 0.32f + 0.055f * i, 60f);
         intro.Add(quitButton, 0.7f, 0f);
         intro.Add(version, 0.72f, 0f);
@@ -114,6 +131,8 @@ public class StartMenu : MonoBehaviour
         // Выбор оружия: сетка плиток + панель подробностей (WeaponSelectScreen).
         weaponScreen = WeaponSelectScreen.Build(selection, shooter.weapons, ChooseWeapon, () =>
         {
+            // Кооператив: «Назад» у игрока 2 возвращает к выбору игрока 1.
+            if (weaponScreen.Picker == 1) { weaponScreen.SetPicker(0, -1); return; }
             selection.gameObject.SetActive(false);
             home.gameObject.SetActive(true);
         }, null, shooter.range);
@@ -153,6 +172,7 @@ public class StartMenu : MonoBehaviour
 
     public void ShowWeapons()
     {
+        if (weaponScreen != null) weaponScreen.SetPicker(0, -1);
         RefreshWeaponLocks();
         home.gameObject.SetActive(false);
         selection.gameObject.SetActive(true);
@@ -185,12 +205,12 @@ public class StartMenu : MonoBehaviour
     private void BuildStatistics(RectTransform background)
     {
         statsScreen = GameUi.Box(background, "Statistics", Vector2.zero, Vector2.one, new Color(0.02f, 0.03f, 0.045f, 0.92f), true);
-        Text caption = GameUi.Label(statsScreen, "СТАТИСТИКА", new Vector2(0.04f, 0.9f), new Vector2(0.96f, 0.95f), 16, GameUi.Accent);
+        Text caption = GameUi.Label(statsScreen, GameText.Source("startmenu.315"), new Vector2(0.04f, 0.9f), new Vector2(0.96f, 0.95f), 16, GameUi.Accent);
         caption.alignment = TextAnchor.MiddleLeft;
         statsHeader = GameUi.Readable(GameUi.Label(statsScreen, "", new Vector2(0.04f, 0.83f), new Vector2(0.96f, 0.9f), 30,
             new Color(0.94f, 0.95f, 0.97f)), 1f);
         statsHeader.alignment = TextAnchor.MiddleLeft;
-        string[] titles = { "ЗА ВСЁ ВРЕМЯ", "ПОСЛЕДНИЙ ЗАБЕГ", "РЕКОРДЫ ПО ОРУЖИЮ" };
+        string[] titles = { GameText.Source("startmenu.316"), GameText.Source("startmenu.317"), GameText.Source("startmenu.318") };
         float[] lefts = { 0.03f, 0.355f, 0.68f };
         for (int i = 0; i < 3; i++)
         {
@@ -214,7 +234,7 @@ public class StartMenu : MonoBehaviour
                 lastRunConditions.alignment = TextAnchor.LowerLeft;
             }
         }
-        Button back = GameUi.Button(statsScreen, "Назад", new Vector2(0.4f, 0.04f), new Vector2(0.6f, 0.115f), () =>
+        Button back = GameUi.Button(statsScreen, GameText.Source("challengescreen.088"), new Vector2(0.4f, 0.04f), new Vector2(0.6f, 0.115f), () =>
         {
             statsScreen.gameObject.SetActive(false);
             home.gameObject.SetActive(true);
@@ -253,15 +273,15 @@ public class StartMenu : MonoBehaviour
     private string WeaponName(int index)
     {
         if (shooter != null && shooter.weapons != null && index >= 0 && index < shooter.weapons.Length && shooter.weapons[index] != null)
-            return shooter.weapons[index].weaponName;
-        return index >= 0 ? "Оружие " + (index + 1) : "—";
+            return WeaponSelectScreen.Title(shooter.weapons[index], index);
+        return index >= 0 ? GameText.Source("startmenu.319") + (index + 1) : "—";
     }
 
     private static string LongTime(double seconds)
     {
         long total = (long)System.Math.Max(0d, seconds);
-        return total >= 3600 ? total / 3600 + " ч " + (total % 3600 / 60).ToString("00") + " мин" :
-            total / 60 + " мин " + (total % 60).ToString("00") + " с";
+        return total >= 3600 ? total / 3600 + GameText.Source("startmenu.320") + (total % 3600 / 60).ToString("00") + GameText.Source("startmenu.321") :
+            total / 60 + GameText.Source("startmenu.322") + (total % 60).ToString("00") + GameText.Source("arenaevents.006");
     }
 
     private static string Number(long value) { return value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("ru-RU")); }
@@ -269,8 +289,8 @@ public class StartMenu : MonoBehaviour
     private void RefreshStatistics()
     {
         MetaSave data = MetaProgress.Data;
-        statsHeader.text = data.runs == 0 ? "Пока нет ни одного забега" :
-            "Забегов: " + data.runs + "   •   " + MetaProgress.CurrencyName + ": " + MetaProgress.Currency;
+        statsHeader.text = data.runs == 0 ? GameText.Source("startmenu.323") :
+            GameText.Source("startmenu.324") + data.runs + "   •   " + MetaProgress.CurrencyName + ": " + MetaProgress.Currency;
         const string record = "  <color=#FFB060>★</color>";
 
         // За всё время.
@@ -278,22 +298,24 @@ public class StartMenu : MonoBehaviour
         int runs = Mathf.Max(1, data.runs);
         var overall = new System.Collections.Generic.List<string[]>
         {
-            new[] { "Забегов", data.runs.ToString() },
-            new[] { "Побед", data.victories + (data.runs > 0 ? "  (" + Mathf.RoundToInt(100f * data.victories / runs) + "%)" : "") },
-            new[] { "Время в бою", LongTime(data.totalSeconds) },
-            new[] { "Всего убийств", Number(data.totalKills) },
-            new[] { "Всего урона", Number(data.totalDamage) },
-            new[] { MetaProgress.CurrencyName + " сейчас", Number(MetaProgress.Currency) },
-            new[] { MetaProgress.CurrencyName + " заработано", Number(data.totalEarned) },
+            new[] { GameText.Source("startmenu.325"), data.runs.ToString() },
+            new[] { GameText.Source("startmenu.326"), data.victories + (data.runs > 0 ? "  (" + Mathf.RoundToInt(100f * data.victories / runs) + "%)" : "") },
+            new[] { GameText.Source("startmenu.327"), LongTime(data.totalSeconds) },
+            new[] { GameText.Source("startmenu.328"), Number(data.totalKills) },
+            new[] { GameText.Source("startmenu.329"), Number(data.totalDamage) },
+            new[] { MetaProgress.CurrencyName + GameText.Source("startmenu.330"), Number(MetaProgress.Currency) },
+            new[] { MetaProgress.CurrencyName + GameText.Source("startmenu.331"), Number(data.totalEarned) },
             new[] { "" },
-            new[] { "Лучшее время", best != null ? FormatTime(best.bestTime) : "—" },
-            new[] { "Больше всего убийств", best != null ? best.bestKills.ToString() : "—" },
-            new[] { "Лучший уровень", best != null ? best.bestLevel.ToString() : "—" },
-            new[] { "Больше всего урона", best != null && best.bestDamage > 0 ? Number(best.bestDamage) : "—" },
+            new[] { GameText.Source("startmenu.332"), best != null ? FormatTime(best.bestTime) : "—" },
+            new[] { GameText.Source("startmenu.333"), best != null ? best.bestKills.ToString() : "—" },
+            new[] { GameText.Source("startmenu.334"), best != null ? best.bestLevel.ToString() : "—" },
+            new[] { GameText.Source("startmenu.335"), best != null && best.bestDamage > 0 ? Number(best.bestDamage) : "—" },
+            new[] { GameText.Source("startmenu.336"), data.bestEndlessSeconds > 0f ? FormatTime(data.bestEndlessSeconds) : "—" },
+            new[] { GameText.Source("startmenu.337"), data.endlessRuns > 0 ? data.bestEndlessRound + " · " + Number(data.bestEndlessScore) : "—" },
             new[] { "" },
-            new[] { "Среднее время", data.runs > 0 ? FormatTime((float)(data.totalSeconds / runs)) : "—" },
-            new[] { "Среднее убийств", data.runs > 0 ? (data.totalKills / (float)runs).ToString("0.#") : "—" },
-            new[] { "Средний уровень", data.runs > 0 ? (data.totalLevels / (float)runs).ToString("0.#") : "—" },
+            new[] { GameText.Source("startmenu.338"), data.runs > 0 ? FormatTime((float)(data.totalSeconds / runs)) : "—" },
+            new[] { GameText.Source("startmenu.339"), data.runs > 0 ? (data.totalKills / (float)runs).ToString("0.#") : "—" },
+            new[] { GameText.Source("startmenu.340"), data.runs > 0 ? (data.totalLevels / (float)runs).ToString("0.#") : "—" },
         };
         FillColumns(statsNames[0], statsValues[0], overall);
 
@@ -301,30 +323,30 @@ public class StartMenu : MonoBehaviour
         var last = new System.Collections.Generic.List<string[]>();
         if (!data.hasLastRun)
         {
-            last.Add(new[] { "Нет данных" });
-            last.Add(new[] { "Сыграй забег, и он появится здесь" });
+            last.Add(new[] { GameText.Source("startmenu.341") });
+            last.Add(new[] { GameText.Source("startmenu.342") });
             lastRunConditions.text = "";
         }
         else
         {
             MetaLastRun run = data.lastRun;
             float dps = run.seconds > 0.5f ? run.damage / run.seconds : 0f;
-            last.Add(new[] { "Итог", run.victory ? "<color=#40D9B8>Победа</color>" : "<color=#FF7352>Поражение</color>" });
-            last.Add(new[] { "Дата", string.IsNullOrEmpty(run.date) ? "—" : run.date });
-            last.Add(new[] { "Оружие", WeaponName(run.weapon) });
+            last.Add(new[] { GameText.Source("startmenu.343"), run.victory ? GameText.Source("startmenu.344") : GameText.Source("startmenu.345") });
+            last.Add(new[] { GameText.Source("startmenu.346"), string.IsNullOrEmpty(run.date) ? "—" : run.date });
+            last.Add(new[] { GameText.Source("startmenu.347"), WeaponName(run.weapon) });
             last.Add(new[] { "" });
-            last.Add(new[] { "Время", FormatTime(run.seconds) + (run.newBestTime ? record : "") });
-            last.Add(new[] { "Убийства", run.kills + (run.newBestKills ? record : "") });
-            last.Add(new[] { "Убийств в минуту", run.seconds > 1f ? (run.kills * 60f / run.seconds).ToString("0.#") : "—" });
-            last.Add(new[] { "Нанесённый урон", Number(run.damage) });
-            last.Add(new[] { "Урон в секунду", dps > 0f ? dps.ToString("0") : "—" });
-            last.Add(new[] { "Волна", run.wave > 0 ? run.wave.ToString() : "—" });
-            last.Add(new[] { "Уровень героя", run.level.ToString() });
+            last.Add(new[] { GameText.Source("startmenu.348"), FormatTime(run.seconds) + (run.newBestTime ? record : "") });
+            last.Add(new[] { GameText.Source("startmenu.349"), run.kills + (run.newBestKills ? record : "") });
+            last.Add(new[] { GameText.Source("startmenu.350"), run.seconds > 1f ? (run.kills * 60f / run.seconds).ToString("0.#") : "—" });
+            last.Add(new[] { GameText.Source("startmenu.351"), Number(run.damage) });
+            last.Add(new[] { GameText.Source("startmenu.352"), dps > 0f ? dps.ToString("0") : "—" });
+            last.Add(new[] { GameText.Source("startmenu.353"), run.wave > 0 ? run.wave.ToString() : "—" });
+            last.Add(new[] { GameText.Source("startmenu.354"), run.level.ToString() });
             last.Add(new[] { "" });
-            last.Add(new[] { "Награда", "+" + run.reward + " " + MetaProgress.CurrencyName.ToLower() +
+            last.Add(new[] { GameText.Source("startmenu.355"), "+" + run.reward + " " + MetaProgress.CurrencyName.ToLower() +
                 (run.multiplier > 1.001f ? "  (×" + run.multiplier.ToString("0.##") + ")" : "") });
             lastRunConditions.text = (string.IsNullOrEmpty(run.modifiers) ? "" : run.modifiers) +
-                (run.newBestTime || run.newBestKills ? "\n<color=#FFB060>★</color> — новый рекорд" : "");
+                (run.newBestTime || run.newBestKills ? GameText.Source("startmenu.356") : "");
         }
         FillColumns(statsNames[1], statsValues[1], last);
 
@@ -335,11 +357,11 @@ public class StartMenu : MonoBehaviour
         {
             MetaRecord entry = MetaProgress.Record(MetaProgress.WeaponKey(i));
             if (entry == null || entry.runs == 0) continue;
-            weapons.Add(new[] { WeaponName(i), entry.runs + " заб. · " + FormatTime(entry.bestTime) + " · " + entry.bestKills + " уб." +
-                (entry.victories > 0 ? " · " + entry.victories + " поб." : "") });
+            weapons.Add(new[] { WeaponName(i), entry.runs + GameText.Source("startmenu.357") + FormatTime(entry.bestTime) + " · " + entry.bestKills + GameText.Source("startmenu.358") +
+                (entry.victories > 0 ? " · " + entry.victories + GameText.Source("startmenu.359") : "") });
         }
-        if (weapons.Count == 0) weapons.Add(new[] { "Нет данных" });
-        else weapons.Insert(0, new[] { "<color=#6B7785>оружие</color>", "<color=#6B7785>забеги · время · убийства</color>" });
+        if (weapons.Count == 0) weapons.Add(new[] { GameText.Source("startmenu.341") });
+        else weapons.Insert(0, new[] { GameText.Source("startmenu.360"), GameText.Source("startmenu.361") });
         FillColumns(statsNames[2], statsValues[2], weapons);
     }
 
@@ -388,9 +410,40 @@ public class StartMenu : MonoBehaviour
         workshopTree.Refresh();
     }
     // Вызывается экраном выбора для открытого оружия.
+    private int coopFirstWeapon = -1;
+    private Text coopLabel;
+
+    private void RefreshCoopLabel()
+    {
+        if (coopLabel != null) coopLabel.text = CoopMode.Unlocked ? GameText.Source("startmenu.306") : GameText.Source("startmenu.362");
+    }
+
+    private void Update()
+    {
+        // Ключ кооператива: F9 переключает замок (для тестов владельца).
+        if (waiting && Input.GetKeyDown(KeyCode.F9))
+        {
+            CoopMode.Unlocked = !CoopMode.Unlocked;
+            RefreshCoopLabel();
+        }
+    }
+
     private void ChooseWeapon(int index)
     {
         if (!MetaProgress.IsWeaponUnlocked(index)) return;
+        // Кооператив: первый выбор — оружие игрока 1, второй — игрока 2, затем бой.
+        if (CoopMode.Selected && weaponScreen.Picker == 0)
+        {
+            coopFirstWeapon = index;
+            weaponScreen.SetPicker(1, index);
+            return;
+        }
+        if (CoopMode.Selected)
+        {
+            CoopMode.SecondWeapon = index;
+            BeginGame(coopFirstWeapon >= 0 ? coopFirstWeapon : index);
+            return;
+        }
         BeginGame(index);
     }
 
@@ -413,10 +466,26 @@ public class StartMenu : MonoBehaviour
 
     private void BeginGame(int index)
     {
-        if (!waiting || !(GameSession.TestMode || MetaProgress.IsWeaponUnlocked(index)) || !shooter.SelectWeapon(index)) return;
+        if (!waiting || !(GameSession.TestMode || MetaProgress.IsWeaponUnlocked(index))) return;
+        // Кооператив: второй герой со своим оружием (тест-арена — только один игрок). Копия снимается до выбора оружия
+        // игрока 1 (без деталей его спецоружия) и до бонусов мастерской, чтобы прибавка к HP не удвоилась; бонусы получают оба.
+        GameObject second = null;
+        if (CoopMode.Selected && !GameSession.TestMode)
+        {
+            int weapon2 = CoopMode.SecondWeapon;
+            if (weapon2 < 0 || !MetaProgress.IsWeaponUnlocked(weapon2)) weapon2 = index;
+            CoopMode.SecondWeapon = weapon2;   // «Повторить» запустит забег с теми же двумя оружиями
+            second = CoopMode.SpawnSecond(gameObject, weapon2);
+        }
+        if (!shooter.SelectWeapon(index))
+        {
+            if (second != null) Destroy(second);
+            return;
+        }
         waiting = false;
         GameAudio.SetMusic(true);
         GetComponent<PlayerProgression>().ApplyMetaBonuses();
+        if (second != null) second.GetComponent<PlayerProgression>().ApplyMetaBonuses();
         GetComponent<GameSession>().Begin(index);
         GetComponent<RunStatistics>().BeginRun();
         for (int i = 0; i < gameplayCanvases.Length; i++)

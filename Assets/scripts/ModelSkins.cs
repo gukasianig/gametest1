@@ -35,9 +35,13 @@ public static class ModelSkins
         model.name = SkinName;
         // Сохраняем поворот корня из FBX (у моделей Blender/Codex он 270° по X) и поверх добавляем поворот записи.
         model.transform.localRotation = Quaternion.Euler(entry.eulerOffset) * entry.model.transform.localRotation;
-        // Родитель может быть сплюснут (пила, мина, кристалл) — компенсируем, чтобы модель не искажалась.
+        // Родитель может быть сплюснут (пила, мина, турель, кристалл) — компенсируем, чтобы модель не искажалась.
+        // Компенсация по осям самой модели: у FBX из Blender корень повёрнут на 90° по X, и его локальная Y смотрит
+        // вдоль Z родителя (11.11.2026: раньше делили по осям родителя, и турель/мина/пила выходили сплющенными).
         Vector3 ls = enemy.transform.localScale;
-        model.transform.localScale = new Vector3(1f / Mathf.Max(0.0001f, Mathf.Abs(ls.x)), 1f / Mathf.Max(0.0001f, Mathf.Abs(ls.y)), 1f / Mathf.Max(0.0001f, Mathf.Abs(ls.z)));
+        Quaternion turn = model.transform.localRotation;
+        model.transform.localScale = new Vector3(1f / AxisScale(turn * Vector3.right, ls), 1f / AxisScale(turn * Vector3.up, ls),
+            1f / AxisScale(turn * Vector3.forward, ls));
         foreach (Collider c in model.GetComponentsInChildren<Collider>()) Object.Destroy(c);
 
         Bounds mb = BoundsOf(model);
@@ -51,6 +55,12 @@ public static class ModelSkins
         foreach (Renderer r in original) r.enabled = false;
         // Модели с частями Leg* получают процедурную анимацию шага (по реальной скорости врага).
         if (ModelWalkAnimator.CanAnimate(model.transform)) model.AddComponent<ModelWalkAnimator>();
+    }
+
+    // Масштаб родителя вдоль направления оси модели (для поворотов на 90° — ровно масштаб соответствующей оси родителя).
+    static float AxisScale(Vector3 axis, Vector3 scale)
+    {
+        return Mathf.Max(0.0001f, Mathf.Abs(axis.x) * Mathf.Abs(scale.x) + Mathf.Abs(axis.y) * Mathf.Abs(scale.y) + Mathf.Abs(axis.z) * Mathf.Abs(scale.z));
     }
 
     // Часть модели-скина: сам SkinModel или любой его потомок.
@@ -76,6 +86,8 @@ public static class ModelSkins
     // Ключ записи оружия: обычное — "Weapon<индекс>", специальное — "Kind_<вид>".
     public static string WeaponKey(WeaponData weapon, int index)
     {
+        if (index == WeaponElements.RifleWeapon && weapon != null && weapon.kind == WeaponKind.Standard)
+            return WeaponElements.RifleModelKey(WeaponElements.Equipped(index));
         return weapon != null && weapon.kind != WeaponKind.Standard ? "Kind_" + weapon.kind : "Weapon" + index;
     }
 
@@ -119,6 +131,7 @@ public static class ModelSkins
         if (s == null || hero == null) return;
         Transform socket = FindDeep(hero, "WeaponSocket");
         if (socket == null) return;
+        SetOffhandWeapon(hero, false);
 
         Transform old = socket.Find(SkinName);
         currentMuzzle = null;
@@ -132,6 +145,12 @@ public static class ModelSkins
         ModelSkinSet.Entry entry = s.Find(key);
         if (entry == null) return;
 
+        GameObject model = CreateHeldWeapon(socket, entry);
+        currentWeaponFx = model.GetComponent<WeaponFireAnimation>();
+    }
+
+    private static GameObject CreateHeldWeapon(Transform socket, ModelSkinSet.Entry entry)
+    {
         GameObject model = Object.Instantiate(entry.model, socket);
         model.name = SkinName;
         model.transform.localPosition = entry.localPosition;
@@ -146,8 +165,43 @@ public static class ModelSkins
         }
         CreateMuzzle(model.transform, socket, entry.muzzleOffset);
         // Анимация выстрела (отскок, перезарядка боеголовки, дым) — запоминается после окончательной расстановки.
-        currentWeaponFx = model.AddComponent<WeaponFireAnimation>();
-        currentWeaponFx.Init(socket);
+        WeaponFireAnimation fx = model.AddComponent<WeaponFireAnimation>();
+        fx.Init(socket);
+        return model;
+    }
+
+    public const string OffhandSocketName = "LeftWeaponSocket";
+
+    public static void SetOffhandWeapon(Transform hero, bool equipped)
+    {
+        Transform grip = FindDeep(hero, "LeftHandGrip");
+        if (grip == null) return;
+        Transform socket = grip.Find(OffhandSocketName);
+        if (!equipped)
+        {
+            if (socket != null)
+            {
+                socket.name = OffhandSocketName + "Old";
+                socket.gameObject.SetActive(false);
+                Object.Destroy(socket.gameObject);
+            }
+            return;
+        }
+        if (socket != null) return;
+        ModelSkinSet.Entry entry = Set != null ? Set.Find("Weapon0") : null;
+        if (entry == null) return;
+        socket = new GameObject(OffhandSocketName).transform;
+        socket.SetParent(grip, false);
+        Transform primaryMuzzle = currentMuzzle;
+        CreateHeldWeapon(socket, entry);
+        currentMuzzle = primaryMuzzle;
+    }
+
+    public static Transform FindOffhandMuzzle(Transform hero)
+    {
+        Transform socket = FindDeep(hero, OffhandSocketName);
+        Transform skin = socket != null ? socket.Find(SkinName) : null;
+        return skin != null ? skin.Find(MuzzleName) : null;
     }
 
     static WeaponFireAnimation currentWeaponFx;
@@ -163,10 +217,22 @@ public static class ModelSkins
     {
         if (!LocalBounds(skin, socket, out Vector3 min, out Vector3 max)) return;
         Vector3 local = new Vector3((min.x + max.x) * 0.5f, min.y + (max.y - min.y) * 0.65f, max.z) + offset;
-        var muzzle = new GameObject("Muzzle").transform;
+        var muzzle = new GameObject(MuzzleName).transform;
         muzzle.SetParent(skin, true);
         muzzle.position = socket.TransformPoint(local);
         currentMuzzle = muzzle;
+    }
+
+    // Своё имя: в FBX оружия из Blender есть маркер «Muzzle», а точка выстрела считается здесь с поправкой записи.
+    public const string MuzzleName = "SkinMuzzle";
+
+    // Дуло модели в руке конкретного героя (кооператив: у каждого своё; общий currentMuzzle помнит только последнюю модель).
+    public static Transform FindMuzzle(Transform hero)
+    {
+        if (hero == null) return null;
+        Transform socket = FindDeep(hero, "WeaponSocket");
+        Transform skin = socket != null ? socket.Find(SkinName) : null;
+        return skin != null ? skin.Find(MuzzleName) : null;
     }
 
     // Габарит модели в системе героя (по границам мешей, без чтения вершин).

@@ -33,6 +33,8 @@ public class WaveManager : MonoBehaviour
     private readonly HashSet<EnemyType> introduced = new HashSet<EnemyType>();
     public bool Suspended { get; private set; }
     public void StopSpawning() { Suspended = true; StopAllCoroutines(); }
+    // Тест-арена: вернуть обычные волны (враги идут на героя, как в забеге).
+    public void ResumeSpawning() { if (!Suspended) return; Suspended = false; StopAllCoroutines(); StartCoroutine(WaveLoop()); }
 
     // Rhythm of pressure and events (see WaveDirector). Turn off to get the plain wave behaviour.
     public bool useDirector = true;
@@ -67,15 +69,15 @@ public class WaveManager : MonoBehaviour
         GameSession session = GameSession.Instance;
         if (phase == DirectorPhase.Relief)
         {
-            if (session != null) session.Announce("Передышка", 2f);
+            if (session != null) session.Announce(GameText.Source("wavemanager.415"), 2f);
             return;
         }
         if (phase != DirectorPhase.Peak) return;
         DirectorEvent directorEvent = WaveDirector.EventForCycle(cycle);
         if (session != null)
-            session.Announce(directorEvent == DirectorEvent.Elite ? "ЭЛИТА НА АРЕНЕ" :
-                directorEvent == DirectorEvent.Horde ? "ОРДА!" : "ПИК ВОЛНЫ", 2.5f);
-        if (directorEvent == DirectorEvent.Elite) StartCoroutine(EliteEvent(WaveDirector.EliteCount(cycle)));
+            session.Announce(directorEvent == DirectorEvent.Elite ? GameText.Source("wavemanager.416") :
+                directorEvent == DirectorEvent.Horde ? GameText.Source("wavemanager.417") : GameText.Source("wavemanager.418"), 2.5f);
+        if (directorEvent == DirectorEvent.Elite) StartCoroutine(EliteEvent(WaveDirector.EliteCount(cycle) * RunModifiers.EliteMultiplier));
         else if (directorEvent == DirectorEvent.Horde) StartCoroutine(HordeEvent(WaveDirector.HordeCount(cycle)));
     }
 
@@ -103,6 +105,55 @@ public class WaveManager : MonoBehaviour
             if (SpawnEnemy(cheapest)) made++;
             yield return new WaitForSeconds(0.25f);
         }
+    }
+
+    // Рой Королевы: обычные модель/цель/рост по волнам, затем меньше размер, HP, урон и награда.
+    public GameObject SpawnMinionAt(string prefabName, Vector3 position, float scale)
+    {
+        if (EnemyAI.ActiveCount >= settings.AbsoluteLimitForWave(wave)) return null;
+        EnemyType type = enemies == null ? null : System.Array.Find(enemies, t => t != null && t.prefab != null && t.prefab.name == prefabName);
+        if (type == null) return null;
+        GameObject enemy = SpawnEnemyAtPosition(type, position);
+        enemy.name = "Swarm minion";
+        enemy.transform.localScale *= scale;
+        float bottom = float.PositiveInfinity;
+        foreach (Renderer renderer in enemy.GetComponentsInChildren<Renderer>()) bottom = Mathf.Min(bottom, renderer.bounds.min.y);
+        if (!float.IsInfinity(bottom)) enemy.transform.position += Vector3.up * (GroundHeight.At(position) - bottom);
+        Health health = enemy.GetComponent<Health>();
+        if (health != null)
+        {
+            // A larger brood is fodder rather than a second full-strength wave.
+            health.SetHealth(Mathf.RoundToInt(health.maxHealth * 0.45f));
+            health.experienceReward = Mathf.Max(1, health.experienceReward / 2);
+        }
+        EnemyAI minionAi = enemy.GetComponent<EnemyAI>();
+        if (minionAi != null) minionAi.damage = Mathf.Max(1, Mathf.RoundToInt(minionAi.damage * 0.6f));
+        return enemy;
+    }
+
+    // Мини-босс «Громила» (MiniBoss): великан из модели врага-танка, своё здоровье, без опыта (награда — сундук).
+    public GameObject SpawnMiniBoss()
+    {
+        if (MiniBoss.Active != null || enemies == null) return null;
+        EnemyType brute = System.Array.Find(enemies, type => type != null && type.prefab != null && type.prefab.name == "Enemy_tank");
+        if (brute == null) return null;
+        GameObject enemy = SpawnEnemyObject(brute);
+        if (enemy == null) return null;
+        enemy.name = "Mini boss " + MiniBoss.Title;
+        enemy.transform.localScale *= MiniBoss.Scale;
+        float bottom = float.PositiveInfinity;
+        foreach (Renderer renderer in enemy.GetComponentsInChildren<Renderer>()) bottom = Mathf.Min(bottom, renderer.bounds.min.y);
+        if (!float.IsInfinity(bottom)) enemy.transform.position += Vector3.up * (GroundHeight.At(enemy.transform.position) - bottom);
+        Health health = enemy.GetComponent<Health>();
+        if (health != null)
+        {
+            health.SetHealth(Mathf.RoundToInt(MiniBoss.BaseHealth * RunModifiers.BossHealth * GameSession.EndlessFactor));
+            health.experienceReward = 0;
+        }
+        EnemyAI ai = enemy.GetComponent<EnemyAI>();
+        if (ai != null) ai.speed *= 0.8f;
+        enemy.AddComponent<MiniBoss>();
+        return enemy;
     }
 
     // One clearly marked, tougher enemy (3x health, 1.3x size, 4x experience, crown). Skips support/suicide types.
@@ -139,8 +190,14 @@ public class WaveManager : MonoBehaviour
         crown.transform.SetParent(enemy.transform, true);
         crown.transform.localScale = Vector3.one * 0.4f;
         crown.transform.position = new Vector3(enemy.transform.position.x, (float.IsInfinity(top) ? 2f : top - bottom + groundHeight) + 0.5f, enemy.transform.position.z);
+        // 10.11.2026: половина элит «Взрывные» — оранжевая корона и свечение, взрыв после смерти (EliteExplosive).
+        bool explosive = Random.value < EliteExplosive.Chance;
+        if (explosive) enemy.AddComponent<EliteExplosive>();
         crown.GetComponent<Renderer>().sharedMaterial = ArenaLayout.Instance != null ?
-            ArenaLayout.Instance.Material(new Color(1f, 0.82f, 0.15f)) : crown.GetComponent<Renderer>().sharedMaterial;
+            ArenaLayout.Instance.Material(explosive ? EliteExplosive.Tone : new Color(1f, 0.82f, 0.15f)) : crown.GetComponent<Renderer>().sharedMaterial;
+        // Модель короны (make_items.py): золотая или оранжевая у «Взрывных»; медленно вращается над головой.
+        ModelSkins.ApplyEnemy(crown, explosive ? "Elite crown explosive" : "Elite crown");
+        if (crown.transform.Find("SkinModel") != null) crown.AddComponent<ItemModelParts.Spinner>().degreesPerSecond = 70f;
         return enemy;
     }
 
@@ -169,7 +226,7 @@ public class WaveManager : MonoBehaviour
 
         List<EnemyType> available = GetAvailableEnemies();
 
-        while (budget > 0 && available.Count > 0 && spawned < settings.maxEnemiesPerWave)
+        while (budget > 0 && available.Count > 0 && spawned < settings.MaxPerWave)
         {
             // Keep a backlog from becoming an instant crowd when enemies are not killed.
             if (!HasRoom())
@@ -187,7 +244,7 @@ public class WaveManager : MonoBehaviour
 
             budget -= type.baseCost;
             spawned++;
-            if (budget > 0 && spawned < settings.maxEnemiesPerWave)
+            if (budget > 0 && spawned < settings.MaxPerWave)
                 yield return new WaitForSeconds(settings.SpawnIntervalForWave(wave) * (useDirector ? Director.IntervalMultiplier : 1f));
         }
 
@@ -329,8 +386,8 @@ public class WaveManager : MonoBehaviour
         Health h = enemy.GetComponent<Health>();
         if (h != null)
         {
-            h.SetHealth(Mathf.RoundToInt(h.maxHealth * RunModifiers.EnemyHealth * CombatStats.EnemyHealthCurse *
-                (1f + Mathf.Max(0, wave - 1) * settings.healthGrowthPerWave)));
+            h.SetHealth(Mathf.RoundToInt(h.maxHealth * WaveSettings.HealthScale * RunModifiers.EnemyHealth * CombatStats.EnemyHealthCurse *
+                (1f + Mathf.Max(0, wave - 1) * settings.healthGrowthPerWave) * GameSession.EndlessFactor));
         }
         return enemy;
     }

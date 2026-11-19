@@ -1,0 +1,3594 @@
+{
+  "entries": [
+    {
+      "id": "arenaevents.001",
+      "ru": "МЕТЕОРИТНЫЙ ДОЖДЬ — уходи с красных кругов!",
+      "en": "METEOR SHOWER — stay out of the red circles!"
+    },
+    {
+      "id": "arenaevents.002",
+      "ru": "МАГНИТНАЯ БУРЯ — враги быстрее, опыт ×2",
+      "en": "MAGNETIC STORM — faster enemies, XP ×2"
+    },
+    {
+      "id": "arenaevents.003",
+      "ru": "РЕМОНТНАЯ ЗОНА — встань в зелёный круг",
+      "en": "REPAIR ZONE — stand in the green circle"
+    },
+    {
+      "id": "arenaevents.004",
+      "ru": "СБРОС ПРИПАСОВ — забери кристаллы у маяка",
+      "en": "SUPPLY DROP — collect crystals at the beacon"
+    },
+    {
+      "id": "arenaevents.005",
+      "ru": "УДЕРЖИ ТОЧКУ — стой в золотом круге ",
+      "en": "HOLD THE POINT — stay in the golden circle for "
+    },
+    {
+      "id": "arenaevents.006",
+      "ru": " с",
+      "en": " s"
+    },
+    {
+      "id": "arenaevents.007",
+      "ru": "ЗАСАДА — враги окружают!",
+      "en": "AMBUSH — enemies are surrounding you!"
+    },
+    {
+      "id": "arenaevents.008",
+      "ru": "ТОКСИЧНЫЕ ЛУЖИ — вредят и вам, и врагам",
+      "en": "TOXIC POOLS — hurt you and enemies alike"
+    },
+    {
+      "id": "arenaevents.009",
+      "ru": "ПОЖАР — очаги разрастаются, обходи огонь",
+      "en": "WILDFIRE — flames spread, avoid the fire"
+    },
+    {
+      "id": "arenaevents.010",
+      "ru": "ЗАЩИТИ СУНДУК — продержись ",
+      "en": "DEFEND THE CHEST — survive for "
+    },
+    {
+      "id": "arenaevents.011",
+      "ru": "СОБЫТИЕ АРЕНЫ",
+      "en": "ARENA EVENT"
+    },
+    {
+      "id": "arenaevents.012",
+      "ru": "Сундук потерян",
+      "en": "Chest lost"
+    },
+    {
+      "id": "arenaevents.013",
+      "ru": "Точка потеряна",
+      "en": "Point lost"
+    },
+    {
+      "id": "arenaevents.014",
+      "ru": "Событие закончилось",
+      "en": "Event ended"
+    },
+    {
+      "id": "arenaevents.015",
+      "ru": "МЕТЕОРИТНЫЙ ДОЖДЬ",
+      "en": "METEOR SHOWER"
+    },
+    {
+      "id": "arenaevents.016",
+      "ru": "МАГНИТНАЯ БУРЯ",
+      "en": "MAGNETIC STORM"
+    },
+    {
+      "id": "arenaevents.017",
+      "ru": "РЕМОНТНАЯ ЗОНА",
+      "en": "REPAIR ZONE"
+    },
+    {
+      "id": "arenaevents.018",
+      "ru": "СБРОС ПРИПАСОВ",
+      "en": "SUPPLY DROP"
+    },
+    {
+      "id": "arenaevents.019",
+      "ru": "УДЕРЖИ ТОЧКУ",
+      "en": "HOLD THE POINT"
+    },
+    {
+      "id": "arenaevents.020",
+      "ru": "ЗАСАДА",
+      "en": "AMBUSH"
+    },
+    {
+      "id": "arenaevents.021",
+      "ru": "ПОЖАР",
+      "en": "WILDFIRE"
+    },
+    {
+      "id": "arenaevents.022",
+      "ru": "ЗАЩИТИ СУНДУК",
+      "en": "DEFEND THE CHEST"
+    },
+    {
+      "id": "arenaevents.023",
+      "ru": "ТОКСИЧНЫЕ ЛУЖИ",
+      "en": "TOXIC POOLS"
+    },
+    {
+      "id": "arenaevents.024",
+      "ru": "ТОЧКА УДЕРЖАНА",
+      "en": "POINT SECURED"
+    },
+    {
+      "id": "arenaevents.025",
+      "ru": "УДЕРЖИ ТОЧКУ  ",
+      "en": "HOLD THE POINT  "
+    },
+    {
+      "id": "arenaevents.026",
+      "ru": " с  •  осталось ",
+      "en": " s  •  remaining "
+    },
+    {
+      "id": "arenaevents.027",
+      "ru": "СУНДУК ОТКРЫТ",
+      "en": "CHEST OPENED"
+    },
+    {
+      "id": "arenaevents.028",
+      "ru": "СУНДУК РАЗРУШЕН",
+      "en": "CHEST DESTROYED"
+    },
+    {
+      "id": "arenaevents.029",
+      "ru": "СУНДУК  ",
+      "en": "CHEST  "
+    },
+    {
+      "id": "arenaevents.030",
+      "ru": " с  •  прочность ",
+      "en": " s  •  durability "
+    },
+    {
+      "id": "arenaevents.031",
+      "ru": "Уходи с красных кругов — туда падают метеориты",
+      "en": "Stay out of the red circles — meteors land there"
+    },
+    {
+      "id": "arenaevents.032",
+      "ru": "Враги быстрее, но опыт ×2 — собирай кристаллы",
+      "en": "Enemies are faster, but XP is doubled — collect crystals"
+    },
+    {
+      "id": "arenaevents.033",
+      "ru": "Иди по стрелке и встань в зелёный круг — он лечит",
+      "en": "Follow the arrow and stand in the green circle to heal"
+    },
+    {
+      "id": "arenaevents.034",
+      "ru": "Иди по стрелке к жёлтому маяку и собери кристаллы",
+      "en": "Follow the arrow to the yellow beacon and collect crystals"
+    },
+    {
+      "id": "arenaevents.035",
+      "ru": "Иди по стрелке и стой в золотом круге, пока идёт счёт",
+      "en": "Follow the arrow and hold the golden circle until the timer ends"
+    },
+    {
+      "id": "arenaevents.036",
+      "ru": "Враги появятся вокруг тебя — будь готов к рывку",
+      "en": "Enemies will appear around you — be ready to dash"
+    },
+    {
+      "id": "arenaevents.037",
+      "ru": "Огонь разрастается — не заходи в него, заманивай врагов",
+      "en": "Fire spreads — stay clear and lure enemies into it"
+    },
+    {
+      "id": "arenaevents.038",
+      "ru": "Не дай врагам сломать сундук в центре арены — когда время выйдет, он даст особую награду",
+      "en": "Keep enemies from destroying the chest in the arena center — survive until time runs out for a special reward"
+    },
+    {
+      "id": "arenaevents.039",
+      "ru": "Не стой в зелёной кислоте — она жжёт и врагов",
+      "en": "Stay out of the green acid — it burns enemies too"
+    },
+    {
+      "id": "arenaevents.040",
+      "ru": " м",
+      "en": " m"
+    },
+    {
+      "id": "arenaevents.041",
+      "ru": "ТОЧКА УДЕРЖАНА — награда!",
+      "en": "POINT SECURED — reward!"
+    },
+    {
+      "id": "arenathemes.042",
+      "ru": "Завод",
+      "en": "Factory"
+    },
+    {
+      "id": "arenathemes.043",
+      "ru": "Пещера",
+      "en": "Cave"
+    },
+    {
+      "id": "arenathemes.044",
+      "ru": "Ледник",
+      "en": "Glacier"
+    },
+    {
+      "id": "arenathemes.045",
+      "ru": "Стальные укрытия и здания, ровный пол — классика",
+      "en": "Steel cover and buildings on a flat floor — a classic arena"
+    },
+    {
+      "id": "arenathemes.046",
+      "ru": "Тёмные скалы, каменные столбы и светящиеся кристаллы",
+      "en": "Dark rocks, stone pillars and glowing crystals"
+    },
+    {
+      "id": "arenathemes.047",
+      "ru": "Ледяные глыбы и колонны, холодный свет и дымка",
+      "en": "Ice blocks and pillars, cold light and mist"
+    },
+    {
+      "id": "autoshoter.048",
+      "ru": "Дуэлянт",
+      "en": "Duelist"
+    },
+    {
+      "id": "autoshoter.049",
+      "ru": "Пистолет → Дуэлянт: +1 пуля, урон +30%, каждый 4-й выстрел — двойной урон",
+      "en": "Pistol → Duelist: +1 bullet, +30% damage, every 4th shot deals double damage"
+    },
+    {
+      "id": "autoshoter.050",
+      "ru": "Пулемёт",
+      "en": "Machine Gun"
+    },
+    {
+      "id": "autoshoter.051",
+      "ru": "Автомат → Пулемёт: темп +50%, пули пробивают ещё одного врага",
+      "en": "Assault Rifle → Machine Gun: +50% fire rate, bullets pierce one more enemy"
+    },
+    {
+      "id": "autoshoter.052",
+      "ru": "Картечница",
+      "en": "Scattergun"
+    },
+    {
+      "id": "autoshoter.053",
+      "ru": "Дробовик → Картечница: +3 дробинки, шире разлёт, урон +15%",
+      "en": "Shotgun → Scattergun: +3 pellets, wider spread, +15% damage"
+    },
+    {
+      "id": "autoshoter.054",
+      "ru": "Пробойник",
+      "en": "Penetrator"
+    },
+    {
+      "id": "autoshoter.055",
+      "ru": "Тяжёлая винтовка → Пробойник: пробивает ещё 3 врагов, урон +50%, дальность +20%",
+      "en": "Heavy Rifle → Penetrator: pierces 3 more enemies, +50% damage, +20% range"
+    },
+    {
+      "id": "autoshoter.056",
+      "ru": "Двойная пила",
+      "en": "Twin Saw"
+    },
+    {
+      "id": "autoshoter.057",
+      "ru": "Пила → Двойная пила: две пилы за бросок, урон +25%",
+      "en": "Saw → Twin Saw: two saws per throw, +25% damage"
+    },
+    {
+      "id": "autoshoter.058",
+      "ru": "Залп",
+      "en": "Barrage"
+    },
+    {
+      "id": "autoshoter.059",
+      "ru": "Ракетница → Залп: три ракеты веером",
+      "en": "Rocket Launcher → Barrage: three rockets in a fan"
+    },
+    {
+      "id": "autoshoter.060",
+      "ru": "Буря",
+      "en": "Tempest"
+    },
+    {
+      "id": "autoshoter.061",
+      "ru": "Электродуга → Буря: ещё 3 прыжка разряда, урон слабеет медленнее",
+      "en": "Arc Emitter → Tempest: 3 more chain jumps, slower damage falloff"
+    },
+    {
+      "id": "autoshoter.062",
+      "ru": "Напалм",
+      "en": "Napalm"
+    },
+    {
+      "id": "autoshoter.063",
+      "ru": "Огнемёт → Напалм: конус шире на 20°, дальность +25%, горение вдвое сильнее",
+      "en": "Flamethrower → Napalm: cone widens by 20°, +25% range, double burn damage"
+    },
+    {
+      "id": "autoshoter.064",
+      "ru": "Абсолютный ноль",
+      "en": "Absolute Zero"
+    },
+    {
+      "id": "autoshoter.065",
+      "ru": "Ледяная пушка → Абсолютный ноль: три осколка веером",
+      "en": "Ice Cannon → Absolute Zero: three shards in a fan"
+    },
+    {
+      "id": "autoshoter.066",
+      "ru": "Гаусс-пушка",
+      "en": "Gauss Cannon"
+    },
+    {
+      "id": "autoshoter.067",
+      "ru": "Рельсовая пушка → Гаусс-пушка: луч вдвое шире, урон +60%",
+      "en": "Railgun → Gauss Cannon: beam twice as wide, +60% damage"
+    },
+    {
+      "id": "autoshoter.068",
+      "ru": "ЭВОЛЮЦИЯ!  ",
+      "en": "EVOLUTION!  "
+    },
+    {
+      "id": "bosscontroller.069",
+      "ru": "СТРАЖ АРЕНЫ",
+      "en": "ARENA GUARDIAN"
+    },
+    {
+      "id": "bosscontroller.070",
+      "ru": "КОРОЛЕВА РОЯ",
+      "en": "SWARM QUEEN"
+    },
+    {
+      "id": "bosscontroller.071",
+      "ru": "ГРОЗОВОЙ СНАЙПЕР",
+      "en": "STORM SNIPER"
+    },
+    {
+      "id": "bosscontroller.072",
+      "ru": "Страж арены",
+      "en": "Arena Guardian"
+    },
+    {
+      "id": "bosscontroller.073",
+      "ru": "Королева роя",
+      "en": "Swarm Queen"
+    },
+    {
+      "id": "bosscontroller.074",
+      "ru": "Грозовой снайпер",
+      "en": "Storm Sniper"
+    },
+    {
+      "id": "bosscontroller.075",
+      "ru": "КОРОЛЕВА В ЯРОСТИ!",
+      "en": "THE QUEEN IS ENRAGED!"
+    },
+    {
+      "id": "challengescreen.076",
+      "ru": "ГЕРОЙ",
+      "en": "HERO"
+    },
+    {
+      "id": "challengescreen.077",
+      "ru": "ВРЕМЯ",
+      "en": "TIME"
+    },
+    {
+      "id": "challengescreen.078",
+      "ru": "ЛЕЧЕНИЕ",
+      "en": "HEALING"
+    },
+    {
+      "id": "challengescreen.079",
+      "ru": "СТРАЖ",
+      "en": "GUARDIAN"
+    },
+    {
+      "id": "challengescreen.080",
+      "ru": "ВРАГИ",
+      "en": "ENEMIES"
+    },
+    {
+      "id": "challengescreen.081",
+      "ru": "И С П Ы Т А Н И Я",
+      "en": "C H A L L E N G E S"
+    },
+    {
+      "id": "challengescreen.082",
+      "ru": "Рискни ради деталей",
+      "en": "Risk more, earn more Parts"
+    },
+    {
+      "id": "challengescreen.083",
+      "ru": "НАГРАДА ЗА ЗАБЕГ",
+      "en": "RUN REWARD"
+    },
+    {
+      "id": "challengescreen.084",
+      "ru": "деталей за каждый забег",
+      "en": "Parts per run"
+    },
+    {
+      "id": "challengescreen.085",
+      "ru": "предел ×",
+      "en": "cap ×"
+    },
+    {
+      "id": "challengescreen.086",
+      "ru": "ВКЛЮЧЕНО",
+      "en": "ACTIVE"
+    },
+    {
+      "id": "challengescreen.087",
+      "ru": "Испытания сохраняются до следующего забега.",
+      "en": "Challenges stay selected for your next run."
+    },
+    {
+      "id": "challengescreen.088",
+      "ru": "Назад",
+      "en": "Back"
+    },
+    {
+      "id": "challengescreen.089",
+      "ru": "Сбросить",
+      "en": "Reset"
+    },
+    {
+      "id": "challengescreen.090",
+      "ru": "Клик по карточке — включить или выключить",
+      "en": "Click a card to toggle it"
+    },
+    {
+      "id": "challengescreen.091",
+      "ru": "ЗАКРЫТО\n<size=24>Победи Стража арены, чтобы открыть испытания.\nЗа первую победу — +",
+      "en": "LOCKED\n<size=24>Defeat the Arena Guardian to unlock challenges.\nFirst victory bonus: +"
+    },
+    {
+      "id": "challengescreen.092",
+      "ru": " деталей.</size>",
+      "en": " Parts.</size>"
+    },
+    {
+      "id": "challengescreen.093",
+      "ru": "УГРОЗА +",
+      "en": "THREAT +"
+    },
+    {
+      "id": "challengescreen.094",
+      "ru": "% деталей",
+      "en": "% Parts"
+    },
+    {
+      "id": "challengescreen.095",
+      "ru": "УГРОЗА ",
+      "en": "THREAT "
+    },
+    {
+      "id": "challengescreen.096",
+      "ru": "  •  рекорд ",
+      "en": "  •  best "
+    },
+    {
+      "id": "challengescreen.097",
+      "ru": "Включено",
+      "en": "Enabled"
+    },
+    {
+      "id": "challengescreen.098",
+      "ru": "Включить",
+      "en": "Enable"
+    },
+    {
+      "id": "challengescreen.099",
+      "ru": "<color=#8C9EB2>Ничего — обычный забег.\nВключи испытание слева, чтобы получать больше деталей.</color>",
+      "en": "<color=#8C9EB2>None — a standard run.\nEnable a challenge on the left to earn more Parts.</color>"
+    },
+    {
+      "id": "combathud.100",
+      "ru": "Броня ",
+      "en": "Armor "
+    },
+    {
+      "id": "combathud.101",
+      "ru": "Брони нет",
+      "en": "No armor"
+    },
+    {
+      "id": "combathud.102",
+      "ru": "Рывок  [Пробел]",
+      "en": "Dash  [Space]"
+    },
+    {
+      "id": "combathud.103",
+      "ru": "Рывок  ",
+      "en": "Dash  "
+    },
+    {
+      "id": "coopmode.104",
+      "ru": "Бой идёт! Клавиши 1 · 2 · 3, переброс R",
+      "en": "Combat continues! Keys 1 · 2 · 3, R to reroll"
+    },
+    {
+      "id": "coopmode.105",
+      "ru": "Бой идёт! Num1 · 2 · 3 или X · Y · B, переброс Num4 / LB",
+      "en": "Combat continues! Num1 · 2 · 3 or X · Y · B, Num4 / LB to reroll"
+    },
+    {
+      "id": "coopmode.106",
+      "ru": "Игрок 1: WASD + Пробел   ·   Игрок 2: стрелки + Правый Shift (Num0) или геймпад + A",
+      "en": "Player 1: WASD + Space   ·   Player 2: arrows + Right Shift (Num0) or gamepad + A"
+    },
+    {
+      "id": "coopmode.107",
+      "ru": "Игрок ",
+      "en": "Player "
+    },
+    {
+      "id": "coopmode.108",
+      "ru": " повержен — встань рядом, чтобы поднять",
+      "en": " is down — stand nearby to revive"
+    },
+    {
+      "id": "coopmode.109",
+      "ru": " снова в бою!",
+      "en": " is back in action!"
+    },
+    {
+      "id": "coopmode.110",
+      "ru": "ПОВЕРЖЕН — подними (",
+      "en": "DOWN — revive ("
+    },
+    {
+      "id": "coopmode.111",
+      "ru": "   рывок ",
+      "en": "   dash "
+    },
+    {
+      "id": "coopmode.112",
+      "ru": "готов",
+      "en": "ready"
+    },
+    {
+      "id": "coopmode.113",
+      "ru": "  ур. ",
+      "en": "  lv. "
+    },
+    {
+      "id": "coopmode.114",
+      "ru": "ИГРОК ",
+      "en": "PLAYER "
+    },
+    {
+      "id": "droppickup.115",
+      "ru": "Ремонт  +",
+      "en": "Repair  +"
+    },
+    {
+      "id": "droppickup.116",
+      "ru": "МАГНИТ — весь опыт летит к вам",
+      "en": "MAGNET — all XP flies to you"
+    },
+    {
+      "id": "gamesession.117",
+      "ru": "ГРОМИЛА ИДЁТ!  Победи его — получишь сундук",
+      "en": "BRUTE INCOMING!  Defeat it for a chest"
+    },
+    {
+      "id": "gamesession.118",
+      "ru": "КРУГ ",
+      "en": "ROUND "
+    },
+    {
+      "id": "gamesession.119",
+      "ru": " · ДО БОССА",
+      "en": " · BOSS IN"
+    },
+    {
+      "id": "gamesession.120",
+      "ru": "ДО БОССА",
+      "en": "BOSS IN"
+    },
+    {
+      "id": "gamesession.121",
+      "ru": "Уничтожь!",
+      "en": "Destroy it!"
+    },
+    {
+      "id": "gamesession.122",
+      "ru": "Через 10 с — ",
+      "en": "In 10 s — "
+    },
+    {
+      "id": "gamesession.123",
+      "ru": " ПРОЙДЕН!  Враги становятся сильнее (HP ×",
+      "en": " CLEARED!  Enemies grow stronger (HP ×"
+    },
+    {
+      "id": "gamesession.124",
+      "ru": "ПРИБЛИЖАЕТСЯ ",
+      "en": "INCOMING: "
+    },
+    {
+      "id": "gamesession.125",
+      "ru": "\nСобери опыт и приготовься",
+      "en": "\nCollect XP and prepare"
+    },
+    {
+      "id": "gamesession.126",
+      "ru": "Страж побеждён (тест)",
+      "en": "Guardian defeated (test)"
+    },
+    {
+      "id": "gamesession.127",
+      "ru": "АРЕНА ПРОЙДЕНА",
+      "en": "ARENA CLEARED"
+    },
+    {
+      "id": "gamesession.128",
+      "ru": "ЗАБЕГ ЗАВЕРШЁН",
+      "en": "RUN OVER"
+    },
+    {
+      "id": "gamesession.129",
+      "ru": "БЕСКОНЕЧНЫЙ РЕЖИМ",
+      "en": "ENDLESS MODE"
+    },
+    {
+      "id": "gamesession.130",
+      "ru": "Продержался  ",
+      "en": "Survived  "
+    },
+    {
+      "id": "gamesession.131",
+      "ru": "  (новый рекорд!)",
+      "en": "  (new record!)"
+    },
+    {
+      "id": "gamesession.132",
+      "ru": "\nКругов пройдено  ",
+      "en": "\nRounds cleared  "
+    },
+    {
+      "id": "gamesession.133",
+      "ru": "\nУбийства  ",
+      "en": "\nKills  "
+    },
+    {
+      "id": "gamesession.134",
+      "ru": "\nСчёт  ",
+      "en": "\nScore  "
+    },
+    {
+      "id": "gamesession.135",
+      "ru": "  (всего ",
+      "en": "  (total "
+    },
+    {
+      "id": "gamesession.136",
+      "ru": "Время  ",
+      "en": "Time  "
+    },
+    {
+      "id": "gamesession.137",
+      "ru": "\nУровень  ",
+      "en": "\nLevel  "
+    },
+    {
+      "id": "gamesession.138",
+      "ru": " за условия)",
+      "en": " from challenges)"
+    },
+    {
+      "id": "gamesession.139",
+      "ru": "\nУгроза  ",
+      "en": "\nThreat  "
+    },
+    {
+      "id": "gamesession.140",
+      "ru": "  (новый рекорд угрозы!)",
+      "en": "  (new threat record!)"
+    },
+    {
+      "id": "gamesession.141",
+      "ru": "\n<color=#F7CC7A>Первая победа: +",
+      "en": "\n<color=#F7CC7A>First victory: +"
+    },
+    {
+      "id": "gamesession.142",
+      "ru": " деталей. В меню открыты «Испытания»!</color>",
+      "en": " Parts. Challenges unlocked in the menu!</color>"
+    },
+    {
+      "id": "gamesession.143",
+      "ru": "\nНаграда за Стража: +200 опыта",
+      "en": "\nGuardian reward: +200 XP"
+    },
+    {
+      "id": "gamesession.144",
+      "ru": "\nПотрать детали в Мастерской и попробуй снова",
+      "en": "\nSpend Parts in the Workshop and try again"
+    },
+    {
+      "id": "gamesession.145",
+      "ru": "ДО СТРАЖА",
+      "en": "GUARDIAN IN"
+    },
+    {
+      "id": "gamesession.146",
+      "ru": "ПАУЗА",
+      "en": "PAUSED"
+    },
+    {
+      "id": "gamesession.147",
+      "ru": "Продолжить",
+      "en": "Resume"
+    },
+    {
+      "id": "gamesession.148",
+      "ru": "Заново",
+      "en": "Restart"
+    },
+    {
+      "id": "gamesession.149",
+      "ru": "Настройки",
+      "en": "Settings"
+    },
+    {
+      "id": "gamesession.150",
+      "ru": "В главное меню",
+      "en": "Main menu"
+    },
+    {
+      "id": "gamesettings.151",
+      "ru": "Полный экран (окно)",
+      "en": "Borderless fullscreen"
+    },
+    {
+      "id": "gamesettings.152",
+      "ru": "Полный экран",
+      "en": "Exclusive fullscreen"
+    },
+    {
+      "id": "gamesettings.153",
+      "ru": "В окне",
+      "en": "Windowed"
+    },
+    {
+      "id": "gamesettings.154",
+      "ru": "НАСТРОЙКИ",
+      "en": "SETTINGS"
+    },
+    {
+      "id": "gamesettings.155",
+      "ru": "Звук",
+      "en": "Audio"
+    },
+    {
+      "id": "gamesettings.156",
+      "ru": "Музыка",
+      "en": "Music"
+    },
+    {
+      "id": "gamesettings.157",
+      "ru": "Эффекты",
+      "en": "Effects"
+    },
+    {
+      "id": "gamesettings.158",
+      "ru": "Графика",
+      "en": "Graphics"
+    },
+    {
+      "id": "gamesettings.159",
+      "ru": "Качество",
+      "en": "Quality"
+    },
+    {
+      "id": "gamesettings.160",
+      "ru": "Ограничение FPS",
+      "en": "FPS limit"
+    },
+    {
+      "id": "gamesettings.161",
+      "ru": "Без ограничения",
+      "en": "Unlimited"
+    },
+    {
+      "id": "gamesettings.162",
+      "ru": "Вертикальная синхр.",
+      "en": "Vertical sync"
+    },
+    {
+      "id": "gamesettings.163",
+      "ru": "Режим экрана",
+      "en": "Display mode"
+    },
+    {
+      "id": "gamesettings.164",
+      "ru": "Разрешение",
+      "en": "Resolution"
+    },
+    {
+      "id": "gamesettings.165",
+      "ru": "Интерфейс",
+      "en": "Interface"
+    },
+    {
+      "id": "gamesettings.166",
+      "ru": "Цифры урона",
+      "en": "Damage numbers"
+    },
+    {
+      "id": "gamesettings.167",
+      "ru": "Тряска камеры",
+      "en": "Camera shake"
+    },
+    {
+      "id": "gamesettings.168",
+      "ru": "Вкл",
+      "en": "On"
+    },
+    {
+      "id": "gamesettings.169",
+      "ru": "Выкл",
+      "en": "Off"
+    },
+    {
+      "id": "metaprogress.170",
+      "ru": "Детали",
+      "en": "Parts"
+    },
+    {
+      "id": "metaprogress.171",
+      "ru": "Усиленный корпус",
+      "en": "Reinforced Hull"
+    },
+    {
+      "id": "metaprogress.172",
+      "ru": "Больше здоровья в начале забега",
+      "en": "More health at the start of each run"
+    },
+    {
+      "id": "metaprogress.173",
+      "ru": "Калибровка оружия",
+      "en": "Weapon Calibration"
+    },
+    {
+      "id": "metaprogress.174",
+      "ru": "Выше урон пуль",
+      "en": "Higher bullet damage"
+    },
+    {
+      "id": "metaprogress.175",
+      "ru": "Магнитный захват",
+      "en": "Magnetic Grip"
+    },
+    {
+      "id": "metaprogress.176",
+      "ru": "Больше радиус сбора опыта",
+      "en": "Larger XP pickup radius"
+    },
+    {
+      "id": "metaprogress.177",
+      "ru": "Лёгкие приводы",
+      "en": "Lightweight Actuators"
+    },
+    {
+      "id": "metaprogress.178",
+      "ru": "Выше скорость движения",
+      "en": "Faster movement"
+    },
+    {
+      "id": "metaprogress.179",
+      "ru": "Дробовик",
+      "en": "Shotgun"
+    },
+    {
+      "id": "metaprogress.180",
+      "ru": "Тяжёлая винтовка",
+      "en": "Heavy Rifle"
+    },
+    {
+      "id": "metaprogress.181",
+      "ru": "Пила-бумеранг",
+      "en": "Boomerang Saw"
+    },
+    {
+      "id": "metaprogress.182",
+      "ru": "Сапёрные мины",
+      "en": "Landmines"
+    },
+    {
+      "id": "metaprogress.183",
+      "ru": "Ракетница",
+      "en": "Rocket Launcher"
+    },
+    {
+      "id": "metaprogress.184",
+      "ru": "Электродуга",
+      "en": "Arc Emitter"
+    },
+    {
+      "id": "metaprogress.185",
+      "ru": "Огнемёт",
+      "en": "Flamethrower"
+    },
+    {
+      "id": "metaprogress.186",
+      "ru": "Ледяная пушка",
+      "en": "Ice Cannon"
+    },
+    {
+      "id": "metaprogress.187",
+      "ru": "Рельсовая пушка",
+      "en": "Railgun"
+    },
+    {
+      "id": "metaprogress.188",
+      "ru": "Турель",
+      "en": "Turret"
+    },
+    {
+      "id": "metaprogress.189",
+      "ru": "Дроны-стрелки",
+      "en": "Shooter Drones"
+    },
+    {
+      "id": "miniboss.190",
+      "ru": "ГРОМИЛА",
+      "en": "BRUTE"
+    },
+    {
+      "id": "miniboss.191",
+      "ru": "Громила повержен!  Забери сундук",
+      "en": "Brute defeated!  Collect the chest"
+    },
+    {
+      "id": "playmovement.192",
+      "ru": "Рывок: готов (Пробел)",
+      "en": "Dash: ready (Space)"
+    },
+    {
+      "id": "playmovement.193",
+      "ru": "Рывок: ",
+      "en": "Dash: "
+    },
+    {
+      "id": "playerprogression.194",
+      "ru": " — УРОВЕНЬ ",
+      "en": " — LEVEL "
+    },
+    {
+      "id": "playerprogression.195",
+      "ru": "НОВЫЙ УРОВЕНЬ\nВыбери улучшение",
+      "en": "LEVEL UP\nChoose an upgrade"
+    },
+    {
+      "id": "playerprogression.196",
+      "ru": "</b>  •  ранг ",
+      "en": "</b>  •  rank "
+    },
+    {
+      "id": "playerprogression.197",
+      "ru": "Стальная воля",
+      "en": "Steel Will"
+    },
+    {
+      "id": "playerprogression.198",
+      "ru": "Ядро ярости",
+      "en": "Rage Core"
+    },
+    {
+      "id": "playerprogression.199",
+      "ru": "Разгон",
+      "en": "Overdrive"
+    },
+    {
+      "id": "playerprogression.200",
+      "ru": "Глаз снайпера",
+      "en": "Sniper's Eye"
+    },
+    {
+      "id": "playerprogression.201",
+      "ru": "Броня сундука",
+      "en": "Chest Armor"
+    },
+    {
+      "id": "playerprogression.202",
+      "ru": "Сердце арены (+HP и полное лечение)",
+      "en": "Arena Heart (+HP and full heal)"
+    },
+    {
+      "id": "playerprogression.203",
+      "ru": "Золотая жила",
+      "en": "Gold Vein"
+    },
+    {
+      "id": "playerprogression.204",
+      "ru": "Живая вода",
+      "en": "Living Water"
+    },
+    {
+      "id": "playerprogression.205",
+      "ru": "Сапоги ветра",
+      "en": "Wind Boots"
+    },
+    {
+      "id": "playerprogression.206",
+      "ru": "Кровавая жатва",
+      "en": "Blood Harvest"
+    },
+    {
+      "id": "playerprogression.207",
+      "ru": "ЭВОЛЮЦИЯ: ",
+      "en": "EVOLUTION: "
+    },
+    {
+      "id": "playerprogression.208",
+      "ru": "СУНДУК ОТКРЫТ!\nВыбери особую награду",
+      "en": "CHEST OPENED!\nChoose a special reward"
+    },
+    {
+      "id": "playerprogression.209",
+      "ru": "Спутники: ",
+      "en": "Orbitals: "
+    },
+    {
+      "id": "playerprogression.210",
+      "ru": "Шанс крита: ",
+      "en": "Crit chance: "
+    },
+    {
+      "id": "playerprogression.211",
+      "ru": "Крит: ×",
+      "en": "Crit: ×"
+    },
+    {
+      "id": "playerprogression.212",
+      "ru": "Рикошет в других врагов: ",
+      "en": "Ricochets to other enemies: "
+    },
+    {
+      "id": "playerprogression.213",
+      "ru": "  (урон −20% за прыжок)",
+      "en": "  (−20% damage per jump)"
+    },
+    {
+      "id": "playerprogression.214",
+      "ru": "Дронов: ",
+      "en": "Drones: "
+    },
+    {
+      "id": "playerprogression.215",
+      "ru": "Турелей: ",
+      "en": "Turrets: "
+    },
+    {
+      "id": "playerprogression.216",
+      "ru": "Мин: ",
+      "en": "Mines: "
+    },
+    {
+      "id": "playerprogression.217",
+      "ru": "Пуля пробивает целей: ",
+      "en": "Bullet pierce targets: "
+    },
+    {
+      "id": "playerprogression.218",
+      "ru": "Урон оружия",
+      "en": "Weapon damage"
+    },
+    {
+      "id": "playerprogression.219",
+      "ru": "Скорость стрельбы",
+      "en": "Fire rate"
+    },
+    {
+      "id": "playerprogression.220",
+      "ru": "Скорость бега",
+      "en": "Run speed"
+    },
+    {
+      "id": "playerprogression.221",
+      "ru": "Радиус сбора опыта",
+      "en": "XP pickup radius"
+    },
+    {
+      "id": "playerprogression.222",
+      "ru": "Урон гранат",
+      "en": "Grenade damage"
+    },
+    {
+      "id": "playerprogression.223",
+      "ru": "Радиус взрыва гранат",
+      "en": "Grenade blast radius"
+    },
+    {
+      "id": "playerprogression.224",
+      "ru": "Урон спутников",
+      "en": "Orbital damage"
+    },
+    {
+      "id": "playerprogression.225",
+      "ru": "Урон дронов",
+      "en": "Drone damage"
+    },
+    {
+      "id": "playerprogression.226",
+      "ru": "Урон турелей",
+      "en": "Turret damage"
+    },
+    {
+      "id": "playerprogression.227",
+      "ru": "Бонус",
+      "en": "Bonus"
+    },
+    {
+      "id": "playerprogression.228",
+      "ru": "новое",
+      "en": "new"
+    },
+    {
+      "id": "playerprogression.229",
+      "ru": "ранг ",
+      "en": "rank "
+    },
+    {
+      "id": "playerprogression.230",
+      "ru": " из ",
+      "en": " of "
+    },
+    {
+      "id": "playerprogression.231",
+      "ru": "Снижение урона",
+      "en": "Damage reduction"
+    },
+    {
+      "id": "playerprogression.232",
+      "ru": "Лечение",
+      "en": "Healing"
+    },
+    {
+      "id": "playerprogression.233",
+      "ru": " HP/с",
+      "en": " HP/s"
+    },
+    {
+      "id": "playerprogression.234",
+      "ru": "HP за убийство",
+      "en": "HP per kill"
+    },
+    {
+      "id": "playerprogression.235",
+      "ru": "Перезарядка рывка",
+      "en": "Dash cooldown"
+    },
+    {
+      "id": "playerprogression.236",
+      "ru": "Дальность рывка",
+      "en": "Dash distance"
+    },
+    {
+      "id": "playerprogression.237",
+      "ru": "Доп. снарядов за выстрел",
+      "en": "Extra projectiles per shot"
+    },
+    {
+      "id": "playerprogression.238",
+      "ru": "Радиус взрыва пули",
+      "en": "Bullet blast radius"
+    },
+    {
+      "id": "playerprogression.239",
+      "ru": "Урон по элите и боссу",
+      "en": "Damage to elites and bosses"
+    },
+    {
+      "id": "playerprogression.240",
+      "ru": "Дальность стрельбы",
+      "en": "Weapon range"
+    },
+    {
+      "id": "playerprogression.241",
+      "ru": "Скорость спутников",
+      "en": "Orbital speed"
+    },
+    {
+      "id": "playerprogression.242",
+      "ru": "Крит спутников (доля шанса героя)",
+      "en": "Orbital crit (share of hero's chance)"
+    },
+    {
+      "id": "playerprogression.243",
+      "ru": "Скорость притяжения",
+      "en": "Attraction speed"
+    },
+    {
+      "id": "playerprogression.244",
+      "ru": "Шанс аптечек и магнита",
+      "en": "Medkit and magnet drop chance"
+    },
+    {
+      "id": "playerprogression.245",
+      "ru": "Опыт с кристаллов",
+      "en": "XP from crystals"
+    },
+    {
+      "id": "playerprogression.246",
+      "ru": "СИНЕРГИЯ Броня + Регенерация: при HP ниже 40% реген ×3 и броня +15%",
+      "en": "SYNERGY Armor + Regeneration: below 40% HP, regen ×3 and +15% armor"
+    },
+    {
+      "id": "playerprogression.247",
+      "ru": "Сразу +",
+      "en": "Instantly gain +"
+    },
+    {
+      "id": "playerprogression.248",
+      "ru": " уровня (и карточки улучшений)",
+      "en": " levels (and upgrade cards)"
+    },
+    {
+      "id": "playerprogression.249",
+      "ru": "ПРОКЛЯТИЕ: урон +100%, но максимум HP −30%",
+      "en": "CURSE: +100% damage, but −30% max HP"
+    },
+    {
+      "id": "playerprogression.250",
+      "ru": "ПРОКЛЯТИЕ: темп стрельбы +40%, но враги быстрее на 15%",
+      "en": "CURSE: +40% fire rate, but enemies move 15% faster"
+    },
+    {
+      "id": "playerprogression.251",
+      "ru": "ПРОКЛЯТИЕ: опыт +50%, но у новых врагов HP +25%",
+      "en": "CURSE: +50% XP, but new enemies have +25% HP"
+    },
+    {
+      "id": "playerprogression.252",
+      "ru": "Переброс [",
+      "en": "Reroll ["
+    },
+    {
+      "id": "playerprogression.253",
+      "ru": "Перебросить карточки (",
+      "en": "Reroll cards ("
+    },
+    {
+      "id": "playerprogression.254",
+      "ru": "ЭВОЛЮЦИЯ ОРУЖИЯ",
+      "en": "WEAPON EVOLUTION"
+    },
+    {
+      "id": "playerprogression.255",
+      "ru": "Уровень ",
+      "en": "Level "
+    },
+    {
+      "id": "playerprogression.256",
+      "ru": "   •   Опыт ",
+      "en": "   •   XP "
+    },
+    {
+      "id": "playerprogression.257",
+      "ru": "Перебросить",
+      "en": "Reroll"
+    },
+    {
+      "id": "playerprogression.258",
+      "ru": "УЛУЧШЕНИЕ ПОЛУЧЕНО",
+      "en": "UPGRADE RECEIVED"
+    },
+    {
+      "id": "playerprogression.259",
+      "ru": "ИГРОК 2: УЛУЧШЕНИЕ ПОЛУЧЕНО",
+      "en": "PLAYER 2: UPGRADE RECEIVED"
+    },
+    {
+      "id": "runmodifiers.260",
+      "ru": "Быстрые враги",
+      "en": "Fast Enemies"
+    },
+    {
+      "id": "runmodifiers.261",
+      "ru": "Враги движутся на 25% быстрее",
+      "en": "Enemies move 25% faster"
+    },
+    {
+      "id": "runmodifiers.262",
+      "ru": "Толстые враги",
+      "en": "Tough Enemies"
+    },
+    {
+      "id": "runmodifiers.263",
+      "ru": "У врагов на 50% больше здоровья",
+      "en": "Enemies have 50% more health"
+    },
+    {
+      "id": "runmodifiers.264",
+      "ru": "Хрупкий герой",
+      "en": "Fragile Hero"
+    },
+    {
+      "id": "runmodifiers.265",
+      "ru": "Здоровье героя на 40% меньше",
+      "en": "Hero health reduced by 40%"
+    },
+    {
+      "id": "runmodifiers.266",
+      "ru": "Орда",
+      "en": "Horde"
+    },
+    {
+      "id": "runmodifiers.267",
+      "ru": "Врагов на арене в 1.5 раза больше и они появляются чаще",
+      "en": "1.5 times as many enemies, with more frequent spawns"
+    },
+    {
+      "id": "runmodifiers.268",
+      "ru": "Быстрый финал",
+      "en": "Early Finale"
+    },
+    {
+      "id": "runmodifiers.269",
+      "ru": "Страж приходит через 5 минут вместо 10",
+      "en": "The Guardian arrives after 5 minutes instead of 10"
+    },
+    {
+      "id": "runmodifiers.270",
+      "ru": "Злой Страж",
+      "en": "Enraged Guardian"
+    },
+    {
+      "id": "runmodifiers.271",
+      "ru": "У Стража +60% здоровья, атакует чаще",
+      "en": "The Guardian has +60% health and attacks more often"
+    },
+    {
+      "id": "runmodifiers.272",
+      "ru": "Без аптечек",
+      "en": "No Medkits"
+    },
+    {
+      "id": "runmodifiers.273",
+      "ru": "Враги не роняют аптечки, ремонтная зона лечит вдвое слабее",
+      "en": "Enemies drop no medkits; the repair zone heals half as much"
+    },
+    {
+      "id": "runmodifiers.274",
+      "ru": "Элитный рой",
+      "en": "Elite Swarm"
+    },
+    {
+      "id": "runmodifiers.275",
+      "ru": "Элитные враги появляются вдвое чаще",
+      "en": "Elite enemies appear twice as often"
+    },
+    {
+      "id": "runmodifiers.276",
+      "ru": "Тяжёлые удары",
+      "en": "Heavy Hits"
+    },
+    {
+      "id": "runmodifiers.277",
+      "ru": "Урон по герою на 40% больше",
+      "en": "Hero takes 40% more damage"
+    },
+    {
+      "id": "runmodifiers.278",
+      "ru": "Испытания: нет",
+      "en": "Challenges: none"
+    },
+    {
+      "id": "runmodifiers.279",
+      "ru": "Угроза ",
+      "en": "Threat "
+    },
+    {
+      "id": "runmodifiers.280",
+      "ru": "  •  награда ×",
+      "en": "  •  reward ×"
+    },
+    {
+      "id": "runstatistics.281",
+      "ru": "Время выживания     ",
+      "en": "Survival time     "
+    },
+    {
+      "id": "runstatistics.282",
+      "ru": "\nУбийства     ",
+      "en": "\nKills     "
+    },
+    {
+      "id": "runstatistics.283",
+      "ru": "\nНанесённый урон     ",
+      "en": "\nDamage dealt     "
+    },
+    {
+      "id": "runstatistics.284",
+      "ru": "\nВолна     ",
+      "en": "\nWave     "
+    },
+    {
+      "id": "runstatistics.285",
+      "ru": "\nУровень героя     ",
+      "en": "\nHero level     "
+    },
+    {
+      "id": "runstatistics.286",
+      "ru": "\nРадиус притяжения     ",
+      "en": "\nAttraction radius     "
+    },
+    {
+      "id": "runstatistics.287",
+      "ru": " м  (×",
+      "en": " m  (×"
+    },
+    {
+      "id": "runstatistics.288",
+      "ru": "\nЗдоровье     ",
+      "en": "\nHealth     "
+    },
+    {
+      "id": "runstatistics.289",
+      "ru": "\nСкорость движения     ",
+      "en": "\nMovement speed     "
+    },
+    {
+      "id": "runstatistics.290",
+      "ru": " м/с  (×",
+      "en": " m/s  (×"
+    },
+    {
+      "id": "runstatistics.291",
+      "ru": "\n\n<color=#65D8CA>ОРУЖИЕ: ",
+      "en": "\n\n<color=#65D8CA>WEAPON: "
+    },
+    {
+      "id": "runstatistics.292",
+      "ru": "\nУрон одной пули     ",
+      "en": "\nDamage per bullet     "
+    },
+    {
+      "id": "runstatistics.293",
+      "ru": "\nВыстрелов в секунду     ",
+      "en": "\nShots per second     "
+    },
+    {
+      "id": "runstatistics.294",
+      "ru": "\nПуль за выстрел     ",
+      "en": "\nBullets per shot     "
+    },
+    {
+      "id": "runstatistics.295",
+      "ru": "\nДальность поиска цели     ",
+      "en": "\nTargeting range     "
+    },
+    {
+      "id": "runstatistics.296",
+      "ru": "\nСкорость пули     ",
+      "en": "\nBullet speed     "
+    },
+    {
+      "id": "runstatistics.297",
+      "ru": " м/с",
+      "en": " m/s"
+    },
+    {
+      "id": "runstatistics.298",
+      "ru": "\nРазброс     ",
+      "en": "\nSpread     "
+    },
+    {
+      "id": "runstatistics.299",
+      "ru": "Забег завершён  •  Tab — закрыть",
+      "en": "Run over  •  Tab to close"
+    },
+    {
+      "id": "runstatistics.300",
+      "ru": "Бой продолжается  •  Tab — закрыть",
+      "en": "Combat continues  •  Tab to close"
+    },
+    {
+      "id": "runstatistics.301",
+      "ru": "СТАТИСТИКА ЗАБЕГА",
+      "en": "RUN STATISTICS"
+    },
+    {
+      "id": "smallchest.302",
+      "ru": "Элита уронила сундук!",
+      "en": "An elite dropped a chest!"
+    },
+    {
+      "id": "startmenu.303",
+      "ru": "ВЫЖИВИ\nВ АРЕНЕ",
+      "en": "SURVIVE\nTHE ARENA"
+    },
+    {
+      "id": "startmenu.304",
+      "ru": "10 минут выживания. Случайный босс. Твоя сборка.",
+      "en": "10 minutes to survive. A random boss. Your build."
+    },
+    {
+      "id": "startmenu.305",
+      "ru": "Старт",
+      "en": "Start"
+    },
+    {
+      "id": "startmenu.306",
+      "ru": "Кооператив",
+      "en": "Co-op"
+    },
+    {
+      "id": "startmenu.307",
+      "ru": "Бесконечный",
+      "en": "Endless"
+    },
+    {
+      "id": "startmenu.308",
+      "ru": "Бесконечный  · после победы",
+      "en": "Endless  · after first victory"
+    },
+    {
+      "id": "startmenu.309",
+      "ru": "Мастерская",
+      "en": "Workshop"
+    },
+    {
+      "id": "startmenu.310",
+      "ru": "Испытания",
+      "en": "Challenges"
+    },
+    {
+      "id": "startmenu.311",
+      "ru": "Статистика",
+      "en": "Statistics"
+    },
+    {
+      "id": "startmenu.312",
+      "ru": "Тест-арена",
+      "en": "Test Arena"
+    },
+    {
+      "id": "startmenu.313",
+      "ru": "Арена:  ",
+      "en": "Arena:  "
+    },
+    {
+      "id": "startmenu.314",
+      "ru": "Выход",
+      "en": "Quit"
+    },
+    {
+      "id": "startmenu.315",
+      "ru": "СТАТИСТИКА",
+      "en": "STATISTICS"
+    },
+    {
+      "id": "startmenu.316",
+      "ru": "ЗА ВСЁ ВРЕМЯ",
+      "en": "ALL TIME"
+    },
+    {
+      "id": "startmenu.317",
+      "ru": "ПОСЛЕДНИЙ ЗАБЕГ",
+      "en": "LAST RUN"
+    },
+    {
+      "id": "startmenu.318",
+      "ru": "РЕКОРДЫ ПО ОРУЖИЮ",
+      "en": "WEAPON RECORDS"
+    },
+    {
+      "id": "startmenu.319",
+      "ru": "Оружие ",
+      "en": "Weapon "
+    },
+    {
+      "id": "startmenu.320",
+      "ru": " ч ",
+      "en": " h "
+    },
+    {
+      "id": "startmenu.321",
+      "ru": " мин",
+      "en": " min"
+    },
+    {
+      "id": "startmenu.322",
+      "ru": " мин ",
+      "en": " min "
+    },
+    {
+      "id": "startmenu.323",
+      "ru": "Пока нет ни одного забега",
+      "en": "No runs yet"
+    },
+    {
+      "id": "startmenu.324",
+      "ru": "Забегов: ",
+      "en": "Runs: "
+    },
+    {
+      "id": "startmenu.325",
+      "ru": "Забегов",
+      "en": "Runs"
+    },
+    {
+      "id": "startmenu.326",
+      "ru": "Побед",
+      "en": "Victories"
+    },
+    {
+      "id": "startmenu.327",
+      "ru": "Время в бою",
+      "en": "Time in combat"
+    },
+    {
+      "id": "startmenu.328",
+      "ru": "Всего убийств",
+      "en": "Total kills"
+    },
+    {
+      "id": "startmenu.329",
+      "ru": "Всего урона",
+      "en": "Total damage"
+    },
+    {
+      "id": "startmenu.330",
+      "ru": " сейчас",
+      "en": " available"
+    },
+    {
+      "id": "startmenu.331",
+      "ru": " заработано",
+      "en": " earned"
+    },
+    {
+      "id": "startmenu.332",
+      "ru": "Лучшее время",
+      "en": "Best time"
+    },
+    {
+      "id": "startmenu.333",
+      "ru": "Больше всего убийств",
+      "en": "Most kills"
+    },
+    {
+      "id": "startmenu.334",
+      "ru": "Лучший уровень",
+      "en": "Highest level"
+    },
+    {
+      "id": "startmenu.335",
+      "ru": "Больше всего урона",
+      "en": "Most damage"
+    },
+    {
+      "id": "startmenu.336",
+      "ru": "Бесконечный: время",
+      "en": "Endless: time"
+    },
+    {
+      "id": "startmenu.337",
+      "ru": "Бесконечный: круг и счёт",
+      "en": "Endless: rounds and score"
+    },
+    {
+      "id": "startmenu.338",
+      "ru": "Среднее время",
+      "en": "Average time"
+    },
+    {
+      "id": "startmenu.339",
+      "ru": "Среднее убийств",
+      "en": "Average kills"
+    },
+    {
+      "id": "startmenu.340",
+      "ru": "Средний уровень",
+      "en": "Average level"
+    },
+    {
+      "id": "startmenu.341",
+      "ru": "Нет данных",
+      "en": "No data"
+    },
+    {
+      "id": "startmenu.342",
+      "ru": "Сыграй забег, и он появится здесь",
+      "en": "Complete a run to see it here"
+    },
+    {
+      "id": "startmenu.343",
+      "ru": "Итог",
+      "en": "Result"
+    },
+    {
+      "id": "startmenu.344",
+      "ru": "<color=#40D9B8>Победа</color>",
+      "en": "<color=#40D9B8>Victory</color>"
+    },
+    {
+      "id": "startmenu.345",
+      "ru": "<color=#FF7352>Поражение</color>",
+      "en": "<color=#FF7352>Defeat</color>"
+    },
+    {
+      "id": "startmenu.346",
+      "ru": "Дата",
+      "en": "Date"
+    },
+    {
+      "id": "startmenu.347",
+      "ru": "Оружие",
+      "en": "Weapon"
+    },
+    {
+      "id": "startmenu.348",
+      "ru": "Время",
+      "en": "Time"
+    },
+    {
+      "id": "startmenu.349",
+      "ru": "Убийства",
+      "en": "Kills"
+    },
+    {
+      "id": "startmenu.350",
+      "ru": "Убийств в минуту",
+      "en": "Kills per minute"
+    },
+    {
+      "id": "startmenu.351",
+      "ru": "Нанесённый урон",
+      "en": "Damage dealt"
+    },
+    {
+      "id": "startmenu.352",
+      "ru": "Урон в секунду",
+      "en": "Damage per second"
+    },
+    {
+      "id": "startmenu.353",
+      "ru": "Волна",
+      "en": "Wave"
+    },
+    {
+      "id": "startmenu.354",
+      "ru": "Уровень героя",
+      "en": "Hero level"
+    },
+    {
+      "id": "startmenu.355",
+      "ru": "Награда",
+      "en": "Reward"
+    },
+    {
+      "id": "startmenu.356",
+      "ru": "\n<color=#FFB060>★</color> — новый рекорд",
+      "en": "\n<color=#FFB060>★</color> — new record"
+    },
+    {
+      "id": "startmenu.357",
+      "ru": " заб. · ",
+      "en": " runs · "
+    },
+    {
+      "id": "startmenu.358",
+      "ru": " уб.",
+      "en": " kills"
+    },
+    {
+      "id": "startmenu.359",
+      "ru": " поб.",
+      "en": " wins"
+    },
+    {
+      "id": "startmenu.360",
+      "ru": "<color=#6B7785>оружие</color>",
+      "en": "<color=#6B7785>weapon</color>"
+    },
+    {
+      "id": "startmenu.361",
+      "ru": "<color=#6B7785>забеги · время · убийства</color>",
+      "en": "<color=#6B7785>runs · time · kills</color>"
+    },
+    {
+      "id": "startmenu.362",
+      "ru": "Кооператив  · закрыто",
+      "en": "Co-op  · locked"
+    },
+    {
+      "id": "testarena.363",
+      "ru": "Враги",
+      "en": "Enemies"
+    },
+    {
+      "id": "testarena.364",
+      "ru": "События",
+      "en": "Events"
+    },
+    {
+      "id": "testarena.365",
+      "ru": "Улучш.",
+      "en": "Upgrades"
+    },
+    {
+      "id": "testarena.366",
+      "ru": "Ещё",
+      "en": "More"
+    },
+    {
+      "id": "testarena.367",
+      "ru": "ТЕСТ  •  F1 — скрыть",
+      "en": "TEST  •  F1 to hide"
+    },
+    {
+      "id": "testarena.368",
+      "ru": "Убрать врагов",
+      "en": "Clear enemies"
+    },
+    {
+      "id": "testarena.369",
+      "ru": "Вылечить",
+      "en": "Heal"
+    },
+    {
+      "id": "testarena.370",
+      "ru": "Герой в центр",
+      "en": "Center hero"
+    },
+    {
+      "id": "testarena.371",
+      "ru": "Герой перенесён в центр арены",
+      "en": "Hero moved to the arena center"
+    },
+    {
+      "id": "testarena.372",
+      "ru": "Сброс событий",
+      "en": "Reset events"
+    },
+    {
+      "id": "testarena.373",
+      "ru": "★ Элита",
+      "en": "★ Elite"
+    },
+    {
+      "id": "testarena.374",
+      "ru": "★ Орда",
+      "en": "★ Horde"
+    },
+    {
+      "id": "testarena.375",
+      "ru": "★ Громила (мини-босс)",
+      "en": "★ Brute (mini-boss)"
+    },
+    {
+      "id": "testarena.376",
+      "ru": "★ Страж (босс)",
+      "en": "★ Guardian (boss)"
+    },
+    {
+      "id": "testarena.377",
+      "ru": "★ Королева роя (босс)",
+      "en": "★ Swarm Queen (boss)"
+    },
+    {
+      "id": "testarena.378",
+      "ru": "★ Грозовой снайпер (босс)",
+      "en": "★ Storm Sniper (boss)"
+    },
+    {
+      "id": "testarena.379",
+      "ru": "■ Остановить",
+      "en": "■ Stop"
+    },
+    {
+      "id": "testarena.380",
+      "ru": "Аптечка",
+      "en": "Medkit"
+    },
+    {
+      "id": "testarena.381",
+      "ru": "Магнит",
+      "en": "Magnet"
+    },
+    {
+      "id": "testarena.382",
+      "ru": "Кристаллы ×10",
+      "en": "Crystals ×10"
+    },
+    {
+      "id": "testarena.383",
+      "ru": "+ Уровень",
+      "en": "+ Level"
+    },
+    {
+      "id": "testarena.384",
+      "ru": "Награда сундука",
+      "en": "Chest reward"
+    },
+    {
+      "id": "testarena.385",
+      "ru": "Урон себе −30",
+      "en": "Take 30 damage"
+    },
+    {
+      "id": "testarena.386",
+      "ru": "Оружие: ",
+      "en": "Weapon: "
+    },
+    {
+      "id": "testarena.387",
+      "ru": "Создано: ",
+      "en": "Spawned: "
+    },
+    {
+      "id": "testarena.388",
+      "ru": "  •  врагов на арене: ",
+      "en": "  •  enemies in arena: "
+    },
+    {
+      "id": "testarena.389",
+      "ru": "Элит создано: ",
+      "en": "Elites spawned: "
+    },
+    {
+      "id": "testarena.390",
+      "ru": "Орда пошла",
+      "en": "Horde incoming"
+    },
+    {
+      "id": "testarena.391",
+      "ru": "Громила создан",
+      "en": "Brute spawned"
+    },
+    {
+      "id": "testarena.392",
+      "ru": "Громила уже на арене или нет места",
+      "en": "Brute already present or no space"
+    },
+    {
+      "id": "testarena.393",
+      "ru": ": создан",
+      "en": ": spawned"
+    },
+    {
+      "id": "testarena.394",
+      "ru": "Босс уже на арене или нет места",
+      "en": "Boss already present or no space"
+    },
+    {
+      "id": "testarena.395",
+      "ru": "Нет системы событий",
+      "en": "Event system missing"
+    },
+    {
+      "id": "testarena.396",
+      "ru": "Событие: ",
+      "en": "Event: "
+    },
+    {
+      "id": "testarena.397",
+      "ru": "Событие остановлено",
+      "en": "Event stopped"
+    },
+    {
+      "id": "testarena.398",
+      "ru": "Улучшение: ",
+      "en": "Upgrade: "
+    },
+    {
+      "id": "testarena.399",
+      "ru": "Недоступно (макс. ранг или нет нужного оружия)",
+      "en": "Unavailable (max rank or required weapon missing)"
+    },
+    {
+      "id": "testarena.400",
+      "ru": "Аптечка рядом",
+      "en": "Medkit nearby"
+    },
+    {
+      "id": "testarena.401",
+      "ru": "Магнит рядом",
+      "en": "Magnet nearby"
+    },
+    {
+      "id": "testarena.402",
+      "ru": "Кристаллы рядом",
+      "en": "Crystals nearby"
+    },
+    {
+      "id": "testarena.403",
+      "ru": "Уровень повышен",
+      "en": "Level increased"
+    },
+    {
+      "id": "testarena.404",
+      "ru": "Награду открыть нельзя",
+      "en": "Cannot open reward"
+    },
+    {
+      "id": "testarena.405",
+      "ru": "Арена очищена",
+      "en": "Arena cleared"
+    },
+    {
+      "id": "testarena.406",
+      "ru": "За клик: ",
+      "en": "Per click: "
+    },
+    {
+      "id": "testarena.407",
+      "ru": "Бессмертие: вкл",
+      "en": "Invincible: on"
+    },
+    {
+      "id": "testarena.408",
+      "ru": "Бессмертие: выкл",
+      "en": "Invincible: off"
+    },
+    {
+      "id": "testarena.409",
+      "ru": "Время ×",
+      "en": "Time ×"
+    },
+    {
+      "id": "testarena.410",
+      "ru": "Волны: выкл",
+      "en": "Waves: off"
+    },
+    {
+      "id": "testarena.411",
+      "ru": "Волны: вкл",
+      "en": "Waves: on"
+    },
+    {
+      "id": "upgradecatalog.412",
+      "ru": "Обычное",
+      "en": "Common"
+    },
+    {
+      "id": "upgradecatalog.413",
+      "ru": "Редкое",
+      "en": "Rare"
+    },
+    {
+      "id": "upgradecatalog.414",
+      "ru": "Особое",
+      "en": "Special"
+    },
+    {
+      "id": "wavemanager.415",
+      "ru": "Передышка",
+      "en": "Breather"
+    },
+    {
+      "id": "wavemanager.416",
+      "ru": "ЭЛИТА НА АРЕНЕ",
+      "en": "ELITE IN THE ARENA"
+    },
+    {
+      "id": "wavemanager.417",
+      "ru": "ОРДА!",
+      "en": "HORDE!"
+    },
+    {
+      "id": "wavemanager.418",
+      "ru": "ПИК ВОЛНЫ",
+      "en": "WAVE PEAK"
+    },
+    {
+      "id": "weaponelements.419",
+      "ru": "Без стихии",
+      "en": "No element"
+    },
+    {
+      "id": "weaponelements.420",
+      "ru": "Огонь",
+      "en": "Fire"
+    },
+    {
+      "id": "weaponelements.421",
+      "ru": "Холод",
+      "en": "Frost"
+    },
+    {
+      "id": "weaponelements.422",
+      "ru": "Молния",
+      "en": "Lightning"
+    },
+    {
+      "id": "weaponelements.423",
+      "ru": "Яд",
+      "en": "Poison"
+    },
+    {
+      "id": "weaponelements.424",
+      "ru": "Горение: ",
+      "en": "Burn: "
+    },
+    {
+      "id": "weaponelements.425",
+      "ru": "% урона попадания в секунду, 3 с. Обновляет длительность. На Стража вдвое слабее.",
+      "en": "% hit damage per second for 3 s. Refreshes duration. Half as effective against the Guardian."
+    },
+    {
+      "id": "weaponelements.426",
+      "ru": "Замедление на ",
+      "en": "Slow by "
+    },
+    {
+      "id": "weaponelements.427",
+      "ru": "% на 2 с. На Стража действует вдвое слабее.",
+      "en": "% for 2 s. Half as effective against the Guardian."
+    },
+    {
+      "id": "weaponelements.428",
+      "ru": "Разряд: до ",
+      "en": "Chain: up to "
+    },
+    {
+      "id": "weaponelements.429",
+      "ru": " соседей в 5 м, 30% урона с затуханием. Не чаще раза в 0,4 с.",
+      "en": " nearby targets within 5 m, 30% damage with falloff. At most once every 0.4 s."
+    },
+    {
+      "id": "weaponelements.430",
+      "ru": "Яд: ",
+      "en": "Poison: "
+    },
+    {
+      "id": "weaponelements.431",
+      "ru": "% урона попадания в секунду, 4 с, до 3 стаков. На Стража вдвое слабее.",
+      "en": "% hit damage per second for 4 s, up to 3 stacks. Half as effective against the Guardian."
+    },
+    {
+      "id": "weaponelements.432",
+      "ru": "Одна активная стихия для каждого оружия. Купленные варианты можно переключать бесплатно.",
+      "en": "One active element per weapon. Switch purchased elements for free."
+    },
+    {
+      "id": "weaponelements.433",
+      "ru": "Револьвер",
+      "en": "Revolver"
+    },
+    {
+      "id": "weaponelements.434",
+      "ru": "Двойные пистолеты",
+      "en": "Dual pistols"
+    },
+    {
+      "id": "weaponelements.435",
+      "ru": "Липкий заряд",
+      "en": "Sticky charge"
+    },
+    {
+      "id": "weaponelements.436",
+      "ru": "Барабан на 6 выстрелов, затем перезарядка 0,9 с. Урон ×1,4, дальность ×1,1.",
+      "en": "6-round cylinder, then a 0.9 s reload. Damage ×1.4, range ×1.1."
+    },
+    {
+      "id": "weaponelements.437",
+      "ru": "Урон ×2,2, дальность ×1,5, выстрелы реже (пауза ×1,4). Барабан и перезарядка те же.",
+      "en": "Damage ×2.2, range ×1.5, slower fire (interval ×1.4). Same cylinder and reload."
+    },
+    {
+      "id": "weaponelements.438",
+      "ru": "Последний выстрел барабана всегда критует и пробивает до 3 врагов. Остальное как на ранге 2.",
+      "en": "The last cylinder shot always crits and pierces up to 3 enemies. Otherwise as rank 2."
+    },
+    {
+      "id": "weaponelements.439",
+      "ru": "По пистолету в каждой руке. Оба стреляют с полным уроном и всеми улучшениями. Пауза между парными залпами ×1,5; цели — разные или одна общая.",
+      "en": "A pistol in each hand. Both fire at full damage with all upgrades. Paired volleys have a ×1.5 interval, at separate targets or together at one."
+    },
+    {
+      "id": "weaponelements.440",
+      "ru": "Темп стрельбы обоих пистолетов +15%. Остальное как на ранге 1.",
+      "en": "Both pistols fire 15% faster. Otherwise as rank 1."
+    },
+    {
+      "id": "weaponelements.441",
+      "ru": "Пули обоих пистолетов пробивают ещё одного врага. Остальное как на ранге 2.",
+      "en": "Bullets from both pistols pierce one additional enemy. Otherwise as rank 2."
+    },
+    {
+      "id": "weaponelements.442",
+      "ru": "Попадание лепит на врага заряд: через 1,5 с взрыв радиусом 2,2 м на 50% урона попадания.",
+      "en": "A hit sticks a charge to the enemy: after 1.5 s it explodes in a 2.2 m radius for 50% of the hit damage."
+    },
+    {
+      "id": "weaponelements.443",
+      "ru": "Если цель с зарядом погибла, заряд перескакивает на ближайшего врага (до 6 м). Остальное как на ранге 1.",
+      "en": "If the target dies, the charge jumps to the nearest enemy within 6 m. Otherwise as rank 1."
+    },
+    {
+      "id": "weaponelements.444",
+      "ru": "До 3 зарядов на цели, их взрывы складываются. Остальное как на ранге 2.",
+      "en": "Up to 3 charges per target; their blasts add up. Otherwise as rank 2."
+    },
+    {
+      "id": "weaponselectscreen.433",
+      "ru": "Пистолет",
+      "en": "Pistol"
+    },
+    {
+      "id": "weaponselectscreen.434",
+      "ru": "Автомат",
+      "en": "Assault Rifle"
+    },
+    {
+      "id": "weaponselectscreen.435",
+      "ru": "ТОЧНОСТЬ",
+      "en": "PRECISION"
+    },
+    {
+      "id": "weaponselectscreen.436",
+      "ru": "ВЫСОКИЙ ТЕМП",
+      "en": "RAPID FIRE"
+    },
+    {
+      "id": "weaponselectscreen.437",
+      "ru": "БЛИЖНИЙ БОЙ",
+      "en": "CLOSE COMBAT"
+    },
+    {
+      "id": "weaponselectscreen.438",
+      "ru": "МОЩНЫЙ ВЫСТРЕЛ",
+      "en": "POWER SHOT"
+    },
+    {
+      "id": "weaponselectscreen.439",
+      "ru": "ОРУЖИЕ",
+      "en": "WEAPON"
+    },
+    {
+      "id": "weaponselectscreen.440",
+      "ru": "С Н А Р Я Ж Е Н И Е",
+      "en": "L O A D O U T"
+    },
+    {
+      "id": "weaponselectscreen.441",
+      "ru": "Выбери оружие",
+      "en": "Choose your weapon"
+    },
+    {
+      "id": "weaponselectscreen.442",
+      "ru": "Нет настроенного оружия",
+      "en": "No weapons configured"
+    },
+    {
+      "id": "weaponselectscreen.443",
+      "ru": "Урон",
+      "en": "Damage"
+    },
+    {
+      "id": "weaponselectscreen.444",
+      "ru": "Темп",
+      "en": "Fire rate"
+    },
+    {
+      "id": "weaponselectscreen.445",
+      "ru": "Дальность",
+      "en": "Range"
+    },
+    {
+      "id": "weaponselectscreen.446",
+      "ru": "Клик по плитке — выбрать, ещё клик — в бой",
+      "en": "Click a tile to select, click again to fight"
+    },
+    {
+      "id": "weaponselectscreen.447",
+      "ru": "Б Е С К О Н Е Ч Н Ы Й   Р Е Ж И М   ·   К Р У Г И   Б О С С О В",
+      "en": "E N D L E S S   M O D E   ·   B O S S   R O U N D S"
+    },
+    {
+      "id": "weaponselectscreen.448",
+      "ru": "КООПЕРАТИВ   ·   У ИГРОКА 1:  ",
+      "en": "CO-OP   ·   PLAYER 1 HAS:  "
+    },
+    {
+      "id": "weaponselectscreen.449",
+      "ru": "К О О П Е Р А Т И В   ·   2   И Г Р О К А",
+      "en": "C O - O P   ·   2   P L A Y E R S"
+    },
+    {
+      "id": "weaponselectscreen.450",
+      "ru": ": выбери оружие",
+      "en": ": choose your weapon"
+    },
+    {
+      "id": "weaponselectscreen.451",
+      "ru": "Обычное оружие: стреляет в ближайшего врага",
+      "en": "Standard weapon: fires at the nearest enemy"
+    },
+    {
+      "id": "weaponselectscreen.452",
+      "ru": " дробин за выстрел.",
+      "en": " pellets per shot."
+    },
+    {
+      "id": "weaponselectscreen.453",
+      "ru": " /с",
+      "en": " /s"
+    },
+    {
+      "id": "weaponselectscreen.454",
+      "ru": "ДАЛЕЕ:  ИГРОК 2",
+      "en": "NEXT:  PLAYER 2"
+    },
+    {
+      "id": "weaponselectscreen.455",
+      "ru": "В  БОЙ",
+      "en": "FIGHT"
+    },
+    {
+      "id": "weaponselectscreen.456",
+      "ru": "ОТКРЫТЬ ЗА ",
+      "en": "UNLOCK FOR "
+    },
+    {
+      "id": "weaponselectscreen.457",
+      "ru": "НУЖНО ",
+      "en": "NEED "
+    },
+    {
+      "id": "workshoptree.458",
+      "ru": "МАСТЕРСКАЯ",
+      "en": "WORKSHOP"
+    },
+    {
+      "id": "workshoptree.459",
+      "ru": "ДЕРЕВО ТЕХНОЛОГИЙ",
+      "en": "TECH TREE"
+    },
+    {
+      "id": "workshoptree.460",
+      "ru": "‹  НАЗАД",
+      "en": "‹  BACK"
+    },
+    {
+      "id": "workshoptree.461",
+      "ru": "Колесо — прокрутка · ПКМ/средняя — перемещение · Ctrl+колесо — масштаб",
+      "en": "Wheel: scroll · Right/middle drag: pan · Ctrl+wheel: zoom"
+    },
+    {
+      "id": "workshoptree.462",
+      "ru": "ДЕТАЛИ  ",
+      "en": "PARTS  "
+    },
+    {
+      "id": "workshoptree.463",
+      "ru": "Открыто",
+      "en": "Unlocked"
+    },
+    {
+      "id": "workshoptree.464",
+      "ru": "\nдеталей",
+      "en": "\nParts"
+    },
+    {
+      "id": "workshoptree.465",
+      "ru": "Закрыто",
+      "en": "Locked"
+    },
+    {
+      "id": "workshoptree.466",
+      "ru": "ВКЛ",
+      "en": "ON"
+    },
+    {
+      "id": "workshoptree.467",
+      "ru": "ПОСТОЯННОЕ УЛУЧШЕНИЕ",
+      "en": "PERMANENT UPGRADE"
+    },
+    {
+      "id": "workshoptree.468",
+      "ru": "СТИХИЯ ОРУЖИЯ",
+      "en": "WEAPON ELEMENT"
+    },
+    {
+      "id": "workshoptree.469",
+      "ru": "ОТКРЫТИЕ ОРУЖИЯ",
+      "en": "WEAPON UNLOCK"
+    },
+    {
+      "id": "workshoptree.470",
+      "ru": "\n\nСейчас: ",
+      "en": "\n\nCurrent: "
+    },
+    {
+      "id": "workshoptree.471",
+      "ru": "\nСледующий: ",
+      "en": "\nNext: "
+    },
+    {
+      "id": "workshoptree.472",
+      "ru": "Ранг ",
+      "en": "Rank "
+    },
+    {
+      "id": "workshoptree.473",
+      "ru": "МАКСИМУМ",
+      "en": "MAXIMUM"
+    },
+    {
+      "id": "workshoptree.474",
+      "ru": "УЛУЧШИТЬ · ",
+      "en": "UPGRADE · "
+    },
+    {
+      "id": "workshoptree.475",
+      "ru": "Не хватает ",
+      "en": "Need "
+    },
+    {
+      "id": "workshoptree.476",
+      "ru": " деталей",
+      "en": " Parts"
+    },
+    {
+      "id": "workshoptree.477",
+      "ru": "Четыре узла под оружием — его стихии.\n\nОдна активная стихия на оружие. Купленные варианты переключаются бесплатно.\n\nДругие оружия покупать не требуется.",
+      "en": "The four nodes below each weapon are its elements.\n\nOne active element per weapon. Switch purchased elements for free.\n\nOther weapons do not need to be purchased."
+    },
+    {
+      "id": "workshoptree.478",
+      "ru": "Оружие открыто",
+      "en": "Weapon unlocked"
+    },
+    {
+      "id": "workshoptree.479",
+      "ru": "Нужно открыть оружие",
+      "en": "Unlock the weapon first"
+    },
+    {
+      "id": "workshoptree.480",
+      "ru": "ОТКРЫТО",
+      "en": "UNLOCKED"
+    },
+    {
+      "id": "workshoptree.481",
+      "ru": "ОТКРЫТЬ · ",
+      "en": "UNLOCK · "
+    },
+    {
+      "id": "workshoptree.482",
+      "ru": "После открытия:\n",
+      "en": "Once unlocked:\n"
+    },
+    {
+      "id": "workshoptree.483",
+      "ru": "Сейчас:\n",
+      "en": "Current:\n"
+    },
+    {
+      "id": "workshoptree.484",
+      "ru": "\n\nРанг ",
+      "en": "\n\nRank "
+    },
+    {
+      "id": "workshoptree.485",
+      "ru": "\n\nТолько для этого оружия.",
+      "en": "\n\nFor this weapon only."
+    },
+    {
+      "id": "workshoptree.486",
+      "ru": "Сначала открой оружие",
+      "en": "Unlock the weapon first"
+    },
+    {
+      "id": "workshoptree.487",
+      "ru": "Стихия не открыта",
+      "en": "Element not unlocked"
+    },
+    {
+      "id": "workshoptree.488",
+      "ru": " · активна",
+      "en": " · active"
+    },
+    {
+      "id": "workshoptree.489",
+      "ru": " · не активна",
+      "en": " · inactive"
+    },
+    {
+      "id": "workshoptree.490",
+      "ru": "Улучшения оружия временно закрыты",
+      "en": "Weapon upgrades are temporarily locked"
+    },
+    {
+      "id": "workshoptree.491",
+      "ru": "ОРУЖИЕ ЗАКРЫТО",
+      "en": "WEAPON LOCKED"
+    },
+    {
+      "id": "workshoptree.492",
+      "ru": "СНЯТЬ СТИХИЮ",
+      "en": "UNEQUIP ELEMENT"
+    },
+    {
+      "id": "workshoptree.493",
+      "ru": "ПРИМЕНИТЬ",
+      "en": "EQUIP"
+    },
+    {
+      "id": "workshoptree.494",
+      "ru": "ЗАКРЫТО",
+      "en": "LOCKED"
+    },
+    {
+      "id": "workshoptree.495",
+      "ru": "Не хватает",
+      "en": "Need"
+    },
+    {
+      "id": "workshoptree.496",
+      "ru": "Сначала",
+      "en": "First"
+    },
+    {
+      "id": "workshoptree.497",
+      "ru": "Горение ",
+      "en": "Burn "
+    },
+    {
+      "id": "workshoptree.498",
+      "ru": "% урона/с · 3 с\nОбновление без стаков; Страж: ×0.5",
+      "en": "% damage/s · 3 s\nRefreshes without stacking; Guardian: ×0.5"
+    },
+    {
+      "id": "workshoptree.499",
+      "ru": "Замедление ",
+      "en": "Slow "
+    },
+    {
+      "id": "workshoptree.500",
+      "ru": "% · 2 с\nНа Стража вдвое слабее",
+      "en": "% · 2 s\nHalf as effective against the Guardian"
+    },
+    {
+      "id": "workshoptree.501",
+      "ru": "Соседей: ",
+      "en": "Targets: "
+    },
+    {
+      "id": "workshoptree.502",
+      "ru": " · радиус 5 м\n30% урона, затухание ×0.65 · 0.4 с",
+      "en": " · radius 5 m\n30% damage, falloff ×0.65 · 0.4 s"
+    },
+    {
+      "id": "workshoptree.503",
+      "ru": "Яд ",
+      "en": "Poison "
+    },
+    {
+      "id": "workshoptree.504",
+      "ru": "% урона/с · 4 с\nДо 3 стаков; Страж: ×0.5",
+      "en": "% damage/s · 4 s\nUp to 3 stacks; Guardian: ×0.5"
+    },
+    {
+      "id": "serialized.505",
+      "ru": "ВОЗВРАТНЫЙ УДАР",
+      "en": "RETURN STRIKE"
+    },
+    {
+      "id": "serialized.506",
+      "ru": "Диск бьёт врагов туда и обратно",
+      "en": "A disc hits enemies on the way out and back"
+    },
+    {
+      "id": "serialized.507",
+      "ru": "ЛОВУШКИ",
+      "en": "TRAPS"
+    },
+    {
+      "id": "serialized.508",
+      "ru": "Мины под ногами подрывают преследователей",
+      "en": "Mines at your feet blow up pursuers"
+    },
+    {
+      "id": "serialized.509",
+      "ru": "ПО ПЛОЩАДИ",
+      "en": "AREA DAMAGE"
+    },
+    {
+      "id": "serialized.510",
+      "ru": "Взрыв по скоплению врагов",
+      "en": "Explodes among groups of enemies"
+    },
+    {
+      "id": "serialized.511",
+      "ru": "ЦЕПНАЯ МОЛНИЯ",
+      "en": "CHAIN LIGHTNING"
+    },
+    {
+      "id": "serialized.512",
+      "ru": "Молния перескакивает между врагами",
+      "en": "Lightning jumps between enemies"
+    },
+    {
+      "id": "serialized.513",
+      "ru": "ВБЛИЗИ",
+      "en": "CLOSE RANGE"
+    },
+    {
+      "id": "serialized.514",
+      "ru": "Конус огня и горение",
+      "en": "A cone of fire and burning damage"
+    },
+    {
+      "id": "serialized.515",
+      "ru": "ЗАМЕДЛЕНИЕ",
+      "en": "SLOW"
+    },
+    {
+      "id": "serialized.516",
+      "ru": "Замедляет врагов в зоне попадания",
+      "en": "Slows enemies in the impact area"
+    },
+    {
+      "id": "serialized.517",
+      "ru": "ПРОБИВАНИЕ",
+      "en": "PIERCING"
+    },
+    {
+      "id": "serialized.518",
+      "ru": "Луч пробивает всю линию врагов",
+      "en": "A beam pierces an entire line of enemies"
+    },
+    {
+      "id": "serialized.519",
+      "ru": "ОБОРОНА",
+      "en": "DEFENSE"
+    },
+    {
+      "id": "serialized.520",
+      "ru": "Ставит до двух стреляющих турелей",
+      "en": "Deploys up to two shooting turrets"
+    },
+    {
+      "id": "serialized.521",
+      "ru": "ВТОРОЙ СТВОЛ",
+      "en": "EXTRA FIREPOWER"
+    },
+    {
+      "id": "serialized.522",
+      "ru": "Два дрона стреляют по разным целям",
+      "en": "Two drones shoot at different targets"
+    },
+    {
+      "id": "serialized.523",
+      "ru": "Урон пуль",
+      "en": "Bullet Damage"
+    },
+    {
+      "id": "serialized.524",
+      "ru": "Темп стрельбы",
+      "en": "Fire Rate"
+    },
+    {
+      "id": "serialized.525",
+      "ru": "Скорость движения",
+      "en": "Movement Speed"
+    },
+    {
+      "id": "serialized.526",
+      "ru": "Радиус сбора",
+      "en": "Pickup Radius"
+    },
+    {
+      "id": "serialized.527",
+      "ru": "Гранаты",
+      "en": "Grenades"
+    },
+    {
+      "id": "serialized.528",
+      "ru": "Мощность орбит",
+      "en": "Orbital Power"
+    },
+    {
+      "id": "serialized.529",
+      "ru": "Радиус взрыва",
+      "en": "Blast Radius"
+    },
+    {
+      "id": "serialized.530",
+      "ru": "Запас здоровья",
+      "en": "Health Reserve"
+    },
+    {
+      "id": "serialized.531",
+      "ru": "Орбитальный спутник",
+      "en": "Orbital Companion"
+    },
+    {
+      "id": "serialized.532",
+      "ru": "Критический шанс",
+      "en": "Critical Chance"
+    },
+    {
+      "id": "serialized.533",
+      "ru": "Сила крита",
+      "en": "Critical Power"
+    },
+    {
+      "id": "serialized.534",
+      "ru": "Пробивание",
+      "en": "Piercing"
+    },
+    {
+      "id": "serialized.535",
+      "ru": "Рикошет",
+      "en": "Ricochet"
+    },
+    {
+      "id": "serialized.536",
+      "ru": "Дрон-стрелок",
+      "en": "Shooter Drone"
+    },
+    {
+      "id": "serialized.537",
+      "ru": "Броня",
+      "en": "Armor"
+    },
+    {
+      "id": "serialized.538",
+      "ru": "Регенерация",
+      "en": "Regeneration"
+    },
+    {
+      "id": "serialized.539",
+      "ru": "Вампиризм",
+      "en": "Vampirism"
+    },
+    {
+      "id": "serialized.540",
+      "ru": "Быстрый рывок",
+      "en": "Quick Dash"
+    },
+    {
+      "id": "serialized.541",
+      "ru": "Дальний рывок",
+      "en": "Long Dash"
+    },
+    {
+      "id": "serialized.542",
+      "ru": "Доп. снаряды",
+      "en": "Extra Projectiles"
+    },
+    {
+      "id": "serialized.543",
+      "ru": "Взрывные пули",
+      "en": "Explosive Bullets"
+    },
+    {
+      "id": "serialized.544",
+      "ru": "Охотник на элиту",
+      "en": "Elite Hunter"
+    },
+    {
+      "id": "serialized.545",
+      "ru": "Критические спутники",
+      "en": "Critical Orbitals"
+    },
+    {
+      "id": "serialized.546",
+      "ru": "Удача",
+      "en": "Luck"
+    },
+    {
+      "id": "serialized.547",
+      "ru": "Опыт",
+      "en": "Experience"
+    },
+    {
+      "id": "serialized.548",
+      "ru": "Стеклянная пушка",
+      "en": "Glass Cannon"
+    },
+    {
+      "id": "serialized.549",
+      "ru": "Кровавый темп",
+      "en": "Blood Rush"
+    },
+    {
+      "id": "serialized.550",
+      "ru": "Жадность",
+      "en": "Greed"
+    },
+    {
+      "id": "settings.language",
+      "ru": "Язык",
+      "en": "Language"
+    },
+    {
+      "id": "settings.high_fidelity",
+      "ru": "Высокое качество",
+      "en": "High Fidelity"
+    },
+    {
+      "id": "menu.genre",
+      "ru": "А Р Е Н А   /   В Ы Ж И В А Н И Е",
+      "en": "A R E N A   /   S U R V I V A L"
+    },
+    {
+      "id": "enemy.fast",
+      "ru": "Быстрый",
+      "en": "Fast"
+    },
+    {
+      "id": "enemy.weak",
+      "ru": "Слабый",
+      "en": "Weak"
+    },
+    {
+      "id": "enemy.tank",
+      "ru": "Танк",
+      "en": "Tank"
+    },
+    {
+      "id": "enemy.shooter",
+      "ru": "Стрелок",
+      "en": "Shooter"
+    },
+    {
+      "id": "enemy.charger",
+      "ru": "Таранщик",
+      "en": "Charger"
+    },
+    {
+      "id": "enemy.bomber",
+      "ru": "Подрывник",
+      "en": "Bomber"
+    },
+    {
+      "id": "enemy.healer",
+      "ru": "Лекарь",
+      "en": "Healer"
+    },
+    {
+      "id": "enemy.splitter",
+      "ru": "Делящийся",
+      "en": "Splitter"
+    },
+    {
+      "id": "enemy.summoner",
+      "ru": "Призыватель",
+      "en": "Summoner"
+    },
+    {
+      "id": "enemy.sniper",
+      "ru": "Снайпер",
+      "en": "Sniper"
+    },
+    {
+      "id": "enemy.mortar",
+      "ru": "Миномётчик",
+      "en": "Mortar"
+    },
+    {
+      "id": "enemy.teleporter",
+      "ru": "Телепортёр",
+      "en": "Teleporter"
+    },
+    {
+      "id": "enemy.buffer",
+      "ru": "Усилитель",
+      "en": "Buffer"
+    },
+    {
+      "id": "enemy.armored",
+      "ru": "Бронированный",
+      "en": "Armored"
+    },
+    {
+      "id": "death.summary",
+      "ru": "Причина смерти: ",
+      "en": "Cause of death: "
+    },
+    {
+      "id": "death.damage",
+      "ru": "\nУрон последнего удара: ",
+      "en": "\nFinal hit damage: "
+    },
+    {
+      "id": "death.cause.unknown",
+      "ru": "неизвестный источник",
+      "en": "unknown source"
+    },
+    {
+      "id": "death.cause.contact",
+      "ru": "контактная атака врага",
+      "en": "enemy melee attack"
+    },
+    {
+      "id": "death.cause.projectile",
+      "ru": "вражеский снаряд",
+      "en": "enemy projectile"
+    },
+    {
+      "id": "death.cause.mortar",
+      "ru": "миномётный обстрел",
+      "en": "mortar strike"
+    },
+    {
+      "id": "death.cause.charge",
+      "ru": "рывок врага",
+      "en": "enemy charge"
+    },
+    {
+      "id": "death.cause.explosion",
+      "ru": "взрыв подрывника",
+      "en": "bomber explosion"
+    },
+    {
+      "id": "death.cause.eliteexplosion",
+      "ru": "посмертный взрыв элиты",
+      "en": "elite death explosion"
+    },
+    {
+      "id": "death.cause.bossslam",
+      "ru": "удар босса по земле",
+      "en": "boss ground slam"
+    },
+    {
+      "id": "death.cause.bossprojectile",
+      "ru": "снаряд босса",
+      "en": "boss projectile"
+    },
+    {
+      "id": "death.cause.bosscharge",
+      "ru": "рывок босса",
+      "en": "boss charge"
+    },
+    {
+      "id": "death.cause.lightning",
+      "ru": "молния босса",
+      "en": "boss lightning"
+    },
+    {
+      "id": "death.cause.beam",
+      "ru": "луч босса",
+      "en": "boss beam"
+    },
+    {
+      "id": "death.cause.acid",
+      "ru": "кислотная лужа",
+      "en": "acid pool"
+    },
+    {
+      "id": "death.cause.fire",
+      "ru": "наземный огонь",
+      "en": "ground fire"
+    },
+    {
+      "id": "death.cause.meteor",
+      "ru": "метеорит",
+      "en": "meteor strike"
+    },
+    {
+      "id": "rifle.assault.name",
+      "ru": "Штурмовой",
+      "en": "Assault"
+    },
+    {
+      "id": "rifle.minigun.name",
+      "ru": "Роторный пулемёт",
+      "en": "Rotary minigun"
+    },
+    {
+      "id": "rifle.heavy.name",
+      "ru": "Тяжёлый автомат",
+      "en": "Heavy automatic"
+    },
+    {
+      "id": "rifle.assault.rank1",
+      "ru": "Точные очереди по 3 выстрела: интервал внутри очереди ×0,5, пауза после очереди ×2,6 от базового интервала. Урон ×1,3, разброс дополнительных пуль ×0,55.",
+      "en": "Accurate 3-shot bursts: ×0.5 interval within a burst, followed by a pause of ×2.6 the base interval. Damage ×1.3, extra-bullet spread ×0.55."
+    },
+    {
+      "id": "rifle.assault.rank2",
+      "ru": "Урон ×1,45, дальность +15%. Очереди и точность как на ранге 1.",
+      "en": "Damage ×1.45, range +15%. Same bursts and accuracy as rank 1."
+    },
+    {
+      "id": "rifle.assault.rank3",
+      "ru": "Последний выстрел каждой очереди наносит ещё на 50% больше урона, включая дополнительные пули. Остальное как на ранге 2.",
+      "en": "The last shot of each burst deals 50% more damage, including extra bullets. Otherwise as rank 2."
+    },
+    {
+      "id": "rifle.minigun.rank1",
+      "ru": "Пулемёт раскручивается за 2 с: интервал ×1,65 → ×0,72, урон каждой пули ×0,85. Смена цели теряет половину разгона, без цели разгон остывает за 1 с.",
+      "en": "Spins up over 2 s: interval ×1.65 → ×0.72, bullet damage ×0.85. Switching targets loses half the spin; without a target it cools in 1 s."
+    },
+    {
+      "id": "rifle.minigun.rank2",
+      "ru": "Урон пули ×0,9, интервал при полном разгоне ×0,65. Остальное как на ранге 1.",
+      "en": "Bullet damage ×0.9, fully spun-up interval ×0.65. Otherwise as rank 1."
+    },
+    {
+      "id": "rifle.minigun.rank3",
+      "ru": "Урон пули ×0,95, интервал при полном разгоне ×0,58. Остальное как на ранге 2.",
+      "en": "Bullet damage ×0.95, fully spun-up interval ×0.58. Otherwise as rank 2."
+    },
+    {
+      "id": "rifle.heavy.rank1",
+      "ru": "Урон ×3,2, интервал ×2,8, дальность +20%, скорость пули +25%. Пули пробивают ещё 1 врага.",
+      "en": "Damage ×3.2, interval ×2.8, range +20%, bullet speed +25%. Bullets pierce 1 additional enemy."
+    },
+    {
+      "id": "rifle.heavy.rank2",
+      "ru": "Урон ×3,8, дальность +30%, пробивание ещё 2 врагов. Темп и скорость пули как на ранге 1.",
+      "en": "Damage ×3.8, range +30%, pierces 2 additional enemies. Same fire rate and bullet speed as rank 1."
+    },
+    {
+      "id": "rifle.heavy.rank3",
+      "ru": "Урон ×4,2, пробивание ещё 3 врагов. Остальное как на ранге 2.",
+      "en": "Damage ×4.2, pierces 3 additional enemies. Otherwise as rank 2."
+    },
+    {
+      "id": "workshop.branch.caption",
+      "ru": "ВЕТКА ОРУЖИЯ",
+      "en": "WEAPON BRANCH"
+    },
+    {
+      "id": "workshop.branch.unequip",
+      "ru": "СНЯТЬ ВЕТКУ",
+      "en": "UNEQUIP BRANCH"
+    },
+    {
+      "id": "workshop.branch.description",
+      "ru": "Три узла под оружием меняют его стиль стрельбы.\n\nОдна активная ветка на оружие, три ранга у каждой. Купленные ветки переключаются бесплатно.",
+      "en": "The three nodes below the weapon change its firing style.\n\nOne active branch per weapon, with three ranks each. Purchased branches can be switched for free."
+    },
+    {
+      "id": "results.time",
+      "ru": "ВРЕМЯ ЗАБЕГА",
+      "en": "RUN TIME"
+    },
+    {
+      "id": "results.kills",
+      "ru": "УБИЙСТВА",
+      "en": "KILLS"
+    },
+    {
+      "id": "results.levelwave",
+      "ru": "УРОВЕНЬ / ВОЛНА",
+      "en": "LEVEL / WAVE"
+    },
+    {
+      "id": "results.dealt",
+      "ru": "НАНЕСЕНО УРОНА",
+      "en": "DAMAGE DEALT"
+    },
+    {
+      "id": "results.bosstime",
+      "ru": "ВРЕМЯ С БОССОМ",
+      "en": "BOSS COMBAT TIME"
+    },
+    {
+      "id": "results.hint",
+      "ru": "ИТОГИ ЗАБЕГА  ·  Прокрути списки, чтобы увидеть все подробности",
+      "en": "RUN BREAKDOWN  ·  Scroll the lists to see all details"
+    },
+    {
+      "id": "results.build",
+      "ru": "ТВОЯ СБОРКА",
+      "en": "YOUR BUILD"
+    },
+    {
+      "id": "results.incoming",
+      "ru": "ПОЛУЧЕННЫЙ УРОН",
+      "en": "DAMAGE TAKEN"
+    },
+    {
+      "id": "results.incomingteam",
+      "ru": "УРОН ПО КОМАНДЕ",
+      "en": "TEAM DAMAGE TAKEN"
+    },
+    {
+      "id": "results.hplost",
+      "ru": "Всего потеряно HP",
+      "en": "Total HP lost"
+    },
+    {
+      "id": "results.base",
+      "ru": "Базовое оружие",
+      "en": "Base weapon"
+    },
+    {
+      "id": "results.evolved",
+      "ru": "Эволюция",
+      "en": "Evolved"
+    },
+    {
+      "id": "results.noupgrades",
+      "ru": "Улучшения ещё не получены",
+      "en": "No upgrades collected"
+    },
+    {
+      "id": "results.nodamage",
+      "ru": "Ни одного попадания — чистая работа!",
+      "en": "No damage taken — clean run!"
+    },
+    {
+      "id": "results.bosswon",
+      "ru": "Побеждён",
+      "en": "Defeated"
+    },
+    {
+      "id": "results.bossunfinished",
+      "ru": "Бой не завершён",
+      "en": "Fight unfinished"
+    },
+    {
+      "id": "results.rounds",
+      "ru": "Круги: ",
+      "en": "Rounds: "
+    },
+    {
+      "id": "results.score",
+      "ru": "Счёт: ",
+      "en": "Score: "
+    },
+    {
+      "id": "hero.pulse",
+      "ru": "Импульс",
+      "en": "Pulse"
+    },
+    {
+      "id": "hero.drive",
+      "ru": "Форсаж",
+      "en": "Overdrive"
+    },
+    {
+      "id": "hero.ready",
+      "ru": "Готово",
+      "en": "Ready"
+    },
+    {
+      "id": "hero.active",
+      "ru": "Активно: ",
+      "en": "Active: "
+    },
+    {
+      "id": "hero.pulse.description",
+      "ru": "Импульс отталкивает ближайших врагов. Боссы устойчивы.",
+      "en": "Push nearby enemies away. Bosses resist the pulse."
+    },
+    {
+      "id": "hero.drive.description",
+      "ru": "Форсаж на 5 с: скорость +25%, темп стрельбы +30%.",
+      "en": "Overdrive for 5 s: +25% movement speed, +30% fire rate."
+    },
+    {
+      "id": "hud.experience",
+      "ru": "ОПЫТ",
+      "en": "XP"
+    },
+    {
+      "id": "hud.boss-near",
+      "ru": "БОСС БЛИЗКО",
+      "en": "BOSS APPROACHING"
+    },
+    {
+      "id": "hud.boss-arena",
+      "ru": "БОСС НА АРЕНЕ",
+      "en": "BOSS ON ARENA"
+    },
+    {
+      "id": "hud.boss-fight",
+      "ru": "БОЙ",
+      "en": "FIGHT"
+    },
+    {
+      "id": "projects.heading",
+      "ru": "ПРОЕКТЫ МАСТЕРСКОЙ",
+      "en": "WORKSHOP PROJECTS"
+    },
+    {
+      "id": "projects.category",
+      "ru": "ПРОЕКТ МАСТЕРСКОЙ",
+      "en": "WORKSHOP PROJECT"
+    },
+    {
+      "id": "projects.generator.title",
+      "ru": "Полевой генератор",
+      "en": "Field generator"
+    },
+    {
+      "id": "projects.scanner.title",
+      "ru": "Сканер арены",
+      "en": "Arena scanner"
+    },
+    {
+      "id": "projects.relics.title",
+      "ru": "Стенд реликвий",
+      "en": "Relic stand"
+    },
+    {
+      "id": "projects.drones.title",
+      "ru": "Станция дронов",
+      "en": "Drone station"
+    },
+    {
+      "id": "projects.weapons.title",
+      "ru": "Оружейный стенд",
+      "en": "Weapon bench"
+    },
+    {
+      "id": "projects.generator.reward0",
+      "ru": "Открывает Q: Импульс",
+      "en": "Unlocks Q: Pulse"
+    },
+    {
+      "id": "projects.generator.reward1",
+      "ru": "Открывает E: Форсаж",
+      "en": "Unlocks E: Overdrive"
+    },
+    {
+      "id": "projects.generator.reward2",
+      "ru": "Откаты способностей −10%",
+      "en": "Ability cooldowns −10%"
+    },
+    {
+      "id": "projects.scanner.reward0",
+      "ru": "Один тайник за забег",
+      "en": "One cache per run"
+    },
+    {
+      "id": "projects.scanner.reward1",
+      "ru": "Два тайника за забег",
+      "en": "Two caches per run"
+    },
+    {
+      "id": "projects.scanner.reward2",
+      "ru": "Три тайника за забег",
+      "en": "Three caches per run"
+    },
+    {
+      "id": "projects.relics.reward0",
+      "ru": "Одна реликвия в сборке",
+      "en": "Equip one relic"
+    },
+    {
+      "id": "projects.relics.reward1",
+      "ru": "Бонус реликвии ×1,25",
+      "en": "Relic bonus ×1.25"
+    },
+    {
+      "id": "projects.relics.reward2",
+      "ru": "Бонус реликвии ×1,5",
+      "en": "Relic bonus ×1.5"
+    },
+    {
+      "id": "projects.drones.reward0",
+      "ru": "Три режима дронов: сила 1",
+      "en": "Three drone modes: power 1"
+    },
+    {
+      "id": "projects.drones.reward1",
+      "ru": "Сила режима дронов 2",
+      "en": "Drone mode power 2"
+    },
+    {
+      "id": "projects.drones.reward2",
+      "ru": "Сила режима дронов 3",
+      "en": "Drone mode power 3"
+    },
+    {
+      "id": "projects.weapons.reward0",
+      "ru": "Мастерство I: 100 убийств",
+      "en": "Mastery I: 100 kills"
+    },
+    {
+      "id": "projects.weapons.reward1",
+      "ru": "Мастерство II: 300 убийств",
+      "en": "Mastery II: 300 kills"
+    },
+    {
+      "id": "projects.weapons.reward2",
+      "ru": "Мастерство III: 600 убийств",
+      "en": "Mastery III: 600 kills"
+    },
+    {
+      "id": "projects.require.details",
+      "ru": "Нужны только детали",
+      "en": "Requires parts only"
+    },
+    {
+      "id": "projects.require.core",
+      "ru": "Ядро Громилы:",
+      "en": "Brute core:"
+    },
+    {
+      "id": "projects.require.boss",
+      "ru": "Ядро финального босса:",
+      "en": "Final boss core:"
+    },
+    {
+      "id": "projects.require.research",
+      "ru": "Данные из тайников:",
+      "en": "Cache research:"
+    },
+    {
+      "id": "projects.require.runs",
+      "ru": "Завершённые забеги:",
+      "en": "Finished runs:"
+    },
+    {
+      "id": "projects.require.events",
+      "ru": "Пройденные события:",
+      "en": "Completed events:"
+    },
+    {
+      "id": "projects.require.caches",
+      "ru": "Открытые тайники:",
+      "en": "Opened caches:"
+    },
+    {
+      "id": "projects.require.kills",
+      "ru": "Убийства за всё время:",
+      "en": "Total kills:"
+    },
+    {
+      "id": "projects.complete",
+      "ru": "ЗАВЕРШЕНО",
+      "en": "COMPLETED"
+    },
+    {
+      "id": "projects.assemble",
+      "ru": "СОБРАТЬ · ",
+      "en": "ASSEMBLE · "
+    },
+    {
+      "id": "projects.track",
+      "ru": "ОТСЛЕЖИВАТЬ",
+      "en": "TRACK PROJECT"
+    },
+    {
+      "id": "projects.untrack",
+      "ru": "СНЯТЬ ЦЕЛЬ",
+      "en": "CLEAR GOAL"
+    },
+    {
+      "id": "projects.target",
+      "ru": "ЦЕЛЬ",
+      "en": "GOAL"
+    },
+    {
+      "id": "projects.goal.prefix",
+      "ru": "Цель: ",
+      "en": "Goal: "
+    },
+    {
+      "id": "projects.goal.none",
+      "ru": "Выбери проект и следующую цель в Мастерской",
+      "en": "Choose a project and your next goal in the Workshop"
+    },
+    {
+      "id": "projects.fit",
+      "ru": "ВПИСАТЬ",
+      "en": "FIT TREE"
+    },
+    {
+      "id": "projects.nav.projects",
+      "ru": "ПРОЕКТЫ",
+      "en": "PROJECTS"
+    },
+    {
+      "id": "projects.ability.locked",
+      "ru": "Открой способность через проект «Полевой генератор» в Мастерской. В тест-арене способности доступны для проверки.",
+      "en": "Unlock this ability through the Field generator project in the Workshop. Abilities are available for testing in the test arena."
+    },
+    {
+      "id": "projects.cooldown",
+      "ru": "Восстановление: ",
+      "en": "Cooldown: "
+    },
+    {
+      "id": "projects.scanner.mode0",
+      "ru": "Поиск: детали",
+      "en": "Search: parts"
+    },
+    {
+      "id": "projects.scanner.mode1",
+      "ru": "Поиск: припасы",
+      "en": "Search: supplies"
+    },
+    {
+      "id": "projects.scanner.mode2",
+      "ru": "Поиск: данные",
+      "en": "Search: research"
+    },
+    {
+      "id": "projects.scanner.description0",
+      "ru": "Тайники дают 30 + 10 × ранг сканера деталей. Награда сохраняется после поражения.",
+      "en": "Caches give 30 + 10 × scanner rank parts. Rewards persist after defeat."
+    },
+    {
+      "id": "projects.scanner.description1",
+      "ru": "Тайник восстанавливает 25 HP и даёт 20 опыта нашедшему герою.",
+      "en": "A cache restores 25 HP and grants 20 XP to the collecting hero."
+    },
+    {
+      "id": "projects.scanner.description2",
+      "ru": "Тайник даёт 1 набор данных для старших этапов проектов.",
+      "en": "A cache grants 1 research pack for advanced project stages."
+    },
+    {
+      "id": "projects.drones.mode0",
+      "ru": "Режим: боевой",
+      "en": "Mode: combat"
+    },
+    {
+      "id": "projects.drones.mode1",
+      "ru": "Режим: защитник",
+      "en": "Mode: defender"
+    },
+    {
+      "id": "projects.drones.mode2",
+      "ru": "Режим: сборщик",
+      "en": "Mode: collector"
+    },
+    {
+      "id": "projects.drones.description0",
+      "ru": "Дроны из карточек: урон +10% за ранг станции. Не создаёт дрона автоматически.",
+      "en": "Drones from upgrades: +10% damage per station rank. Does not create a drone automatically."
+    },
+    {
+      "id": "projects.drones.description1",
+      "ru": "Пока в сборке есть дрон: броня +3% за ранг станции. Общий предел брони сохранён.",
+      "en": "With a drone in your build: +3% armor per station rank. The armor cap still applies."
+    },
+    {
+      "id": "projects.drones.description2",
+      "ru": "Пока в сборке есть дрон: радиус сбора +15% за ранг станции.",
+      "en": "With a drone in your build: +15% collection radius per station rank."
+    },
+    {
+      "id": "projects.relic.0",
+      "ru": "Реликвия: не выбрана",
+      "en": "Relic: none"
+    },
+    {
+      "id": "projects.relic.1",
+      "ru": "Реликвия Громилы",
+      "en": "Brute relic"
+    },
+    {
+      "id": "projects.relic.2",
+      "ru": "Реликвия Стража",
+      "en": "Guardian relic"
+    },
+    {
+      "id": "projects.relic.3",
+      "ru": "Реликвия Королевы",
+      "en": "Queen relic"
+    },
+    {
+      "id": "projects.relic.4",
+      "ru": "Реликвия Снайпера",
+      "en": "Sniper relic"
+    },
+    {
+      "id": "projects.relic.description0",
+      "ru": "Трофеи открываются за победы над боссами. Кнопка ниже выбирает одну из полученных реликвий; эффекты действуют со следующего забега.",
+      "en": "Boss victories unlock trophies. The button below cycles through collected relics; effects apply from the next run."
+    },
+    {
+      "id": "projects.relic.description1",
+      "ru": "Броня +6% × сила реликвии; скорость −5%. Одна реликвия на забег.",
+      "en": "Armor +6% × relic power; movement speed −5%. One relic per run."
+    },
+    {
+      "id": "projects.relic.description2",
+      "ru": "Регенерация +0,5 HP/с × сила; получаемый опыт −5%.",
+      "en": "Regeneration +0.5 HP/s × power; XP gain −5%."
+    },
+    {
+      "id": "projects.relic.description3",
+      "ru": "Урон дронов +20% × сила; максимальные HP −10%.",
+      "en": "Drone damage +20% × power; maximum HP −10%."
+    },
+    {
+      "id": "projects.relic.description4",
+      "ru": "Шанс крита +8% × сила; темп стрельбы −5%.",
+      "en": "Critical chance +8% × power; fire rate −5%."
+    },
+    {
+      "id": "projects.mastery",
+      "ru": "Мастерство стартового оружия: ",
+      "en": "Starting weapon mastery: "
+    },
+    {
+      "id": "projects.mastery.help",
+      "ru": "Убийства стартовым оружием сохраняются между забегами. Каждый доступный ранг мастерства даёт +5% урона этому оружию.",
+      "en": "Starting weapon kills persist across runs. Each available mastery rank grants +5% damage to that weapon."
+    },
+    {
+      "id": "projects.signal.found",
+      "ru": "Сканер обнаружил тайник поблизости",
+      "en": "Scanner detected a nearby cache"
+    },
+    {
+      "id": "projects.signal.distance",
+      "ru": "Тайник: ",
+      "en": "Cache: "
+    },
+    {
+      "id": "projects.signal.collected",
+      "ru": "Тайник открыт · ",
+      "en": "Cache opened · "
+    },
+    {
+      "id": "projects.mastery.bonus",
+      "ru": "Каждый ранг: +5% урона",
+      "en": "Each rank: +5% damage"
+    },
+    {
+      "id": "workshop.layout.center",
+      "ru": "ЦЕНТР",
+      "en": "CENTER"
+    },
+    {
+      "id": "tuning.heading",
+      "ru": "УСИЛЕНИЕ ОРУЖИЯ",
+      "en": "WEAPON ENHANCEMENT"
+    },
+    {
+      "id": "tuning.level.short",
+      "ru": "Ур. ",
+      "en": "Lv. "
+    },
+    {
+      "id": "tuning.damage",
+      "ru": "Базовый урон: ",
+      "en": "Base damage: "
+    },
+    {
+      "id": "tuning.permanent",
+      "ru": "Постоянный бонус только этому оружию",
+      "en": "Permanent bonus for this weapon only"
+    },
+    {
+      "id": "tuning.unlock.first",
+      "ru": "Сначала откройте оружие",
+      "en": "Unlock this weapon first"
+    },
+    {
+      "id": "tuning.branch.next",
+      "ru": "Следующий ранг: ",
+      "en": "Next rank: "
+    },
+    {
+      "id": "tuning.branch.current",
+      "ru": "Эффект: ",
+      "en": "Effect: "
+    },
+    {
+      "id": "tuning.branch.locked",
+      "ru": "Ветки этого оружия пока закрыты. Усиление базового урона доступно отдельно.",
+      "en": "Branches for this weapon are currently locked. Base damage enhancement is available separately."
+    },
+    {
+      "id": "tuning.branch.equip",
+      "ru": "ПРИМЕНИТЬ ВЕТКУ",
+      "en": "EQUIP BRANCH"
+    }
+  ]
+}

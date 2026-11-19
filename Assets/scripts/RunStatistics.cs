@@ -20,6 +20,34 @@ public class RunStatistics : MonoBehaviour
     private PlayerHealth health;
     private WaveManager waves;
     private float nextRefresh;
+    public RunReport Report { get; private set; } = new RunReport();
+    private RunBossReport activeBoss;
+    private float bossStarted;
+
+    public void RecordIncoming(int amount, HeroDamageCause cause)
+    {
+        if (!started || finished || amount <= 0) return;
+        var entry = Report.incoming.Find(hit => hit.cause == cause);
+        if (entry == null) { entry = new RunDamageReport { cause = cause }; Report.incoming.Add(entry); }
+        entry.amount += amount;
+    }
+
+    public void BeginBoss(BossKind kind)
+    {
+        if (!started || finished) return;
+        EndBoss(false);
+        activeBoss = new RunBossReport { kind = kind };
+        Report.bosses.Add(activeBoss);
+        bossStarted = GameSession.Instance != null ? GameSession.Instance.Elapsed : Elapsed;
+    }
+
+    public void EndBoss(bool defeated)
+    {
+        if (activeBoss == null) return;
+        activeBoss.seconds = Mathf.Max(0, (GameSession.Instance != null ? GameSession.Instance.Elapsed : Elapsed) - bossStarted);
+        activeBoss.defeated = defeated;
+        activeBoss = null;
+    }
     private void Awake()
     {
         Instance = this;
@@ -36,12 +64,38 @@ public class RunStatistics : MonoBehaviour
         Kills = 0;
         DamageDealt = 0;
         Elapsed = 0f;
+        Report = new RunReport();
+        activeBoss = null;
         started = true;
         finished = false;
         panel.SetActive(false);
     }
 
-    public void EndRun() { finished = true; }
+    public void EndRun()
+    {
+        EndBoss(false);
+        finished = true;
+        panel.SetActive(false);
+        Report.heroes.Clear();
+        Report.endless = GameSession.EndlessMode;
+        Report.rounds = GameSession.EndlessRound;
+        Report.score = GameSession.Instance != null ? GameSession.Instance.EndlessScore : 0;
+        foreach (PlayerHealth hero in CoopMode.Heroes)
+        {
+            if (hero == null || !hero.TryGetComponent(out AutoShoter weapon) || !hero.TryGetComponent(out PlayerProgression progress)) continue;
+            var build = new RunHeroReport { weapon = weapon.startWeaponIndex, evolved = weapon.Evolved };
+            build.branch = WeaponElements.Equipped(build.weapon);
+            build.branchRank = WeaponElements.Rank(build.weapon, build.branch);
+            var seen = new System.Collections.Generic.HashSet<string>();
+            foreach (var entry in RunReport.Definitions(progress))
+            {
+                int rank = progress.Rank(entry.id);
+                if (rank > 0 && seen.Add(entry.id)) build.upgrades.Add(new RunUpgradeReport { id = entry.id, rank = rank });
+            }
+            Report.heroes.Add(build);
+        }
+        Report.incoming.Sort((a, b) => b.amount.CompareTo(a.amount));
+    }
 
     public void RecordDamage(int amount)
     {
@@ -50,12 +104,16 @@ public class RunStatistics : MonoBehaviour
 
     public void RecordKill()
     {
-        if (started && !finished) Kills++;
+        if (started && !finished)
+        {
+            Kills++;
+            WorkshopProjects.RecordKill(GameSession.Instance != null ? GameSession.Instance.SelectedWeapon : -1);
+        }
     }
 
     private void Update()
     {
-        if (!started) return;
+        if (!started || finished) return;
         if (!finished) Elapsed = GameSession.Instance != null ? GameSession.Instance.Elapsed : Elapsed + Time.deltaTime;
         // Do not cover level-up choices. Tab never changes the game's time scale.
         if (!finished && Time.timeScale <= 0f)
@@ -77,42 +135,42 @@ public class RunStatistics : MonoBehaviour
     {
         int seconds = Mathf.FloorToInt(Elapsed);
         StringBuilder text = new StringBuilder(600);
-        text.Append("Время выживания     ").Append(seconds / 60).Append(':')
+        text.Append(GameText.Source("runstatistics.281")).Append(seconds / 60).Append(':')
             .Append((seconds % 60).ToString("00"));
-        text.Append("\nУбийства     ").Append(Kills);
-        text.Append("\nНанесённый урон     ").Append(DamageDealt);
-        if (waves != null) text.Append("\nВолна     ").Append(waves.wave);
-        if (progression != null) text.Append("\nУровень героя     ").Append(progression.Level);
-        if (progression != null) text.Append("\nРадиус притяжения     ")
-            .Append(progression.AttractionRadius.ToString("0.##")).Append(" м  (×")
+        text.Append(GameText.Source("runstatistics.282")).Append(Kills);
+        text.Append(GameText.Source("runstatistics.283")).Append(DamageDealt);
+        if (waves != null) text.Append(GameText.Source("runstatistics.284")).Append(waves.wave);
+        if (progression != null) text.Append(GameText.Source("runstatistics.285")).Append(progression.Level);
+        if (progression != null) text.Append(GameText.Source("runstatistics.286"))
+            .Append(progression.AttractionRadius.ToString("0.##")).Append(GameText.Source("runstatistics.287"))
             .Append(progression.PickupRadiusMultiplier.ToString("0.###")).Append(')');
-        if (health != null) text.Append("\nЗдоровье     ").Append(health.CurrentHP).Append(" / ").Append(health.maxHP);
-        if (movement != null) text.Append("\nСкорость движения     ")
-            .Append((movement.speed * movement.SpeedMultiplier).ToString("0.##")).Append(" м/с  (×")
+        if (health != null) text.Append(GameText.Source("runstatistics.288")).Append(health.CurrentHP).Append(" / ").Append(health.maxHP);
+        if (movement != null) text.Append(GameText.Source("runstatistics.289"))
+            .Append(movement.EffectiveSpeed.ToString("0.##")).Append(GameText.Source("runstatistics.290"))
             .Append(movement.SpeedMultiplier.ToString("0.###")).Append(')');
         if (shooter != null && shooter.baseWeapon != null)
         {
             WeaponData weapon = shooter.baseWeapon;
-            text.Append("\n\n<color=#65D8CA>ОРУЖИЕ: ").Append(weapon.weaponName).Append("</color>");
+            text.Append(GameText.Source("runstatistics.291")).Append(WeaponSelectScreen.Title(weapon, shooter.startWeaponIndex)).Append("</color>");
             float damageMultiplier = progression != null ? progression.DamageMultiplier : 1f;
-            text.Append("\nУрон одной пули     ").Append(shooter.ExactDamage.ToString("0.##"))
+            text.Append(GameText.Source("runstatistics.292")).Append(shooter.ExactDamage.ToString("0.##"))
                 .Append("  (×").Append(damageMultiplier.ToString("0.###")).Append(')');
             float attackMultiplier = progression != null ? progression.AttackSpeedMultiplier : 1f;
-            text.Append("\nВыстрелов в секунду     ")
+            text.Append(GameText.Source("runstatistics.293"))
                 .Append((1f / Mathf.Max(0.03f, shooter.CurrentFireInterval)).ToString("0.###"))
                 .Append("  (×").Append(attackMultiplier.ToString("0.###")).Append(')');
-            text.Append("\nПуль за выстрел     ").Append(shooter.CurrentPelletCount);
-            text.Append("\nДальность поиска цели     ").Append(shooter.range.ToString("0.#")).Append(" м");
-            text.Append("\nСкорость пули     ").Append(weapon.bulletSpeed.ToString("0.#")).Append(" м/с");
-            text.Append("\nРазброс     ").Append(shooter.CurrentSpread.ToString("0.#")).Append('°');
+            text.Append(GameText.Source("runstatistics.294")).Append(shooter.CurrentPelletCount);
+            text.Append(GameText.Source("runstatistics.295")).Append(shooter.range.ToString("0.#")).Append(GameText.Source("arenaevents.040"));
+            text.Append(GameText.Source("runstatistics.296")).Append(weapon.bulletSpeed.ToString("0.#")).Append(GameText.Source("runstatistics.297"));
+            text.Append(GameText.Source("runstatistics.298")).Append(shooter.CurrentSpread.ToString("0.#")).Append('°');
         }
         body.text = text.ToString();
-        hint.text = finished ? "Забег завершён  •  Tab — закрыть" : "Бой продолжается  •  Tab — закрыть";
+        hint.text = finished ? GameText.Source("runstatistics.299") : GameText.Source("runstatistics.300");
     }
 
     private Text Label(Transform parent, string name, Vector2 min, Vector2 max, int size, Color color)
     {
-        Text label = new GameObject(name, typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+        Text label = new GameObject(name, typeof(RectTransform), typeof(LocalizedUiText)).GetComponent<Text>();
         label.transform.SetParent(parent, false);
         label.rectTransform.anchorMin = min;
         label.rectTransform.anchorMax = max;
@@ -147,7 +205,7 @@ public class RunStatistics : MonoBehaviour
         panel.GetComponent<Image>().raycastTarget = false;
         Text title = Label(panel.transform, "Title", new Vector2(0.06f, 0.87f), new Vector2(0.94f, 0.98f),
             30, new Color(0.4f, 0.9f, 0.83f));
-        title.text = "СТАТИСТИКА ЗАБЕГА";
+        title.text = GameText.Source("runstatistics.301");
         title.alignment = TextAnchor.MiddleLeft;
         body = Label(panel.transform, "Stats", new Vector2(0.06f, 0.1f), new Vector2(0.94f, 0.86f), 22, Color.white);
         body.alignment = TextAnchor.UpperLeft;

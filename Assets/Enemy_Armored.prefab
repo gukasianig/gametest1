@@ -144,7 +144,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hpText: {fileID: 0}
   maxHealth: 180
-  experienceReward: 16
+  experienceReward: 20
   isDead: 0
   DamageTakenFactor: 1
 --- !u!54 &-7290393306951870467

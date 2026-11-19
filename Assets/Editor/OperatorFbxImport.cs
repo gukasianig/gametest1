@@ -13,7 +13,7 @@ public static class OperatorFbxImport
 {
     private const string Folder = "Assets/Art/Characters/OperatorBlender";
     internal const string Path = Folder + "/Operator.fbx";
-    private static readonly string[] ClipNames = { "Idle", "Run", "Dash", "Throw", "Hit", "Death" };
+    private static readonly string[] ClipNames = { "Idle", "Run", "Dash", "Throw", "Hit", "Death", "RunBack", "StrafeLeft", "StrafeRight", "TurnLeft", "TurnRight" };
 
     public static void RunBatch()
     {
@@ -39,6 +39,8 @@ public static class OperatorFbxImport
         importer.bakeAxisConversion = true;
         importer.importCameras = false;
         importer.importLights = false;
+        importer.animationRotationError = .10f;
+        importer.animationPositionError = .08f;
         importer.SaveAndReimport();
 
         ModelImporterClipAnimation[] clips = importer.defaultClipAnimations;
@@ -47,11 +49,11 @@ public static class OperatorFbxImport
             string name = clip.takeName.Split('|').Last();
             Require(ClipNames.Contains(name), "Unexpected animation stack: " + clip.takeName);
             clip.name = name;
-            bool loop = name == "Idle" || name == "Run";
+            bool loop = name == "Idle" || name == "Run" || name == "RunBack" || name.StartsWith("Strafe") || name.StartsWith("Turn");
             clip.loopTime = loop;
             clip.wrapMode = loop ? WrapMode.Loop : WrapMode.ClampForever;
         }
-        Require(clips.Length == ClipNames.Length, "Expected six FBX animation takes, got " + clips.Length);
+        Require(clips.Length == ClipNames.Length, "Expected eleven FBX animation takes, got " + clips.Length);
         importer.clipAnimations = ClipNames.Select(name => clips.Single(clip => clip.name == name)).ToArray();
 
         RemapMaterial(importer, "Graphite Suit", "282C38", .07f, .38f);
@@ -168,6 +170,19 @@ public static class OperatorFbxImport
                 Require(movement > (name == "Idle" ? .005f : .12f), $"Clip does not deform the skin: {name}, {movement:F3} m");
                 if (name == "Throw") Require(Vector3.Distance(grenade.position, throwStart) > .35f, "Grenade hand did not travel during throw");
                 results.Add($"{name} {clip.length:F3}s / {movement:F3}m movement");
+            }
+            // During planted stance, the foot must travel against the character's movement.
+            Transform stanceFoot = Find(instance, "FootR");
+            foreach (string name in new[] { "Run", "RunBack", "StrafeLeft", "StrafeRight" })
+            {
+                AnimationClip clip = animation.GetClip(name);
+                clip.SampleAnimation(instance, clip.length * .05f);
+                Vector3 start = stanceFoot.position;
+                clip.SampleAnimation(instance, clip.length * .24f);
+                Vector3 delta = stanceFoot.position - start;
+                float travel = name == "Run" ? -delta.z : name == "RunBack" ? delta.z : name == "StrafeLeft" ? delta.x : -delta.x;
+                Require(travel > .05f, $"Planted foot moves with travel in {name}: {delta}");
+                results.Add($"{name}: planted foot opposition {travel:F3}m");
             }
             long triangles = Enumerable.Range(0, skin.sharedMesh.subMeshCount).Sum(i => (long)skin.sharedMesh.GetIndexCount(i)) / 3;
             string report = $"OPERATOR FBX PASS\nY={minY:F4}..{maxY:F4}m, {skin.bones.Length} bones, {triangles} triangles, {skin.sharedMaterials.Length} URP materials\n"

@@ -6,9 +6,18 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayMovement : MonoBehaviour
 {
+    // Бонусы своего героя (кооператив: у каждого свой набор, CombatStats.Of).
+    private HeroStats heroStats;
+    private HeroStats Stats => heroStats ?? (heroStats = CombatStats.Of(this));
 
     public float speed = 5f;
+    // 0 — игрок 1, 1 — игрок 2 в кооперативе (CoopMode).
+    public int playerIndex;
     public float SpeedMultiplier { get; set; } = 1f;
+    private HeroAbilities abilities;
+    public float EffectiveSpeed => speed * SpeedMultiplier * ((abilities != null ? abilities : abilities = GetComponent<HeroAbilities>()) != null ? abilities.SpeedFactor : 1f);
+    private bool recoveringDash;
+    private Vector3 motorVelocity;
     //public Transform cameraTransform;
     public float rotationSpeed = 10f;
     public Transform cameraTransform;
@@ -23,6 +32,7 @@ public class PlayMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.interpolation = RigidbodyInterpolation.Interpolate;
+        ownHealth = GetComponent<PlayerHealth>();
         if (GroundHeight.HasTerrain)
         {
             // Рельеф: Y больше не заморожена, высоту каждый шаг задаём по земле (капсула сама на склон не заберётся).
@@ -49,12 +59,19 @@ public class PlayMovement : MonoBehaviour
 
     void Update()
     {
-        movementInput = CheckInput.HasValue ? CheckInput.Value : new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+        bool coop = CoopMode.Active;
+        movementInput = CheckInput.HasValue ? CheckInput.Value
+            : coop ? CoopMode.ReadMove(playerIndex) : new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
         bool playing = GameSession.Instance != null && GameSession.Instance.State == GameRunState.Playing;
-        if (playing && Time.timeScale > 0f && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.LeftShift)))
+        bool dashKey = coop ? CoopMode.DashPressed(playerIndex) : Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.LeftShift);
+        if (playing && Time.timeScale > 0f && dashKey && !Downed)
             dashRequested = true;
         UpdateDashLabel(playing);
     }
+
+    private PlayerHealth ownHealth;
+    // Поверженный в кооперативе герой лежит, пока напарник его не поднимет.
+    private bool Downed => ownHealth != null && ownHealth.IsDead && CoopMode.Active;
 
     // Public so checks can trigger a dash without a keyboard.
     public void RequestDash() { dashRequested = true; }
@@ -81,7 +98,7 @@ public class PlayMovement : MonoBehaviour
         }
         dashCanvas.enabled = playing;
         float left = DashCooldownRemaining;
-        dashLabel.text = left <= 0f ? "Рывок: готов (Пробел)" : "Рывок: " + left.ToString("0.0") + " с";
+        dashLabel.text = left <= 0f ? GameText.Source("playmovement.192") : GameText.Source("playmovement.193") + left.ToString("0.0") + GameText.Source("arenaevents.006");
         dashLabel.color = left <= 0f ? GameUi.Accent : new Color(0.6f, 0.66f, 0.72f);
     }
 
@@ -122,6 +139,7 @@ public class PlayMovement : MonoBehaviour
         right.Normalize();
 
         Vector3 move = Vector3.ClampMagnitude(forward * z + right * x, 1f);
+        if (Downed) { move = Vector3.zero; dashRequested = false; dashTimeLeft = 0f; }
 
         if (dashRequested)
         {
@@ -131,17 +149,32 @@ public class PlayMovement : MonoBehaviour
                 dashDirection = move.sqrMagnitude > 0.01f ? move.normalized : transform.forward;
                 dashDirection.y = 0f;
                 dashTimeLeft = Mathf.Max(0.05f, dashDuration);
-                nextDash = Time.time + Mathf.Max(1f, dashCooldown - CombatStats.DashCooldownReduction);
+                nextDash = Time.time + Mathf.Max(1f, dashCooldown - Stats.DashCooldownReduction);
                 PlayerHealth health = GetComponent<PlayerHealth>();
                 if (health != null) health.GrantInvulnerability(dashInvulnerability);
             }
         }
-        Vector3 velocity = move * speed * SpeedMultiplier;
+        Vector3 velocity = move * EffectiveSpeed;
         if (dashTimeLeft > 0f)
         {
+            motorVelocity = Vector3.zero;
+            recoveringDash = true;
             dashTimeLeft -= Time.fixedDeltaTime;
-            velocity = dashDirection * ((dashDistance + CombatStats.DashDistanceBonus) / Mathf.Max(0.05f, dashDuration));
+            velocity = dashDirection * ((dashDistance + Stats.DashDistanceBonus) / Mathf.Max(0.05f, dashDuration));
         }
+        else if (recoveringDash)
+        {
+            recoveringDash = false;
+            motorVelocity = velocity;
+        }
+        else
+        {
+            // Keep intent separate from the solver's velocity: ground friction can erase a small first step.
+            motorVelocity = Vector3.MoveTowards(motorVelocity, velocity, (move.sqrMagnitude > .01f ? 45f : 65f) * Time.fixedDeltaTime);
+            velocity = motorVelocity;
+        }
+        if (Downed) { motorVelocity = Vector3.zero; velocity = Vector3.zero; }
+        if (CoopMode.Active) velocity = CoopMode.Leash(this, rb.position, velocity);
         if (ArenaLayout.Instance != null)
         {
             Vector3 desired = rb.position + velocity * Time.fixedDeltaTime;
@@ -161,7 +194,7 @@ public class PlayMovement : MonoBehaviour
         //transform.Translate(move * speed * Time.deltaTime, Space.World);
 
             Vector3 facing = aimDirection.sqrMagnitude > 0.001f ? aimDirection : move;
-            if (facing.sqrMagnitude > 0.001f)
+            if (facing.sqrMagnitude > 0.001f && !Downed)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(facing);
                 rb.MoveRotation(Quaternion.Slerp(

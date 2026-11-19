@@ -1,0 +1,13 @@
+{
+  "meshParts": 12,
+  "triangles": 1398,
+  "boundsMetersBlenderXYZ": [
+    3.5667,
+    3.8275,
+    2.1503
+  ],
+  "markers": [],
+  "fbxRoundTrip": "PASS",
+  "closedMeshParts": 12,
+  "degenerateTriangles": 0
+}

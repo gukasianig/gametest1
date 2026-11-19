@@ -33,7 +33,19 @@ public static class UiArtwork
     }
 
     // Atlas slots 9+ hold the weapon icons, so upgrades added later draw a vector icon instead.
-    public static Sprite Upgrade(UpgradeEffect effect) { return (int)effect <= (int)UpgradeEffect.OrbitCount ? Icon((int)effect) : null; }
+    // Сначала отдельный файл Resources/UI/Upgrades/<UpgradeEffect>.png (см. docs/CODEX_UPGRADE_ICONS.md), затем атлас, затем вектор.
+    private static readonly Dictionary<UpgradeEffect, Sprite> upgradeFiles = new Dictionary<UpgradeEffect, Sprite>();
+    public static Sprite Upgrade(UpgradeEffect effect)
+    {
+        if (!upgradeFiles.TryGetValue(effect, out Sprite file))
+        {
+            Texture2D tex = Resources.Load<Texture2D>("UI/Upgrades/" + effect);
+            file = tex == null ? null : Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+            upgradeFiles[effect] = file;
+        }
+        if (file != null) return file;
+        return (int)effect <= (int)UpgradeEffect.OrbitCount ? Icon((int)effect) : null;
+    }
     public static Sprite Weapon(int index) { return Icon(9 + Mathf.Clamp(index, 0, 3)); }
     public static Sprite Heart(bool critical) { return Icon(critical ? 7 : 13); }
 

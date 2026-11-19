@@ -11,8 +11,13 @@ public class Bullet : MonoBehaviour, IProjectile
     private Rigidbody rb;
     private Transform owner;
     public WeaponElementAttack elementAttack;
+    // Бонусы героя, выпустившего пулю (взрывные пули); null — игрок 1.
+    public HeroStats stats;
+    private HeroStats Stats => stats ?? CombatStats.Primary;
     // Extra enemies this bullet may pass through (from the Pierce upgrade).
     public int pierce;
+    // Револьвер, ранг 3: последний выстрел барабана всегда критует.
+    public bool forceCrit;
     // How many times this bullet may jump to another enemy after a hit (Ricochet upgrade); each jump keeps 80% damage.
     public int ricochet;
     private static readonly System.Collections.Generic.List<Health> ricochetTargets = new System.Collections.Generic.List<Health>();
@@ -20,8 +25,8 @@ public class Bullet : MonoBehaviour, IProjectile
     // Explosive bullets (upgrade): a small blast around the hit that damages the other enemies nearby.
     private void Explode(Health hit)
     {
-        float radius = CombatStats.ExplosionRadius;
-        int blast = Mathf.Max(1, Mathf.RoundToInt(damage * CombatStats.ExplosionDamageShare));
+        float radius = Stats.ExplosionRadius;
+        int blast = Mathf.Max(1, Mathf.RoundToInt(damage * HeroStats.ExplosionDamageShare));
         WeaponTargets.Collect(ricochetTargets);
         foreach (Health candidate in ricochetTargets)
         {
@@ -140,10 +145,10 @@ public class Bullet : MonoBehaviour, IProjectile
         Health health = other.GetComponentInParent<Health>();
         // One enemy with several colliders must not take the same bullet twice.
         if (health != null && !pierced.Add(health)) return;
-        if (elementAttack != null && health != null && health.CompareTag("Enemy")) elementAttack.Hit(health, damage);
+        if (elementAttack != null && health != null && health.CompareTag("Enemy")) elementAttack.Hit(health, damage, forceCrit);
         else dmg.TakeDamage(damage);
         bool enemy = health != null && health.CompareTag("Enemy");
-        if (enemy && CombatStats.ExplosionRadius > 0f) Explode(health);
+        if (enemy && Stats.ExplosionRadius > 0f) Explode(health);
         // Пробивание и рикошет вместе (09.11.2026): раньше пробивание тратилось первым, и если за врагом было пусто,
         // пуля улетала и рикошет не срабатывал (особенно вплотную). Теперь сквозь — только если впереди есть ещё враг,
         // иначе рикошет к ближайшему; пробивание без цели впереди — последний вариант.

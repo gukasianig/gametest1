@@ -1,4 +1,4 @@
-// 09.11.2026: SampleScene (заводская арена) удалена; эти пакетные методы больше не работают — оставлены для истории.
+// Пакетные методы работают на GreenArenaPlay (с 18.11.2026); бывшая SampleScene удалена.
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -84,7 +84,7 @@ public static class ArenaPropsEditor
     // Batch: -executeMethod ArenaPropsEditor.BakeBatch -quit
     public static void BakeBatch()
     {
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         string result = Bake();
         EditorSceneManager.SaveOpenScenes();
         Directory.CreateDirectory("Logs");

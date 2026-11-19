@@ -7,6 +7,9 @@ using UnityEngine.UI;
 [RequireComponent(typeof(PlayerHealth))]
 public class CombatHud : MonoBehaviour
 {
+    // Бонусы своего героя (кооператив: у каждого свой набор, CombatStats.Of).
+    private HeroStats heroStats;
+    private HeroStats Stats => heroStats ?? (heroStats = CombatStats.Of(this));
     public static CombatHud Instance { get; private set; }
 
     private static readonly Color HpHigh = new Color(0.24f, 0.86f, 0.36f);
@@ -154,9 +157,9 @@ public class CombatHud : MonoBehaviour
         // Тряска панели при ударе.
         panel.anchoredPosition = panelBase + (hitFlash > 0.5f ? Random.insideUnitCircle * 4f * hitFlash : Vector2.zero);
 
-        float armor = Mathf.Min(0.6f, CombatStats.Armor);
+        float armor = Mathf.Min(0.6f, Stats.Armor);
         armorFlash = Mathf.Max(0f, armorFlash - dt * 3f);
-        armorText.text = armor > 0f ? "Броня " + Mathf.RoundToInt(armor * 100f) + "%" : "Брони нет";
+        armorText.text = armor > 0f ? GameText.Source("combathud.100") + Mathf.RoundToInt(armor * 100f) + "%" : GameText.Source("combathud.101");
         Color armorNow = armor > 0f ? armorTint : Muted;
         armorText.color = Color.Lerp(armorNow, Color.white, armorFlash);
         if (!art) armorIcon.color = armorText.color;
@@ -165,9 +168,9 @@ public class CombatHud : MonoBehaviour
         if (movement != null)
         {
             float left = movement.DashCooldownRemaining;
-            float cooldown = Mathf.Max(1f, movement.dashCooldown - CombatStats.DashCooldownReduction);
+            float cooldown = Mathf.Max(1f, movement.dashCooldown - Stats.DashCooldownReduction);
             SetWidth(dashFill, left <= 0f ? 1f : 1f - left / cooldown);
-            dashText.text = left <= 0f ? "Рывок  [Пробел]" : "Рывок  " + left.ToString("0.0") + " с";
+            dashText.text = left <= 0f ? GameText.Source("combathud.102") : GameText.Source("combathud.103") + left.ToString("0.0") + GameText.Source("arenaevents.006");
             dashText.color = left <= 0f ? Color.white : Muted;
         }
     }

@@ -68,7 +68,7 @@ public class SpecialWeapons : MonoBehaviour
 
     public int SupportDamage(float multiplier)
     {
-        return Mathf.Max(1, Mathf.RoundToInt(shooter.RollDamage() * multiplier));
+        return Mathf.Max(1, Mathf.RoundToInt(shooter.RollDamage(false) * multiplier));
     }
 
     private void SyncDrones()
@@ -100,6 +100,8 @@ public class SpecialWeapons : MonoBehaviour
     private void Update()
     {
         if (flame != null && flame.Emitting && Time.time > flameUntil) flame.Stop();
+        // Пока горит, сопло следует за дулом каждый кадр (между выстрелами герой двигается и поворачивается).
+        if (flame != null && flame.Emitting) flame.Aim(FlameNozzle(Origin(), flameDirection), flameDirection);
         // Огнемёт бьёт каждые ~0,15 с: звук - непрерывная петля, пока горит пламя, а не новый звук на каждый тик.
         if (flame != null && flame.Emitting && Running) GameAudio.Hold(SfxLoop.Flame, 0.6f);
     }
@@ -175,28 +177,40 @@ public class SpecialWeapons : MonoBehaviour
         }
         PlayFireSound();
         Vector3 origin = Origin();
+        // Эволюция спецоружия (11.11.2026, AutoShoter.Evolutions): золотые искры у ствола, веер снарядов, сильнее луч/разряд/огонь.
+        bool evolved = !support && shooter.Evolved;
+        if (evolved) EnemyFx.Puff(origin, EvolvedGold, 0.12f, 0.25f, Vector3.up * 0.6f);
         switch (weapon.kind)
         {
-            case WeaponKind.Rail: FireRail(origin, damage, target); break;
+            case WeaponKind.Rail: FireRail(origin, damage, target, evolved); break;
             case WeaponKind.Boomerang:
-                if (CountAlive<WeaponSaw>() < Mathf.Max(1, weapon.maxActive))
-                    WeaponSaw.Create(this, origin, FlatDirection(origin, target.position), damage,
-                        Mathf.Min(weapon.range, WeaponTargets.Flat(origin, target.position) + 3f));
+                // Двойная пила: две пилы веером, предел одновременно летящих тоже вдвое.
+                if (CountAlive<WeaponSaw>() < Mathf.Max(1, weapon.maxActive) * (evolved ? 2 : 1))
+                {
+                    float reach = Mathf.Min(weapon.range, WeaponTargets.Flat(origin, target.position) + 3f);
+                    Vector3 aim = FlatDirection(origin, target.position);
+                    if (!evolved) WeaponSaw.Create(this, origin, aim, damage, reach);
+                    else foreach (float turn in new[] { -14f, 14f }) WeaponSaw.Create(this, origin, Quaternion.Euler(0f, turn, 0f) * aim, damage, reach);
+                }
                 break;
             case WeaponKind.Mines:
                 if (CountAlive<WeaponMine>() < MineLimit) WeaponMine.Create(this, transform.position, damage);
                 break;
             case WeaponKind.Rocket:
-                WeaponProjectile.CreateRocket(this, origin, FlatDirection(origin, target.position), damage);
+                // Залп: три ракеты веером.
+                foreach (float turn in evolved ? new[] { -12f, 0f, 12f } : new[] { 0f })
+                    WeaponProjectile.CreateRocket(this, origin, Quaternion.Euler(0f, turn, 0f) * FlatDirection(origin, target.position), damage);
                 // Отскок ракетницы, дым у жерла и из сопла, боеголовка в жерле возвращается к середине перезарядки.
-                WeaponFireAnimation fx = ModelSkins.CurrentWeaponFx;
+                WeaponFireAnimation fx = shooter != null ? shooter.WeaponFx : ModelSkins.CurrentWeaponFx;
                 if (fx != null) fx.Play(1f, Mathf.Clamp(weapon.fireRate * 0.5f, 0.15f, 0.8f));
                 break;
             case WeaponKind.Ice:
-                WeaponProjectile.CreateIce(this, origin, FlatDirection(origin, target.position), damage);
+                // Абсолютный ноль: три осколка веером.
+                foreach (float turn in evolved ? new[] { -10f, 0f, 10f } : new[] { 0f })
+                    WeaponProjectile.CreateIce(this, origin, Quaternion.Euler(0f, turn, 0f) * FlatDirection(origin, target.position), damage);
                 break;
-            case WeaponKind.Arc: FireArc(origin, damage, target); break;
-            case WeaponKind.Flame: FireFlame(origin, damage, target); break;
+            case WeaponKind.Arc: FireArc(origin, damage, target, evolved); break;
+            case WeaponKind.Flame: FireFlame(origin, damage, target, evolved); break;
             case WeaponKind.Turret:
                 if (CountAlive<WeaponTurret>() < TurretLimit)
                 {
@@ -224,8 +238,11 @@ public class SpecialWeapons : MonoBehaviour
         }
     }
 
-    private void FireRail(Vector3 origin, int damage, Transform target)
+    private static readonly Color EvolvedGold = new Color(1f, 0.78f, 0.25f);
+
+    private void FireRail(Vector3 origin, int damage, Transform target, bool evolved = false)
     {
+        float width = weapon.beamWidth * (evolved ? 2f : 1f);   // Гаусс-пушка: луч вдвое шире
         Vector3 direction = FlatDirection(origin, target.position);
         float length = Mathf.Max(2f, weapon.range);
         float clipped = length;
@@ -235,29 +252,33 @@ public class SpecialWeapons : MonoBehaviour
         Vector3 end = origin + direction * clipped;
         WeaponTargets.Collect(scratch);
         foreach (Health health in scratch)
-            if (SegmentDistance(origin, end, health.transform.position) <= weapon.beamWidth + WeaponTargets.BodyRadius(health))
+            if (SegmentDistance(origin, end, health.transform.position) <= width + WeaponTargets.BodyRadius(health))
                 Hit(health, damage);
-        BeamFlash.Create(origin, end, new Color(0.55f, 0.9f, 1f), 0.35f, 0.15f);
+        BeamFlash.Create(origin, end, new Color(0.55f, 0.9f, 1f), 0.35f * (evolved ? 1.8f : 1f), 0.15f);
+        if (evolved) BeamFlash.Create(origin, end, EvolvedGold, 0.18f, 0.22f);
     }
 
-    private void FireArc(Vector3 origin, int damage, Transform target)
+    private void FireArc(Vector3 origin, int damage, Transform target, bool evolved = false)
     {
         var hit = new List<Health>();
         Health current = target.GetComponent<Health>();
         Vector3 from = origin;
         float strength = damage;
-        for (int jump = 0; jump <= weapon.chainJumps && current != null; jump++)
+        // Буря: ещё 3 прыжка, урон за прыжок слабеет медленнее, разряд золотистый.
+        int jumps = weapon.chainJumps + (evolved ? 3 : 0);
+        float falloff = evolved ? Mathf.Max(weapon.chainFalloff, 0.85f) : weapon.chainFalloff;
+        for (int jump = 0; jump <= jumps && current != null; jump++)
         {
             Vector3 point = current.transform.position + Vector3.up * 0.2f;
             point.y = 0.9f;
             Hit(current, Mathf.Max(1, Mathf.RoundToInt(strength)));
             hit.Add(current);
-            Color electric = new Color(0.35f, 0.6f, 1f);
+            Color electric = evolved ? new Color(1f, 0.85f, 0.45f) : new Color(0.35f, 0.6f, 1f);
             LightningBolt.Create(from, point, electric, jump == 0 ? 0.42f : 0.34f, jump == 0 ? 0.55f : 0.48f, jump == 0 ? 3 : 2);
             if (jump == 0) LightningBolt.Impact(from, electric, 0.45f, false);   // вспышка у ствола
             LightningBolt.Impact(point, electric, 1f - 0.12f * jump);
             from = point;
-            strength *= weapon.chainFalloff;
+            strength *= falloff;
             current = NearestUnhit(current.transform.position, hit, weapon.chainRadius);
         }
     }
@@ -276,10 +297,21 @@ public class SpecialWeapons : MonoBehaviour
         return best;
     }
 
-    private void FireFlame(Vector3 origin, int damage, Transform target)
+    private Vector3 flameDirection = Vector3.forward;
+
+    // Сопло огнемёта: дуло модели в руке (если есть), иначе точка перед героем.
+    private Vector3 FlameNozzle(Vector3 fallback, Vector3 direction)
+    {
+        if (shooter != null ? shooter.TryGetMuzzle(out Vector3 muzzle) : ModelSkins.TryGetMuzzle(out muzzle)) return muzzle;
+        return fallback + direction * 0.8f;
+    }
+
+    private void FireFlame(Vector3 origin, int damage, Transform target, bool evolved = false)
     {
         Vector3 direction = FlatDirection(origin, target.position);
-        float half = weapon.coneAngle * 0.5f;
+        // Напалм: конус шире на 20°, дальность +25%, горение вдвое сильнее.
+        float half = weapon.coneAngle * 0.5f + (evolved ? 10f : 0f);
+        float reach = weapon.range * (evolved ? 1.25f : 1f);
         WeaponTargets.Collect(scratch);
         foreach (Health health in scratch)
         {
@@ -287,19 +319,23 @@ public class SpecialWeapons : MonoBehaviour
             offset.y = 0f;
             float distance = offset.magnitude;
             float radius = WeaponTargets.BodyRadius(health);
-            if (distance > weapon.range + radius) continue;
+            if (distance > reach + radius) continue;
             // Wide bodies count when their edge is inside the cone.
             float slack = distance > 0.01f ? Mathf.Atan2(radius, distance) * Mathf.Rad2Deg : 180f;
             if (distance > 0.8f && Vector3.Angle(direction, offset) > half + slack) continue;
             Health.HitSoundScale = 0.35f;   // тики огня частые - попадания тише
             try { Hit(health, damage); }
             finally { Health.HitSoundScale = 1f; }
-            BurnEffect.Apply(health, weapon.burnPerSecond, weapon.effectDuration);
+            // Горение растёт вместе с уроном героя (раньше было плоским 6/с и отставало от улучшений).
+            float burnScale = Mathf.Max(1f, damage / (float)Mathf.Max(1, weapon.damage));
+            BurnEffect.Apply(health, weapon.burnPerSecond * burnScale * (evolved ? 2f : 1f), weapon.effectDuration);
         }
         // 09.11.2026: вместо растянутой оранжевой сферы — струя огня из частиц (FlameJet) от сопла.
         if (flame == null) flame = FlameJet.Create();
-        if (!Mathf.Approximately(flameRange, weapon.range)) { flameRange = weapon.range; flame.Configure(weapon.range, weapon.coneAngle); }
-        flame.Aim(origin, direction);
+        // Струя Напалма длиннее и шире (перенастройка только при смене значений).
+        if (!Mathf.Approximately(flameRange, reach)) { flameRange = reach; flame.Configure(reach, half * 2f); }
+        flameDirection = direction;
+        flame.Aim(FlameNozzle(origin, direction), direction);   // 10.11.2026: струя идёт от дула модели, а не от центра тела героя
         flameUntil = Time.time + 0.2f;
         IgniteGround(origin, direction, target);
     }
@@ -602,14 +638,23 @@ public class WeaponMine : MonoBehaviour
         mine.damage = damage;
         mine.lifetime = Mathf.Max(2f, owner.Weapon.lifetime);
         mine.body = item.GetComponent<Renderer>();
+        Transform lamp = ItemModelParts.Find(item.transform, "Light");
+        mine.lamp = lamp != null ? lamp.GetComponent<Renderer>() : null;
+        mine.pop = new ItemModelParts.Pop(item.transform);
         owner.Register(item);
     }
+
+    private Renderer lamp;
+    private ItemModelParts.Pop pop;
 
     private void Update()
     {
         if (!SpecialWeapons.Running) return;
         age += Time.deltaTime;
+        pop.Tick(age);
         if (age >= lifetime) { Destroy(gameObject); return; }
+        // Огонёк модели: погашен до взвода, затем мигает (чаще к концу срока).
+        if (lamp != null) lamp.enabled = age >= armTime && Mathf.Repeat(age * (age > lifetime - 2f ? 6f : 2.5f), 1f) < 0.55f;
         if (age < armTime) return;
         WeaponTargets.Collect(buffer);
         foreach (Health health in buffer)
@@ -639,8 +684,17 @@ public class WeaponTurret : MonoBehaviour
         WeaponTurret turret = item.AddComponent<WeaponTurret>();
         turret.owner = owner;
         turret.barrel = barrel.transform;
+        // Модель турели (make_items.py): поворотная голова Head и точка выстрела TurretMuzzle.
+        turret.head = ItemModelParts.Find(item.transform, "Head");
+        turret.muzzle = ItemModelParts.Find(item.transform, "TurretMuzzle");
+        turret.pop = new ItemModelParts.Pop(item.transform);
         owner.Register(item);
     }
+
+    private Transform head, muzzle;
+    private ItemModelParts.Pop pop;
+    private Vector3 aim;
+    private bool aiming;
 
     private void Update()
     {
@@ -648,15 +702,22 @@ public class WeaponTurret : MonoBehaviour
         WeaponData data = owner.Weapon;
         age += Time.deltaTime;
         timer += Time.deltaTime;
+        pop.Tick(age);
+        // Голова плавно доворачивает к последней цели (до 540°/с).
+        if (aiming && head != null && muzzle != null) ItemModelParts.AimYaw(head, muzzle.position, aim, 540f * Time.deltaTime);
         if (age >= Mathf.Max(2f, data.lifetime)) { Destroy(gameObject); return; }
         if (timer < Mathf.Max(0.05f, data.placedFireRate)) return;
         Transform target = WeaponTargets.Pick(transform.position, data.range, TargetRule.Nearest);
         if (target == null) return;
         timer = 0f;
-        Vector3 from = transform.position + Vector3.up * 0.7f;
         Vector3 to = target.position;
         to.y = 0.9f;
+        aim = to;
+        aiming = true;
+        if (head != null && muzzle != null) ItemModelParts.AimYaw(head, muzzle.position, aim, 360f);
+        Vector3 from = muzzle != null ? muzzle.position : transform.position + Vector3.up * 0.7f;
         barrel.rotation = Quaternion.LookRotation(new Vector3(to.x - from.x, 0f, to.z - from.z));
+        if (muzzle != null) EnemyFx.Puff(from, new Color(1f, 0.85f, 0.4f), 0.12f, 0.12f, Vector3.zero);
         GameAudio.Play(Sfx.Zap, 0.35f);
         owner.Hit(target.GetComponent<Health>(), owner.SupportDamage(owner.TurretDamage));
         BeamFlash.Create(from, to, new Color(1f, 0.9f, 0.4f), 0.08f, 0.06f);
@@ -684,26 +745,99 @@ public class WeaponDrone : MonoBehaviour
         drone.owner = owner;
         drone.index = index;
         drone.angle = index * 180f;
+        // Модель дрона (make_items.py): винты RotorL/RotorR вращаются, глаз Eye смотрит на цель.
+        drone.rotors = new[] { ItemModelParts.Find(item.transform, "RotorL"), ItemModelParts.Find(item.transform, "RotorR") };
+        Transform eye = ItemModelParts.Find(item.transform, "Eye");
+        drone.eye = eye != null ? eye.GetComponent<Renderer>() : null;
+        drone.pop = new ItemModelParts.Pop(item.transform);
         owner.Register(item);
     }
+
+    private Transform[] rotors;
+    private Renderer eye;
+    private ItemModelParts.Pop pop;
+    private float age;
+    private Vector3 look;
 
     private void Update()
     {
         if (!SpecialWeapons.Running || owner == null) return;
         WeaponData data = owner.Weapon;
+        age += Time.deltaTime;
+        pop.Tick(age);
         angle += 80f * Time.deltaTime;
         // Drones are spread evenly on the circle, however many there are.
         float radians = (angle + index * 360f / Mathf.Max(1, owner.DroneLimit)) * Mathf.Deg2Rad;
-        transform.position = owner.transform.position + new Vector3(Mathf.Cos(radians), 0f, Mathf.Sin(radians)) * 2.4f + Vector3.up * 2.2f;
+        float bob = Mathf.Sin(age * 3.1f + index) * 0.12f;
+        transform.position = owner.transform.position + new Vector3(Mathf.Cos(radians), 0f, Mathf.Sin(radians)) * 2.4f + Vector3.up * (2.2f + bob);
+        foreach (Transform rotor in rotors)
+            if (rotor != null) rotor.Rotate(Vector3.up, 1500f * Time.deltaTime, Space.World);
+        // Без цели глаз смотрит по ходу облёта, с целью — на неё.
+        Vector3 tangent = new Vector3(-Mathf.Sin(radians), 0f, Mathf.Cos(radians));
+        Vector3 facing = look.sqrMagnitude > 0f ? look : transform.position + tangent;
+        if (eye != null) ItemModelParts.AimYaw(transform, eye.bounds.center, facing, 300f * Time.deltaTime);
         timer += Time.deltaTime;
+        if (timer > 1.5f) look = Vector3.zero;
         if (timer < Mathf.Max(0.05f, data.placedFireRate)) return;
         Transform target = WeaponTargets.Pick(transform.position, data.range, index % 2 == 0 ? TargetRule.Nearest : TargetRule.Strongest);
         if (target == null) return;
         timer = 0f;
         Vector3 to = target.position;
         to.y = 0.9f;
+        look = to;
         GameAudio.Play(Sfx.Zap, 0.3f, 0.12f);
         owner.Hit(target.GetComponent<Health>(), owner.SupportDamage(owner.DroneDamage));
-        BeamFlash.Create(transform.position, to, new Color(0.4f, 1f, 0.9f), 0.07f, 0.06f);
+        // Вместо длинного луча: сгусток летит к цели, у дрона вспышка и отдача, в цели — искры.
+        Color boltColor = new Color(0.4f, 1f, 0.9f);
+        Vector3 dir = (to - transform.position).normalized;
+        Vector3 muzzle = transform.position + dir * 0.45f;
+        DroneBolt.Launch(muzzle, to, boltColor);
+        EnemyFx.LightFlash(muzzle, boltColor, 3f, 2.5f, 0.12f);
+        EnemyFx.Puff(muzzle, boltColor, 0.3f, 0.18f, dir * 1.5f);
+        kick = -dir * 0.35f;
+        flash = 1f;
+    }
+
+    private Vector3 kick;
+    private float flash;
+
+    private void LateUpdate()
+    {
+        if (!SpecialWeapons.Running) return;
+        // Отдача затухает, глаз вспыхивает увеличением в момент выстрела.
+        kick = Vector3.Lerp(kick, Vector3.zero, 1f - Mathf.Exp(-Time.deltaTime * 14f));
+        transform.position += kick;
+        flash = Mathf.MoveTowards(flash, 0f, Time.deltaTime * 6f);
+        if (eye != null) eye.transform.localScale = Vector3.one * (1f + 0.6f * flash);
+    }
+}
+
+// Быстрый светящийся сгусток дрона (только визуально: урон наносится при выстреле).
+public class DroneBolt : MonoBehaviour
+{
+    private Vector3 target;
+    private Color color;
+
+    public static void Launch(Vector3 from, Vector3 to, Color color)
+    {
+        GameObject go = SpecialWeapons.Prim(PrimitiveType.Sphere, "Drone bolt", from, Vector3.one * 0.22f, color);
+        TrailRenderer trail = go.AddComponent<TrailRenderer>();
+        trail.time = 0.12f;
+        trail.widthMultiplier = 0.2f;
+        trail.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
+        trail.sharedMaterial = EnemyFx.Mat(color);
+        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        DroneBolt bolt = go.AddComponent<DroneBolt>();
+        bolt.target = to;
+        bolt.color = color;
+    }
+
+    private void Update()
+    {
+        transform.position = Vector3.MoveTowards(transform.position, target, 45f * Time.deltaTime);
+        if ((transform.position - target).sqrMagnitude > 0.01f) return;
+        EnemyFx.Blobs(target, color, 5, 3f, 0.07f, 0.25f, GroundHeight.At(target));
+        EnemyFx.LightFlash(target, color, 2.5f, 2f, 0.1f);
+        Destroy(gameObject);
     }
 }

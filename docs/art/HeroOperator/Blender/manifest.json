@@ -1,0 +1,27 @@
+{
+  "triangles": 7882,
+  "vertices": 4172,
+  "bones": 16,
+  "materials": 6,
+  "height_m": 2,
+  "sole_z_blender": 0,
+  "forward_blender": "-Y",
+  "sockets": {
+    "WeaponSocket": "HandR",
+    "LeftHandGrip": "HandL",
+    "BackSocket": "Chest"
+  },
+  "clips_seconds": {
+    "Idle": 2.4,
+    "Run": 0.6333333333333333,
+    "Dash": 0.21666666666666667,
+    "Throw": 0.48333333333333334,
+    "Hit": 0.23333333333333334,
+    "Death": 0.75,
+    "RunBack": 0.5666666666666667,
+    "StrafeLeft": 0.5666666666666667,
+    "StrafeRight": 0.5666666666666667,
+    "TurnLeft": 0.7333333333333333,
+    "TurnRight": 0.7333333333333333
+  }
+}

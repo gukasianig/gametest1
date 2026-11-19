@@ -6,12 +6,12 @@ public enum ArenaTheme { Factory = 0, Cave = 1, Glacier = 2 }
 public static class ArenaThemes
 {
     const string Key = "arena_theme";
-    public static readonly string[] Names = { "Завод", "Пещера", "Ледник" };
+    public static readonly string[] Names = { GameText.Source("arenathemes.042"), GameText.Source("arenathemes.043"), GameText.Source("arenathemes.044") };
     public static readonly string[] Hints =
     {
-        "Стальные укрытия и здания, ровный пол — классика",
-        "Тёмные скалы, каменные столбы и светящиеся кристаллы",
-        "Ледяные глыбы и колонны, холодный свет и дымка"
+        GameText.Source("arenathemes.045"),
+        GameText.Source("arenathemes.046"),
+        GameText.Source("arenathemes.047")
     };
 
     static bool loaded;

@@ -116,12 +116,22 @@ public class EnemyAI : MonoBehaviour
     // Плотность толпы: доля «личного пространства» (сумма радиусов тел, separationRadius), которую враги держат между собой.
     // 09.11.2026 владелец попросил стоять плотнее: 1 → 0,75 (радиус бокса считается по диагонали и завышен).
     public const float CrowdPacking = 0.75f;
+    // 11.11.2026 (просьба владельца): враги не мешают друг другу и могут проходить друг сквозь друга; false — прежний обход толпы.
+    public const bool PassThrough = true;
     public float separationRadius = 1.2f;
     public float separationStrength = 2f;
     public float attackRange = 1.5f;
     public Transform target;
     public bool UsesMelee { get; set; } = true;
     public bool MovementLocked { get; set; }
+    private Vector3 heroImpulse;
+    private float heroImpulseUntil;
+    public void ApplyHeroImpulse(Vector3 impulse, float seconds)
+    {
+        if (GetComponent<BossController>() != null || GetComponent<MiniBoss>() != null) return;
+        heroImpulse = Vector3.ProjectOnPlane(impulse, Vector3.up);
+        heroImpulseUntil = Time.time + Mathf.Max(0, seconds);
+    }
     public float PreferredRange { get; set; }
     // Speed boost from a Buffer enemy: multiplier until the given game time.
     private float boostFactor = 1f, boostUntil;
@@ -133,6 +143,7 @@ public class EnemyAI : MonoBehaviour
     private float bodyRadius = 0.5f;
     private Vector3 velocity;
     private float preferredSide = 1f;
+    private float laneOffset;
     private static readonly float[] steeringAngles = { 0f, 25f, -25f, 50f, -50f, 75f, -75f, 100f, -100f };
 
     private void OnEnable() { active.Add(this); velocity = Vector3.zero; }
@@ -140,6 +151,7 @@ public class EnemyAI : MonoBehaviour
 
     private void Start()
     {
+        laneOffset = Random.Range(-0.7f, 0.7f);
         Collider shape = GetComponent<Collider>();
         if (shape != null)
         {
@@ -149,10 +161,34 @@ public class EnemyAI : MonoBehaviour
         else bodyRadius = Mathf.Max(transform.lossyScale.x, transform.lossyScale.z) * 0.5f;
     }
 
+    private float retargetTimer;
+
     private void Update()
     {
+        if (CoopMode.Active) Retarget();
+        if (Time.timeScale > 0 && Time.time < heroImpulseUntil && Health != null && !Health.isDead)
+        {
+            Vector3 position = transform.position;
+            Vector3 next = position + heroImpulse * Time.deltaTime;
+            if (ArenaLayout.Instance != null) next = ArenaLayout.Instance.ResolveMovement(position, next, bodyRadius);
+            next.y = position.y + GroundHeight.At(next) - GroundHeight.At(position);
+            transform.position = next;
+            heroImpulse *= Mathf.Exp(-8f * Time.deltaTime);
+            return;
+        }
         if (target == null || Time.timeScale <= 0f || MovementLocked) { velocity = Vector3.zero; return; }
         Move(Time.deltaTime);
+    }
+
+    // Кооператив: враг идёт к ближайшему живому герою (цель-сундук события не трогаем).
+    private void Retarget()
+    {
+        retargetTimer -= Time.deltaTime;
+        if (retargetTimer > 0f) return;
+        retargetTimer = 0.35f + Random.value * 0.3f;
+        if (target != null && !target.CompareTag("Player")) return;
+        Transform nearest = CoopMode.NearestAlive(transform.position);
+        if (nearest != null) target = nearest;
     }
 
     private void Move(float deltaTime)
@@ -181,7 +217,15 @@ public class EnemyAI : MonoBehaviour
         }
 
         CrowdMarker.Begin();
+        // 12.11.2026: враги по-прежнему проходят друг сквозь друга (не блокируют), но мягко расходятся в стороны,
+        // иначе вся толпа сливается в одну кучу на одном пути к герою.
         GatherNeighbors(position);
+        if (distance > 5f && direction != Vector3.zero)
+        {
+            // Личная «полоса» подхода: враги идут веером, а не гуськом.
+            Vector3 side = new Vector3(-direction.z, 0f, direction.x);
+            direction = (direction + side * (laneOffset * Mathf.Clamp01((distance - 5f) / 10f))).normalized;
+        }
         Vector3 separation = Vector3.zero;
         foreach (EnemyAI other in neighbors)
         {
@@ -198,7 +242,7 @@ public class EnemyAI : MonoBehaviour
         }
         // Repulsion must not reverse pursuit, as the previous inverse-distance sum did.
         Vector3 desired = Vector3.ClampMagnitude(direction + Vector3.ClampMagnitude(separation * separationStrength, 0.65f), 1f) * speed * (Boosted ? boostFactor : 1f) * SlowEffect.MovementFactor(this) * ArenaEvents.EnemySpeedFactor * CombatStats.EnemySpeedCurse;
-        Vector3 chosen = AvoidCrowd(position, desired, deltaTime);
+        Vector3 chosen = PassThrough ? desired : AvoidCrowd(position, desired, deltaTime);
         CrowdMarker.End();
         Vector3 next = position + chosen * deltaTime;
         if (ArenaLayout.Instance != null) using (ResolveMarker.Auto()) next = ArenaLayout.Instance.ResolveMovement(position, next, bodyRadius);
@@ -276,9 +320,10 @@ public class EnemyAI : MonoBehaviour
 
     private void Attack()
     {
+        if (Time.time < heroImpulseUntil) return;
         if (Time.time - lastAttackTime < attackCooldown) return;
         lastAttackTime = Time.time;
         PlayerHealth player = target.GetComponent<PlayerHealth>();
-        if (player != null) player.TakeDamage(damage);
+        if (player != null) player.TakeDamage(damage, HeroDamageCause.Contact);
     }
 }

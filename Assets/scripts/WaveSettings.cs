@@ -22,17 +22,22 @@ public class WaveSettings
     [Min(0f)] public float intervalReductionPerWave = 0.015f;
     [Min(0f)] public float healthGrowthPerWave = 0.04f;
 
+    // 11.11.2026 (просьба владельца): врагов больше, здоровья меньше, бой активнее. Множители поверх значений из сцены.
+    // 12.11.2026 (просьба владельца): враги умирали слишком быстро — здоровье ×2,7 (0,6→1,6), врагов больше (2,2→3,2), спавн чаще.
+    public const float CrowdScale = 3.2f, HealthScale = 1.3f, SpawnRateScale = 2.4f;
+    public int MaxPerWave { get { return Mathf.CeilToInt(Mathf.Max(1, maxEnemiesPerWave) * CrowdScale); } }
+
     public int BudgetForWave(int wave)
     {
         long budget = (long)Mathf.Max(1, baseBudget) + (long)Mathf.Max(0, wave - 1) * Mathf.Max(0, budgetPerWave);
-        return (int)System.Math.Min(Mathf.Max(1, maxBudget), budget);
+        return Mathf.CeilToInt((int)System.Math.Min(Mathf.Max(1, maxBudget), budget) * CrowdScale);
     }
 
     public int AliveLimitForWave(int wave)
     {
         long limit = (long)Mathf.Max(1, initialAliveLimit) + (long)Mathf.Max(0, wave - 1) * Mathf.Max(0, aliveLimitPerWave);
         int baseLimit = (int)System.Math.Min(Mathf.Max(1, maxAliveEnemies), limit);
-        return Mathf.Max(1, Mathf.CeilToInt(baseLimit * RunModifiers.AliveLimit));
+        return Mathf.Max(1, Mathf.CeilToInt(baseLimit * CrowdScale * RunModifiers.AliveLimit));
     }
 
     public int AbsoluteLimitForWave(int wave)
@@ -44,7 +49,7 @@ public class WaveSettings
     {
         float interval = Mathf.Max(0.1f, minimumSpawnInterval,
             initialSpawnInterval - Mathf.Max(0, wave - 1) * Mathf.Max(0f, intervalReductionPerWave));
-        return Mathf.Max(0.1f, interval * RunModifiers.SpawnInterval);
+        return Mathf.Max(0.1f, interval / SpawnRateScale * RunModifiers.SpawnInterval);
     }
     
 }

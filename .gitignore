@@ -25,3 +25,5 @@ UserSettings/
 *.aab
 
 *.unitypackage
+# Сырые скачанные модели/записи (>100 МБ файлы не принимает GitHub)
+_incoming/

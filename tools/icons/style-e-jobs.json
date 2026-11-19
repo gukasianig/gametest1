@@ -1,0 +1,192 @@
+{
+  "style": "E",
+  "reference": "docs/art/Upgrades/StyleE/reference-be.png",
+  "basePrompt": "Use case: stylized-concept. Production game UI upgrade icon, ONE isolated object centered on GENUINELY TRANSPARENT background. Single square icon, no grid. Approved style E: premium gritty retrofuturistic military equipment miniature, worn olive green painted metal, chipped edges, weathered dark steel, brass, warm amber orange warning lights, tactile hand-painted volumetric look, bold readable silhouette and dark outline, soft top-left light, three-quarter view. Match the RIGHT side E of reference sheet for materials and rendering, but render ONLY the requested subject. Entire object and effects contained in central 80 percent of square with at least 10 percent transparent padding each side. No scenery, no ground plane or cast shadow on background, no frame, no text, no letters, no numbers, no plus badge, no watermark. Large simple forms readable at 64px; avoid tiny clutter. Cursed subjects use dark crimson and black instead of amber. Subject: ",
+  "jobs": [
+    {
+      "name": "CritChance",
+      "subject": "a circular metal target with a sharp red starburst bullseye",
+      "source": "docs/art/Upgrades/StyleE/CritChance.png"
+    },
+    {
+      "name": "CritPower",
+      "subject": "a brass bullet surrounded by sharp bright amber critical-hit rays",
+      "source": "docs/art/Upgrades/StyleE/CritPower.png"
+    },
+    {
+      "name": "Pierce",
+      "subject": "a brass bullet visibly piercing through two separated steel armor plates",
+      "source": "docs/art/Upgrades/StyleE/Pierce.png"
+    },
+    {
+      "name": "Ricochet",
+      "subject": "one bullet bouncing off a steel plate, with a bold angular amber zigzag trajectory",
+      "source": "docs/art/Upgrades/StyleE/Ricochet.png"
+    },
+    {
+      "name": "DroneCount",
+      "subject": "a compact armed drone with exactly two ducted rotors and one amber optic",
+      "source": "docs/art/Upgrades/StyleE/DroneCount.png"
+    },
+    {
+      "name": "DroneDamage",
+      "subject": "a compact twin-rotor combat drone firing a bright short amber muzzle flash",
+      "source": "docs/art/Upgrades/StyleE/DroneDamage.png"
+    },
+    {
+      "name": "TurretCount",
+      "subject": "a compact gun turret on a three-legged mechanical tripod",
+      "source": "docs/art/Upgrades/StyleE/TurretCount.png"
+    },
+    {
+      "name": "TurretDamage",
+      "subject": "a compact three-legged turret firing with a glowing hot barrel and amber muzzle flash",
+      "source": "docs/art/Upgrades/StyleE/TurretDamage.png"
+    },
+    {
+      "name": "Armor",
+      "subject": "a chunky riveted olive-painted steel shield with chipped paint and amber center lamp",
+      "source": "docs/art/Upgrades/StyleE/Armor.png"
+    },
+    {
+      "name": "Regeneration",
+      "subject": "a red mechanical heart with a single bold amber circular healing arrow around it",
+      "source": "docs/art/Upgrades/StyleE/Regeneration.png"
+    },
+    {
+      "name": "Vampirism",
+      "subject": "a dark red mechanical heart with a blood droplet and two steel fangs",
+      "source": "docs/art/Upgrades/StyleE/Vampirism.png"
+    },
+    {
+      "name": "DashCooldown",
+      "subject": "an armored military boot paired with a small clear stopwatch, amber dial",
+      "source": "docs/art/Upgrades/StyleE/DashCooldown.png"
+    },
+    {
+      "name": "DashDistance",
+      "subject": "an armored military boot with three bold amber speed trails behind it",
+      "source": "docs/art/Upgrades/StyleE/DashDistance.png"
+    },
+    {
+      "name": "ExtraPellets",
+      "subject": "exactly three brass bullet cartridges fanned apart",
+      "source": "docs/art/Upgrades/StyleE/ExtraPellets.png"
+    },
+    {
+      "name": "ExplosiveBullets",
+      "subject": "one brass bullet with a compact orange explosion at its tip",
+      "source": "docs/art/Upgrades/StyleE/ExplosiveBullets.png"
+    },
+    {
+      "name": "EliteDamage",
+      "subject": "a battered brass crown overlaid by a bold red targeting crosshair",
+      "source": "docs/art/Upgrades/StyleE/EliteDamage.png"
+    },
+    {
+      "name": "WeaponRange",
+      "subject": "a short gun barrel pointing toward an amber dotted line ending in an arrow",
+      "source": "docs/art/Upgrades/StyleE/WeaponRange.png"
+    },
+    {
+      "name": "OrbitSpeed",
+      "subject": "one compact metallic orbital satellite with a broad amber circular motion trail",
+      "source": "docs/art/Upgrades/StyleE/OrbitSpeed.png"
+    },
+    {
+      "name": "OrbitCrit",
+      "subject": "one metallic orbital satellite with a sharp red critical-hit starburst",
+      "source": "docs/art/Upgrades/StyleE/OrbitCrit.png"
+    },
+    {
+      "name": "PickupSpeed",
+      "subject": "a horseshoe industrial magnet with amber speed streaks drawing in a tiny metal fragment",
+      "source": "docs/art/Upgrades/StyleE/PickupSpeed.png"
+    },
+    {
+      "name": "Luck",
+      "subject": "a chunky four-leaf clover made from weathered olive metal and brass",
+      "source": "docs/art/Upgrades/StyleE/Luck.png"
+    },
+    {
+      "name": "ExperienceGain",
+      "subject": "a faceted amber crystal in a small olive metal mount with one bold upward arrow",
+      "source": "docs/art/Upgrades/StyleE/ExperienceGain.png"
+    },
+    {
+      "name": "CursedGlass",
+      "subject": "a cracked glass bullet cartridge holding deep red glowing energy, black steel and brass casing",
+      "source": "docs/art/Upgrades/StyleE/CursedGlass.png"
+    },
+    {
+      "name": "CursedHaste",
+      "subject": "a deep crimson blood droplet framed by two sharp red lightning bolts, blackened steel fittings",
+      "source": "docs/art/Upgrades/StyleE/CursedHaste.png"
+    },
+    {
+      "name": "CursedGreed",
+      "subject": "a gold crystal with a jagged black corruption scar and subtle deep red glow",
+      "source": "docs/art/Upgrades/StyleE/CursedGreed.png"
+    },
+    {
+      "name": "MineCount",
+      "subject": "a round low-profile olive military landmine with an amber indicator light",
+      "source": "docs/art/Upgrades/StyleE/MineCount.png"
+    },
+    {
+      "name": "Damage",
+      "subject": "a heavy brass bullet cartridge beside a bold upward amber chevron",
+      "source": "docs/art/Upgrades/StyleE/Damage.png"
+    },
+    {
+      "name": "AttackSpeed",
+      "subject": "a brass bullet cartridge with three parallel amber firing speed streaks",
+      "source": "docs/art/Upgrades/StyleE/AttackSpeed.png"
+    },
+    {
+      "name": "Movement",
+      "subject": "a sturdy olive military boot with a small amber forward arrow",
+      "source": "docs/art/Upgrades/StyleE/Movement.png"
+    },
+    {
+      "name": "Pickup",
+      "subject": "a heavy horseshoe magnet attracting three small amber crystals",
+      "source": "docs/art/Upgrades/StyleE/Pickup.png"
+    },
+    {
+      "name": "GrenadeDamage",
+      "subject": "an olive fragmentation grenade with a short orange explosive flash",
+      "source": "docs/art/Upgrades/StyleE/GrenadeDamage.png"
+    },
+    {
+      "name": "OrbitDamage",
+      "subject": "a circular saw blade satellite with orange sharp impact sparks",
+      "source": "docs/art/Upgrades/StyleE/OrbitDamage.png"
+    },
+    {
+      "name": "GrenadeRadius",
+      "subject": "an olive grenade surrounded by a wide bold amber blast radius ring",
+      "source": "docs/art/Upgrades/StyleE/GrenadeRadius.png"
+    },
+    {
+      "name": "MaxHealth",
+      "subject": "a red armored mechanical heart in a protective steel housing",
+      "source": "docs/art/Upgrades/StyleE/MaxHealth.png"
+    },
+    {
+      "name": "OrbitCount",
+      "subject": "two separated compact olive circular saw blade satellites orbiting together",
+      "source": "docs/art/Upgrades/StyleE/OrbitCount.png"
+    },
+    {
+      "name": "ChestXp",
+      "subject": "an open battered olive supply chest filled with amber experience crystals",
+      "source": "docs/art/Upgrades/StyleE/ChestXp.png"
+    },
+    {
+      "name": "SteelWill",
+      "subject": "a riveted olive shield with a reinforced steel mechanical heart at its center",
+      "source": "docs/art/Upgrades/StyleE/SteelWill.png"
+    }
+  ]
+}

@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 // Новые значения добавлять только в конец: числа enum используются как индексы.
-public enum Sfx { Shot, Rail, Arc, Rocket, Ice, Flame, Throw, Explosion, Hit, Kill, SawCut, Shotgun, Zap, Deploy, AutoShot }
+// 11.11.2026 (ощущение от боя): LevelUp — новый уровень, Pickup — кристалл (высота растёт серией), Chest — сундук, Heartbeat — низкое HP.
+public enum Sfx { Shot, Rail, Arc, Rocket, Ice, Flame, Throw, Explosion, Hit, Kill, SawCut, Shotgun, Zap, Deploy, AutoShot, LevelUp, Pickup, Chest, Heartbeat, HeroStep, HeroDash, HeroHurt, HeroDown }
 
 // Зацикленные звуки, которые звучат, пока их «держат» каждый кадр (GameAudio.Hold).
 public enum SfxLoop { Saw, Flame }
@@ -54,7 +55,10 @@ public class GameAudio : MonoBehaviour
         return instance;
     }
 
-    public static void Play(Sfx sfx, float volume = 1f, float pitchJitter = 0.04f)
+    public static void Play(Sfx sfx, float volume = 1f, float pitchJitter = 0.04f) { PlayAt(sfx, volume, 1f, pitchJitter); }
+
+    // То же с заданной высотой (серия кристаллов звучит всё выше).
+    public static void PlayAt(Sfx sfx, float volume, float pitch, float pitchJitter = 0f)
     {
         GameAudio a = Get();
         int i = (int)sfx;
@@ -67,7 +71,7 @@ public class GameAudio : MonoBehaviour
         a.lastVariant[i] = v;
         AudioSource s = a.voices[a.nextVoice];
         a.nextVoice = (a.nextVoice + 1) % Voices;
-        s.pitch = 1f + UnityEngine.Random.Range(-pitchJitter, pitchJitter);
+        s.pitch = pitch + UnityEngine.Random.Range(-pitchJitter, pitchJitter);
         s.PlayOneShot(set[v], volume * SfxVolume);
     }
 
@@ -108,6 +112,9 @@ public class GameAudio : MonoBehaviour
             case Sfx.SawCut: return 0.09f;
             case Sfx.Zap: return 0.06f;
             case Sfx.Arc: return 0.05f;
+            case Sfx.Pickup: return 0.045f;
+            case Sfx.LevelUp: return 0.3f;
+            case Sfx.Heartbeat: return 0.3f;
             default: return 0.03f;
         }
     }
@@ -179,6 +186,10 @@ public class GameAudio : MonoBehaviour
             case Sfx.SawCut: return 0.75f;
             case Sfx.Zap: return 0.5f;
             case Sfx.Deploy: return 0.6f;
+            case Sfx.LevelUp: return 0.6f;
+            case Sfx.Pickup: return 0.35f;
+            case Sfx.Chest: return 0.7f;
+            case Sfx.Heartbeat: return 0.8f;
             default: return 0.7f;
         }
     }
@@ -257,6 +268,7 @@ public class GameAudio : MonoBehaviour
             music.volume = musicFade;
             return;
         }
+        music.pitch = 1f;   // темп музыки всегда 1: ничто (в т.ч. замедление времени при хит-стопе) не должно его менять
         float target = MusicVolume * 0.55f;
         float step = Time.unscaledDeltaTime * 0.8f;
         if (music.clip != wantedMusic)
@@ -383,7 +395,8 @@ public class GameAudio : MonoBehaviour
 
         public static AudioClip[] Set(Sfx sfx)
         {
-            int count = sfx == Sfx.Explosion || sfx == Sfx.Rocket || sfx == Sfx.Throw ? 2 : Variants;
+            int count = sfx == Sfx.Explosion || sfx == Sfx.Rocket || sfx == Sfx.Throw ? 2
+                : sfx == Sfx.LevelUp || sfx == Sfx.Pickup || sfx == Sfx.Chest || sfx == Sfx.Heartbeat ? 1 : Variants;
             var set = new AudioClip[count];
             for (int v = 0; v < count; v++) set[v] = Effect(sfx, v);
             return set;
@@ -410,6 +423,14 @@ public class GameAudio : MonoBehaviour
                 case Sfx.Kill: return Make(name, Kill(j), Peak(sfx));
                 case Sfx.SawCut: return Make(name, SawCut(j), Peak(sfx));
                 case Sfx.Zap: return Make(name, Zap(j), Peak(sfx));
+                case Sfx.LevelUp: return Make(name, LevelUp(), Peak(sfx));
+                case Sfx.Pickup: return Make(name, Pickup(), Peak(sfx));
+                case Sfx.Chest: return Make(name, ChestOpen(), Peak(sfx));
+                case Sfx.Heartbeat: return Make(name, Heartbeat(), Peak(sfx));
+                case Sfx.HeroStep: return Make(name, Hit(j * .55f), .2f);
+                case Sfx.HeroDash: return Make(name, Throw(j * .8f), .5f);
+                case Sfx.HeroHurt: return Make(name, Hit(j * .65f), .6f);
+                case Sfx.HeroDown: return Make(name, Kill(j * .45f), .6f);
                 default: return Make(name, Hit(j), 0.5f);
             }
         }
@@ -524,6 +545,78 @@ public class GameAudio : MonoBehaviour
         }
 
         // Мелкий лучевой выстрел турели/дрона: короткое «пью» с треском.
+        // Колокольчик: основной тон и два обертона, мягкая атака, экспоненциальное затухание.
+        private static void Bell(float[] d, float start, float freq, float decay, float gain)
+        {
+            int from = Mathf.RoundToInt(start * R);
+            for (int i = from; i < d.Length; i++)
+            {
+                float t = (i - from) / (float)R;
+                float env = Mathf.Min(1f, t * 300f) * Mathf.Exp(-t * decay);
+                d[i] += gain * env * (Mathf.Sin(Tau * freq * t) + 0.35f * Mathf.Sin(Tau * freq * 2.01f * t) + 0.12f * Mathf.Sin(Tau * freq * 3.98f * t));
+            }
+        }
+
+        // Новый уровень: восходящее арпеджио до-ми-соль-до с блеском и мягким отражением.
+        private static float[] LevelUp()
+        {
+            var d = Buffer(0.9f);
+            float[] notes = { 523.25f, 659.25f, 783.99f, 1046.5f };
+            for (int k = 0; k < notes.Length; k++) Bell(d, k * 0.075f, notes[k], k == 3 ? 4.5f : 9f, k == 3 ? 1f : 0.7f);
+            Svf air = new Svf();
+            for (int i = 0; i < d.Length; i++)
+            {
+                float t = i / (float)R;
+                air.Run(Noise(), 7000f, 0.7f);
+                d[i] += air.high * 0.05f * Mathf.Exp(-t * 6f) * Mathf.Min(1f, t * 20f);
+            }
+            Room(d, 0.6f);
+            return d;
+        }
+
+        // Кристалл: короткий звонкий «динь» (высоту меняет PlayAt).
+        private static float[] Pickup()
+        {
+            var d = Buffer(0.12f);
+            Bell(d, 0f, 1318.5f, 38f, 1f);
+            Bell(d, 0.012f, 1975.5f, 50f, 0.45f);
+            return d;
+        }
+
+        // Сундук: глухой удар крышки и рассыпающийся звон вверх.
+        private static float[] ChestOpen()
+        {
+            var d = Buffer(1.0f);
+            Svf thud = new Svf();
+            for (int i = 0; i < R / 5 && i < d.Length; i++)
+            {
+                float t = i / (float)R;
+                thud.Run(Noise(), 260f, 1.2f);
+                d[i] += (thud.low * 2.2f + 0.6f * Mathf.Sin(Tau * 95f * t)) * Mathf.Exp(-t * 28f);
+            }
+            float[] sparkle = { 880f, 1174.7f, 1396.9f, 1760f, 2093f, 2637f };
+            for (int k = 0; k < sparkle.Length; k++) Bell(d, 0.08f + k * 0.055f, sparkle[k], 7f, 0.45f);
+            Room(d, 0.7f);
+            return d;
+        }
+
+        // Сердцебиение: два низких удара «тук-тук».
+        private static float[] Heartbeat()
+        {
+            var d = Buffer(0.55f);
+            foreach (float start in new[] { 0f, 0.2f })
+            {
+                int from = Mathf.RoundToInt(start * R);
+                for (int i = from; i < d.Length; i++)
+                {
+                    float t = (i - from) / (float)R;
+                    float pitch = 58f + 30f * Mathf.Exp(-t * 30f);
+                    d[i] += (start > 0f ? 0.7f : 1f) * Mathf.Sin(Tau * pitch * t) * Mathf.Min(1f, t * 400f) * Mathf.Exp(-t * 22f);
+                }
+            }
+            return d;
+        }
+
         private static float[] Zap(float j)
         {
             var d = Buffer(0.13f);

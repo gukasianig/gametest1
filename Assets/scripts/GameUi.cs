@@ -35,7 +35,7 @@ public static class GameUi
     public static Text Label(Transform parent, string value, Vector2 min, Vector2 max, int size,
         Color? color = null)
     {
-        Text label = new GameObject("Label", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+        Text label = new GameObject("Label", typeof(RectTransform), typeof(LocalizedUiText)).GetComponent<Text>();
         label.transform.SetParent(parent, false);
         label.rectTransform.anchorMin = min;
         label.rectTransform.anchorMax = max;

@@ -112,6 +112,7 @@ public static class MetaProgressChecks
         Pass("Weapon unlocks: locked card cannot start, needs funds, purchase opens it once, overlay hides.");
 
         // Run modifiers chosen through the menu buttons.
+        MetaProgress.Data.victories = Mathf.Max(1, MetaProgress.Data.victories);   // испытания открываются после первой победы
         menu.ShowModifiers();
         foreach (string id in new[] { "mod_fast", "mod_thick", "mod_fragile", "mod_short" })
         {
@@ -248,12 +249,14 @@ public static class MetaProgressChecks
 
         // Run modifiers: toggling, multiplier, conflicts-free combination, persistence and effects on settings.
         MetaProgress.UseFile(file);
+        Require(!RunModifiers.Unlocked && !RunModifiers.Toggle("mod_fast") && RunModifiers.ActiveCount == 0, "Modifiers must stay locked before the first victory.");
+        MetaProgress.Data.victories = 1;
         Require(RunModifiers.ActiveCount == 0 && Mathf.Approximately(RunModifiers.RewardMultiplier, 1f), "Fresh save has modifiers.");
         Require(RunModifiers.Toggle("mod_fast") && RunModifiers.IsActive("mod_fast") && Mathf.Approximately(RunModifiers.RewardMultiplier, 1.15f), "Toggle on.");
         Require(!RunModifiers.Toggle("mod_fast") && !RunModifiers.IsActive("mod_fast"), "Toggle off.");
         Require(!RunModifiers.Toggle("no_such_modifier") && RunModifiers.ActiveCount == 0, "Unknown modifier must do nothing.");
         foreach (RunModifier modifier in RunModifiers.Catalog) RunModifiers.Toggle(modifier.id);
-        Require(RunModifiers.ActiveCount == RunModifiers.Catalog.Length && Mathf.Approximately(RunModifiers.RewardMultiplier, 1.9f), "All five: x1.9.");
+        Require(RunModifiers.ActiveCount == RunModifiers.Catalog.Length && Mathf.Approximately(RunModifiers.RewardMultiplier, 2.65f) && RunModifiers.Threat == RunModifiers.MaxThreat, "All nine: x2.65.");
         Require(Mathf.Approximately(RunModifiers.EnemySpeed, 1.25f) && Mathf.Approximately(RunModifiers.EnemyHealth, 1.5f) &&
             Mathf.Approximately(RunModifiers.HeroHealth, 0.6f) && Mathf.Approximately(RunModifiers.SurvivalSeconds(600f), 300f) &&
             Mathf.Approximately(RunModifiers.SurvivalSeconds(120f), 120f), "Modifier effect getters.");

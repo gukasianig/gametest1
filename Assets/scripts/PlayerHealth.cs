@@ -2,8 +2,17 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+public enum HeroDamageCause
+{
+    Unknown, Contact, Projectile, Mortar, Charge, Explosion, EliteExplosion,
+    BossSlam, BossProjectile, BossCharge, Lightning, Beam, Acid, Fire, Meteor
+}
+
 public class PlayerHealth : MonoBehaviour, IDamagable
 {
+    // Бонусы своего героя (кооператив: у каждого свой набор, CombatStats.Of).
+    private HeroStats heroStats;
+    private HeroStats Stats => heroStats ?? (heroStats = CombatStats.Of(this));
     public Image hpImage;
     public Image hpDamageImage;
     public int maxHP = 100;
@@ -14,14 +23,25 @@ public class PlayerHealth : MonoBehaviour, IDamagable
     private int currentHP;
     public int CurrentHP => currentHP;
     public bool IsDead => isDead;
+    public HeroDamageCause LastDamageCause { get; private set; }
+    public int LastDamage { get; private set; }
+    public string DeathSummary => GameText.Source("death.summary") +
+        GameText.Source("death.cause." + LastDamageCause.ToString().ToLowerInvariant()) +
+        GameText.Source("death.damage") + LastDamage;
     private float damageHold;
 
     // Удар по герою: (урон до брони, урон после брони). Нужен экрану боя (вспышка ХП и брони).
     public event System.Action<int, int> Damaged;
 
+    private void OnEnable() { CoopMode.Register(this); }
+    private void OnDisable() { CoopMode.Unregister(this); }
+
     private void Start()
     {
-        if (GetComponent<CombatHud>() == null) gameObject.AddComponent<CombatHud>();
+        // Панель боя (CombatHud) — только у игрока 1; у игрока 2 своя панель (CoopHero).
+        if (CoopMode.IndexOf(this) == 0 && GetComponent<CombatHud>() == null) gameObject.AddComponent<CombatHud>();
+        if (GetComponent<HeroAbilities>() == null) gameObject.AddComponent<HeroAbilities>();
+        if (GetComponent<HeroPresentation>() == null) gameObject.AddComponent<HeroPresentation>();
         Time.timeScale = 1f;
         currentHP = Mathf.Max(1, maxHP);
         StyleHealthBar();
@@ -45,10 +65,24 @@ public class PlayerHealth : MonoBehaviour, IDamagable
 
     public void TakeDamage(int damage)
     {
+        TakeDamage(damage, HeroDamageCause.Unknown);
+    }
+
+    public void TakeDamage(int damage, HeroDamageCause cause)
+    {
         if (isDead || damage <= 0 || Invulnerable || (GameSession.Instance != null && GameSession.Instance.State != GameRunState.Playing)) return;
+        damage = Mathf.Max(1, Mathf.RoundToInt(damage * RunModifiers.HeroDamageTaken));   // испытание «Тяжёлые удары»
         int raw = damage;
-        if (CombatStats.Armor > 0f) damage = Mathf.Max(1, Mathf.RoundToInt(damage * (1f - Mathf.Min(0.6f, CombatStats.Armor))));
+        // Синергия «Стальная воля»: при низком HP броня +15% (предел 75% вместо 60%).
+        float armor = Mathf.Min(0.6f, Stats.Armor) + (SteelWillActive ? 0.15f : 0f);
+        if (armor > 0f) damage = Mathf.Max(1, Mathf.RoundToInt(damage * (1f - Mathf.Min(0.75f, armor))));
+        int lostHP = Mathf.Min(currentHP, damage);
         currentHP = Mathf.Max(0, currentHP - damage);
+        if (currentHP > 0) GrantInvulnerability(.18f);
+        RunStatistics statistics = GameSession.Instance != null ? GameSession.Instance.GetComponent<RunStatistics>() : GetComponent<RunStatistics>();
+        if (statistics != null) statistics.RecordIncoming(lostHP, cause);
+        LastDamageCause = cause;
+        LastDamage = damage;
         damageHold = 0.25f;
         if (Damaged != null) Damaged(raw, damage);
         if (currentHP == 0) Die();
@@ -77,7 +111,7 @@ public class PlayerHealth : MonoBehaviour, IDamagable
     // Called for every enemy killed (Vampirism upgrade).
     public void OnEnemyKilled()
     {
-        if (CombatStats.VampirismPerKill > 0f && !isDead) HealFraction(CombatStats.VampirismPerKill);
+        if (Stats.VampirismPerKill > 0f && !isDead) HealFraction(Stats.VampirismPerKill);
     }
 
     // A cursed upgrade lowers the maximum without healing: the current value is only capped.
@@ -88,11 +122,13 @@ public class PlayerHealth : MonoBehaviour, IDamagable
         currentHP = Mathf.Min(currentHP, maxHP);
     }
 
+    public bool SteelWillActive => Stats.SteelWill && !isDead && currentHP < maxHP * CombatStats.SteelWillThreshold;
+
     private void Update()
     {
-        if (CombatStats.RegenPerSecond > 0f && !isDead && Time.timeScale > 0f &&
+        if (Stats.RegenPerSecond > 0f && !isDead && Time.timeScale > 0f &&
             (GameSession.Instance == null || GameSession.Instance.State == GameRunState.Playing))
-            HealFraction(CombatStats.RegenPerSecond * Time.deltaTime);
+            HealFraction(Stats.RegenPerSecond * (SteelWillActive ? 3f : 1f) * Time.deltaTime);
         if (hpImage == null || hpDamageImage == null) return;
         float target = (float)currentHP / Mathf.Max(1, maxHP);
         hpImage.fillAmount = Mathf.Lerp(hpImage.fillAmount, target,
@@ -154,14 +190,14 @@ public class PlayerHealth : MonoBehaviour, IDamagable
         button.targetGraphic = image;
         button.onClick.AddListener(ReturnToMenu);
 
-        Text label = new GameObject("Label", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+        Text label = new GameObject("Label", typeof(RectTransform), typeof(LocalizedUiText)).GetComponent<Text>();
         label.transform.SetParent(root.transform, false);
         label.rectTransform.anchorMin = Vector2.zero;
         label.rectTransform.anchorMax = Vector2.one;
         label.rectTransform.offsetMin = new Vector2(12f, 4f);
         label.rectTransform.offsetMax = new Vector2(-12f, -4f);
         label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        label.text = "В главное меню";
+        label.text = GameText.Source("gamesession.150");
         label.fontSize = 26;
         label.alignment = TextAnchor.MiddleCenter;
         label.color = Color.white;
@@ -180,16 +216,32 @@ public class PlayerHealth : MonoBehaviour, IDamagable
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
+    // Кооператив: поверженного поднимает напарник (CoopHero), с частью здоровья и короткой неуязвимостью.
+    public event System.Action Revived;
+
+    public void Revive(float healthShare)
+    {
+        if (!isDead || returningToMenu) return;
+        isDead = false;
+        LastDamageCause = HeroDamageCause.Unknown;
+        LastDamage = 0;
+        currentHP = Mathf.Clamp(Mathf.RoundToInt(maxHP * healthShare), 1, maxHP);
+        GrantInvulnerability(2f);
+        if (Revived != null) Revived();
+    }
+
     private void Die()
     {
         if (isDead) return;
         isDead = true;
+        // Кооператив: пока жив напарник, герой только повержен; поражение — когда упали все.
+        if (CoopMode.Active && GameSession.Instance != null && CoopMode.AnyOtherAlive(this)) return;
         if (GameSession.Instance != null)
         {
             if (hpImage != null) hpImage.fillAmount = 0f;
             if (hpDamageImage != null) hpDamageImage.fillAmount = 0f;
             if (gameOverUI != null) gameOverUI.SetActive(false);
-            GameSession.Instance.Defeat();
+            GameSession.Instance.Defeat(this);
             return;
         }
         if (RunStatistics.Instance != null) RunStatistics.Instance.EndRun();

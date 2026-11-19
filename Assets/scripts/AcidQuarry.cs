@@ -33,7 +33,7 @@ public sealed class AcidQuarry : MonoBehaviour
         if (player == null && PlayerProgression.Instance != null)
             player = PlayerProgression.Instance.GetComponent<PlayerHealth>();
         if (player != null && WeaponTargets.Flat(spillCenter, player.transform.position) <= spillRadius)
-            player.TakeDamage(5);
+            player.TakeDamage(5, HeroDamageCause.Acid);
 
         WeaponTargets.Collect(targets);
         foreach (Health target in targets)

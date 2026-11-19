@@ -40,16 +40,14 @@ public static class EnemyFx
     // Заливка круга-предупреждения: плоский диск на земле растёт от центра до края ровно к моменту удара.
     public static TelegraphFill Fill(Vector3 center, float radius, float seconds, Material material)
     {
-        // По склону: наклон по нормали земли и подъём, чтобы край не уходил в рельеф.
-        center.y = Mathf.Max(center.y, GroundHeight.At(center) + 0.1f) + GroundHeight.Lift(center, radius);
+        // Диск строит сам TelegraphFill: сетка по высоте рельефа (на склонах и буграх не торчат треугольники).
         GameObject go = Prim(PrimitiveType.Cylinder, center, Color.white);
-        go.transform.rotation = GroundHeight.Tilt(center);
         go.name = "Telegraph fill";
         go.GetComponent<Renderer>().sharedMaterial = material;
         TelegraphFill fill = go.AddComponent<TelegraphFill>();
         fill.radius = radius;
         fill.seconds = Mathf.Max(0.05f, seconds);
-        go.transform.localScale = new Vector3(0.01f, 0.004f, 0.01f);
+        fill.Begin(center);
         return fill;
     }
 
@@ -137,6 +135,16 @@ public static class EnemyFx
         go.transform.SetPositionAndRotation(position, GroundHeight.Tilt(position));
         FxRing ring = go.AddComponent<FxRing>();
         ring.Init(radius, color, life, width);
+    }
+
+    // Вспышка выстрела у дула: свет, дымок по направлению, искры. scale ~1 для обычного, больше для тяжёлого.
+    public static void MuzzleFlash(Vector3 position, Vector3 direction, Color color, float scale = 1f)
+    {
+        direction.y = 0f;
+        direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
+        LightFlash(position, color, 3.5f * scale, 3f * scale, 0.12f);
+        Puff(position, Color.Lerp(color, Color.white, 0.6f), 0.35f * scale, 0.2f, direction * 2.5f);
+        Blobs(position, color, Mathf.RoundToInt(5 * scale), 3.5f, 0.07f, 0.25f, GroundHeight.At(position));
     }
 
     public static void LightFlash(Vector3 position, Color color, float range, float intensity, float life)
@@ -385,13 +393,65 @@ public sealed class TelegraphFill : MonoBehaviour
 {
     public float radius, seconds;
     float age;
+    Mesh mesh;
+    Vector3 centre;
+    const int Segments = 32, Rings = 6;
+    const float Offset = 0.08f;   // подъём над рельефом: диск не мерцает и не режется землёй
+
+    // Диск повторяет рельеф (каждая вершина берёт высоту земли), поэтому не торчит треугольниками и не уходит в склон.
+    public void Begin(Vector3 centreGround)
+    {
+        centre = centreGround;
+        mesh = new Mesh { name = "Telegraph fill" };
+        var triangles = new int[Segments * (Rings * 2 - 1) * 3];
+        int t = 0;
+        for (int s = 0; s < Segments; s++)
+        {
+            int n = (s + 1) % Segments;
+            triangles[t++] = 0; triangles[t++] = 1 + n; triangles[t++] = 1 + s;
+            for (int r = 1; r < Rings; r++)
+            {
+                int a = 1 + (r - 1) * Segments, b = 1 + r * Segments;
+                triangles[t++] = a + s; triangles[t++] = a + n; triangles[t++] = b + s;
+                triangles[t++] = a + n; triangles[t++] = b + n; triangles[t++] = b + s;
+            }
+        }
+        mesh.vertices = new Vector3[1 + Segments * Rings];
+        mesh.triangles = triangles;
+        GetComponent<MeshFilter>().sharedMesh = mesh;
+        transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+        transform.localScale = Vector3.one;
+        Rebuild(0.05f);
+    }
+
+    void Rebuild(float t)
+    {
+        float size = radius * Mathf.Lerp(0.05f, 1f, t);
+        var v = mesh.vertices;
+        v[0] = Ground(centre.x, centre.z);
+        for (int r = 1; r <= Rings; r++)
+            for (int s = 0; s < Segments; s++)
+            {
+                float a = s * Mathf.PI * 2f / Segments, d = size * r / Rings;
+                v[1 + (r - 1) * Segments + s] = Ground(centre.x + Mathf.Cos(a) * d, centre.z + Mathf.Sin(a) * d);
+            }
+        mesh.vertices = v;
+        mesh.RecalculateBounds();
+    }
+
+    static Vector3 Ground(float x, float z)
+    {
+        var p = new Vector3(x, 0f, z);
+        p.y = GroundHeight.At(p) + Offset;
+        return p;
+    }
 
     void Update()
     {
-        if (Time.deltaTime <= 0f) return;
+        if (mesh == null || Time.deltaTime <= 0f) return;
         age += Time.deltaTime;
-        float t = Mathf.Clamp01(age / seconds);
-        float size = radius * 2f * Mathf.Lerp(0.05f, 1f, t);
-        transform.localScale = new Vector3(size, 0.004f, size);
+        Rebuild(Mathf.Clamp01(age / seconds));
     }
+
+    void OnDestroy() { if (mesh != null) Destroy(mesh); }
 }

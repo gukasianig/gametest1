@@ -111,8 +111,10 @@ public static class WorkshopLayoutChecks
         {
             if (!workshopShooter.weapons[weapon].IsSelectable) continue;
             Transform group = Find(tree.transform, "Weapon group " + weapon);
-            Check(group != null && group.GetComponentsInChildren<Button>().Length == 5, "Weapon/module grouping " + weapon);
-            for (int e = 1; e <= 4; e++)
+            // Пистолет (оружие 0): три ветки Revolver/Dual/Sticky; остальные — четыре стихии.
+            int firstModule = weapon == 0 ? (int)WeaponElement.Revolver : 1, lastModule = weapon == 0 ? (int)WeaponElement.Sticky : 4;
+            Check(group != null && group.GetComponentsInChildren<Button>().Length == 1 + lastModule - firstModule + 1, "Weapon/module grouping " + weapon);
+            for (int e = firstModule; e <= lastModule; e++)
                 Check(Find(group, "Node weapon:" + weapon + ":" + (WeaponElement)e) != null, "Module belongs to wrong weapon");
         }
         Pass("All selectable weapon clusters contain exactly their own weapon and four modules");

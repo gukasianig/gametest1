@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Grenade : MonoBehaviour
 {
-    public const float VisualLength = .32f;
+    public const float VisualLength = .6f;
     public float explosionRadius = 3f;
     public int damage = 20;
     public GameObject explosionEffect;
@@ -15,7 +15,23 @@ public class Grenade : MonoBehaviour
     {
         ProjectileModels.Skin(gameObject, "grenade", VisualLength);
         Invoke(nameof(Explode), delay);
+        // Заметность: яркий след и мигающий красный огонёк запала (раньше мелкий снаряд сливался с землёй).
+        TrailRenderer trail = gameObject.AddComponent<TrailRenderer>();
+        trail.time = 0.35f;
+        trail.widthMultiplier = 0.25f;
+        trail.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
+        trail.sharedMaterial = EnemyFx.Mat(new Color(1f, 0.6f, 0.2f));
+        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        fuse = new GameObject("Grenade fuse").AddComponent<Light>();
+        fuse.transform.SetParent(transform, false);
+        fuse.type = LightType.Point;
+        fuse.color = new Color(1f, 0.3f, 0.15f);
+        fuse.range = 3f;
+        fuse.shadows = LightShadows.None;
     }
+
+    private Light fuse;
+    private float age;
 
     void Explode()
     {
@@ -41,6 +57,9 @@ public class Grenade : MonoBehaviour
     void Update()
     {
         transform.Rotate(300 * Time.deltaTime, 0, 0);
+        age += Time.deltaTime;
+        // Мигание учащается к взрыву.
+        if (fuse != null) fuse.intensity = 1.5f + 2.5f * Mathf.Max(0f, Mathf.Sin(age * Mathf.Lerp(10f, 40f, Mathf.Clamp01(age / Mathf.Max(0.1f, delay)))));
     }
 }
 

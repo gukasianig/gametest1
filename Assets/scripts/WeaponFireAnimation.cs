@@ -6,8 +6,17 @@ using UnityEngine;
 // пружинисто возвращается; боеголовка в жерле (часть «Warhead» модели make_rocket_launcher.py) пропадает
 // вместе с вылетевшей ракетой и через паузу въезжает обратно; у жерла вспышка и дым, из заднего сопла — струя дыма.
 // Без части «Warhead» (старые модели Kenney) работают только отскок и дым.
+[DefaultExecutionOrder(-40)]
 public class WeaponFireAnimation : MonoBehaviour
 {
+    // Дуло этой модели оружия (кооператив: у каждого героя своё, см. ModelSkins.MuzzleName).
+    private bool OwnMuzzle(out Vector3 position)
+    {
+        Transform point = transform.Find(ModelSkins.MuzzleName);
+        position = point != null ? point.position : Vector3.zero;
+        return point != null;
+    }
+
     private Transform socket, warhead;
     private Renderer[] warheadRenderers;
     private Vector3 restPosition, warheadRest;
@@ -54,7 +63,7 @@ public class WeaponFireAnimation : MonoBehaviour
         if (!smoke || Time.time - lastPuff < 0.15f) return;
         lastPuff = Time.time;
         Vector3 flat = FlatForward();
-        Vector3 muzzle = ModelSkins.TryGetMuzzle(out Vector3 m) ? m : transform.position + Forward() * 0.3f;
+        Vector3 muzzle = OwnMuzzle(out Vector3 m) ? m : transform.position + Forward() * 0.3f;
         EnemyFx.Puff(muzzle + flat * 0.05f, new Color(0.62f, 0.6f, 0.62f), Random.Range(0.08f, 0.13f), Random.Range(0.22f, 0.32f),
             flat * Random.Range(0.8f, 1.4f) + Vector3.up * 0.3f);
     }
@@ -105,7 +114,8 @@ public class WeaponFireAnimation : MonoBehaviour
         }
     }
 
-    private Vector3 Forward() { return socket != null ? socket.forward : transform.forward; }
+    public Vector3 BarrelForward => socket != null ? transform.rotation * Quaternion.Inverse(restRotation) * Vector3.forward : transform.forward;
+    private Vector3 Forward() { return BarrelForward; }
 
     private void SetWarheadVisible(bool on)
     {
@@ -123,7 +133,7 @@ public class WeaponFireAnimation : MonoBehaviour
         Bounds b = renderers[0].bounds;
         foreach (Renderer r in renderers) b.Encapsulate(r.bounds);
         float half = Mathf.Abs(b.extents.x * forward.x) + Mathf.Abs(b.extents.y * forward.y) + Mathf.Abs(b.extents.z * forward.z);
-        Vector3 muzzle = ModelSkins.TryGetMuzzle(out Vector3 m) ? m : b.center + forward * half;
+        Vector3 muzzle = OwnMuzzle(out Vector3 m) ? m : b.center + forward * half;
         Vector3 rear = b.center - forward * half;
 
         Color fire = new Color(1f, 0.62f, 0.18f);

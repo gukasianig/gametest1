@@ -7,8 +7,8 @@ using UnityEngine.UI;
 public class WeaponSelectScreen : MonoBehaviour
 {
     private const int Columns = 4;
-    private static readonly string[] Titles = { "Пистолет", "Автомат", "Дробовик", "Тяжёлая винтовка" };
-    private static readonly string[] Roles = { "ТОЧНОСТЬ", "ВЫСОКИЙ ТЕМП", "БЛИЖНИЙ БОЙ", "МОЩНЫЙ ВЫСТРЕЛ" };
+    private static readonly string[] Titles = { GameText.Source("weaponselectscreen.433"), GameText.Source("weaponselectscreen.434"), GameText.Source("metaprogress.179"), GameText.Source("metaprogress.180") };
+    private static readonly string[] Roles = { GameText.Source("weaponselectscreen.435"), GameText.Source("weaponselectscreen.436"), GameText.Source("weaponselectscreen.437"), GameText.Source("weaponselectscreen.438") };
     private static readonly Color[] Accents = { new Color(0.64f, 0.79f, 0.85f), GameUi.Accent, new Color(0.94f, 0.65f, 0.35f), new Color(0.73f, 0.64f, 0.92f) };
     private static readonly Color Warm = new Color(1f, 0.6f, 0.22f);
     private static readonly Color Muted = new Color(0.55f, 0.62f, 0.7f);
@@ -51,7 +51,7 @@ public class WeaponSelectScreen : MonoBehaviour
 
     private static string Role(WeaponData weapon, int index)
     {
-        return !string.IsNullOrEmpty(weapon.role) ? weapon.role : index < Roles.Length ? Roles[index] : "ОРУЖИЕ";
+        return !string.IsNullOrEmpty(weapon.role) ? weapon.role : index < Roles.Length ? Roles[index] : GameText.Source("weaponselectscreen.439");
     }
 
     private static Color Accent(WeaponData weapon, int index)
@@ -88,11 +88,12 @@ public class WeaponSelectScreen : MonoBehaviour
 
     private void Create(RectTransform root, System.Action back)
     {
-        Text tag = GameUi.Readable(GameUi.Label(root, "С Н А Р Я Ж Е Н И Е", new Vector2(0.04f, 0.885f), new Vector2(0.5f, 0.925f), 15, Warm), 1f);
+        Text tag = GameUi.Readable(GameUi.Label(root, GameText.Source("weaponselectscreen.440"), new Vector2(0.04f, 0.885f), new Vector2(0.5f, 0.925f), 15, Warm), 1f);
         tag.alignment = TextAnchor.MiddleLeft;
-        Text header = GameUi.Readable(GameUi.Label(root, "Выбери оружие", new Vector2(0.04f, 0.8f), new Vector2(0.56f, 0.89f), 40, Color.white), 2f);
+        Text header = GameUi.Readable(GameUi.Label(root, GameText.Source("weaponselectscreen.441"), new Vector2(0.04f, 0.8f), new Vector2(0.56f, 0.89f), 40, Color.white), 2f);
         header.alignment = TextAnchor.MiddleLeft;
         header.fontStyle = FontStyle.Bold;
+        headerText = header;
         currencyText = GameUi.Readable(GameUi.Label(root, "", new Vector2(0.6f, 0.82f), new Vector2(0.96f, 0.88f), 20, new Color(0.97f, 0.8f, 0.48f)), 1f);
         currencyText.alignment = TextAnchor.MiddleRight;
 
@@ -118,7 +119,7 @@ public class WeaponSelectScreen : MonoBehaviour
             float x = left + col * (w + gap), y = top - row * (h + gap * 1.6f);
             Tile(root, i, new Vector2(x, y - h), new Vector2(x + w, y));
         }
-        if (count == 0) GameUi.Label(root, "Нет настроенного оружия", new Vector2(0.1f, 0.3f), new Vector2(0.9f, 0.6f), 24);
+        if (count == 0) GameUi.Label(root, GameText.Source("weaponselectscreen.442"), new Vector2(0.1f, 0.3f), new Vector2(0.9f, 0.6f), 24);
 
         // Панель подробностей.
         RectTransform panel = GameUi.Box(root, "Weapon Detail", new Vector2(0.59f, 0.155f), new Vector2(0.96f, 0.785f), new Color(0.03f, 0.045f, 0.06f, 0.92f));
@@ -135,7 +136,7 @@ public class WeaponSelectScreen : MonoBehaviour
         detailText = GameUi.Label(panel, "", new Vector2(0.07f, 0.375f), new Vector2(0.93f, 0.46f), 16, new Color(0.75f, 0.81f, 0.87f));
         detailText.alignment = TextAnchor.UpperLeft;
         detailText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        string[] names = { "Урон", "Темп", "Дальность" };
+        string[] names = { GameText.Source("weaponselectscreen.443"), GameText.Source("weaponselectscreen.444"), GameText.Source("weaponselectscreen.445") };
         for (int s = 0; s < 3; s++)
         {
             float y = 0.335f - s * 0.055f;
@@ -156,10 +157,14 @@ public class WeaponSelectScreen : MonoBehaviour
         actionLabel.fontSize = 26;
         actionLabel.resizeTextMaxSize = 26;
 
-        Button backButton = GameUi.Button(root, "Назад", new Vector2(0.04f, 0.055f), new Vector2(0.2f, 0.125f), () => { if (back != null) back(); });
+        Button backButton = GameUi.Button(root, GameText.Source("challengescreen.088"), new Vector2(0.04f, 0.055f), new Vector2(0.2f, 0.125f), () => { if (back != null) back(); });
         UiArtwork.Round(backButton.GetComponent<Image>());
-        Text hint = GameUi.Label(root, "Клик по плитке — выбрать, ещё клик — в бой", new Vector2(0.22f, 0.055f), new Vector2(0.56f, 0.125f), 15, Muted);
+        Text hint = GameUi.Label(root, GameText.Source("weaponselectscreen.446"), new Vector2(0.22f, 0.055f), new Vector2(0.56f, 0.125f), 15, Muted);
         hint.alignment = TextAnchor.MiddleLeft;
+        // Кооператив (кнопка главного меню): подсказка по управлению двух игроков над кнопкой «Назад».
+        coopHint = GameUi.Label(root, CoopMode.ControlsHint, new Vector2(0.04f, 0.13f), new Vector2(0.58f, 0.17f), 14, CoopMode.Colors[1]);
+        coopHint.alignment = TextAnchor.MiddleLeft;
+        tagText = tag;
         Selected = 0;
     }
 
@@ -226,8 +231,34 @@ public class WeaponSelectScreen : MonoBehaviour
         return unlock == null || MetaProgress.IsUnlocked(unlock.id) || MetaProgress.DevUnlockAllWeapons;
     }
 
+    private Text coopHint, tagText, headerText;
+
+    // Кооператив (этап 4): оружие выбирают по очереди — сначала игрок 1, затем игрок 2 (0 / 1).
+    public int Picker { get; private set; }
+    private int firstWeapon = -1;
+
+    public void SetPicker(int player, int chosenByFirst)
+    {
+        Picker = Mathf.Clamp(player, 0, 1);
+        firstWeapon = chosenByFirst;
+        Refresh();
+    }
+
     public void Refresh()
     {
+        bool coop = CoopMode.Selected;
+        if (!coop) Picker = 0;
+        if (coopHint != null) coopHint.gameObject.SetActive(coop);
+        if (tagText != null)
+            tagText.text = !coop ? (GameSession.EndlessMode ? GameText.Source("weaponselectscreen.447") : GameText.Source("weaponselectscreen.440"))
+                : Picker == 1 && firstWeapon >= 0 && firstWeapon < weapons.Length && weapons[firstWeapon] != null
+                    ? GameText.Source("weaponselectscreen.448") + Title(weapons[firstWeapon], firstWeapon).ToUpperInvariant()
+                    : GameText.Source("weaponselectscreen.449");
+        if (headerText != null)
+        {
+            headerText.text = coop ? GameText.Source("coopmode.107") + (Picker + 1) + GameText.Source("weaponselectscreen.450") : GameText.Source("weaponselectscreen.441");
+            headerText.color = coop ? CoopMode.Colors[Picker] : Color.white;
+        }
         if (tiles == null) return;
         if (Selected < 0 || Selected >= tiles.Length || tiles[Selected] == null) Selected = 0;
         currencyText.text = MetaProgress.CurrencyName + ":  " + MetaProgress.Currency;
@@ -258,7 +289,7 @@ public class WeaponSelectScreen : MonoBehaviour
         detailArt.sprite = Art(weapon, Selected);
         detailArt.color = Icon(weapon, Selected) == null && weapon.kind != WeaponKind.Standard ? tone : Color.white;
         string about = !string.IsNullOrEmpty(weapon.description) ? weapon.description :
-            "Обычное оружие: стреляет в ближайшего врага" + (weapon.pelletCount > 1 ? ", " + weapon.pelletCount + " дробин за выстрел." : ".");
+            GameText.Source("weaponselectscreen.451") + (weapon.pelletCount > 1 ? ", " + weapon.pelletCount + GameText.Source("weaponselectscreen.452") : ".");
         detailText.text = about;
         for (int s = 0; s < 3; s++)
         {
@@ -266,14 +297,14 @@ public class WeaponSelectScreen : MonoBehaviour
             statFills[s].rectTransform.anchorMax = new Vector2(Mathf.Clamp01(value / Mathf.Max(0.01f, statMax[s])), 1f);
             statFills[s].color = tone;
             statValues[s].text = s == 0 ? (weapon.pelletCount > 1 ? weapon.damage + "×" + weapon.pelletCount : weapon.damage.ToString()) :
-                s == 1 ? value.ToString("0.#") + " /с" : Mathf.RoundToInt(value) + " м";
+                s == 1 ? value.ToString("0.#") + GameText.Source("weaponselectscreen.453") : Mathf.RoundToInt(value) + GameText.Source("arenaevents.040");
         }
 
         bool unlocked = Unlocked(Selected);
         MetaUnlock price = MetaProgress.FindUnlock(MetaProgress.WeaponKey(Selected));
         bool affordable = price != null && MetaProgress.Currency >= price.cost;
         string currency = MetaProgress.CurrencyName.ToLowerInvariant();
-        actionLabel.text = unlocked ? "В  БОЙ" : affordable ? "ОТКРЫТЬ ЗА " + price.cost + " " + currency.ToUpperInvariant() : "НУЖНО " + price.cost + " " + currency;
+        actionLabel.text = unlocked ? (CoopMode.Selected && Picker == 0 ? GameText.Source("weaponselectscreen.454") : GameText.Source("weaponselectscreen.455")) : affordable ? GameText.Source("weaponselectscreen.456") + price.cost + " " + currency.ToUpperInvariant() : GameText.Source("weaponselectscreen.457") + price.cost + " " + currency;
         actionBack.color = unlocked ? new Color(0.75f, 0.38f, 0.1f, 1f) : affordable ? new Color(0.08f, 0.38f, 0.33f, 1f) : new Color(0.12f, 0.14f, 0.17f, 1f);
         actionLabel.color = unlocked || affordable ? Color.white : Muted;
         action.interactable = unlocked || affordable;

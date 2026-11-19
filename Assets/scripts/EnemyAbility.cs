@@ -205,13 +205,15 @@ public class EnemyAbility : MonoBehaviour
         Anim?.Release();
         Anim?.Fire();
         Vector3 landing = new Vector3(impact.x, GroundHeight.At(impact), impact.z);
-        MortarShell.Launch(Muzzle("SporeSac", transform.position + Vector3.up * 1.2f), landing, 1.05f, MortarRadius);
+        Vector3 sac = Muzzle("SporeSac", transform.position + Vector3.up * 1.2f);
+        MortarShell.Launch(sac, landing, 1.05f, MortarRadius);
+        EnemyFx.MuzzleFlash(sac, Vector3.up, new Color(1f, 0.55f, 0.3f), 1.2f);
         yield return Wait(1.05f);
         warning.enabled = false;
         ClearFill();
         if (ai.target != null && FlatDistance(impact, ai.target.position) <= MortarRadius)
         {
-            ai.target.GetComponent<PlayerHealth>()?.TakeDamage(MortarDamage);
+            ai.target.GetComponent<PlayerHealth>()?.TakeDamage(MortarDamage, HeroDamageCause.Mortar);
             // Попадание по герою: брызги споры и вспышка на нём (сам взрыв рисует MortarShell).
             Vector3 hero = ai.target.position;
             EnemyFx.Blobs(hero + Vector3.up * 1f, new Color(1f, 0.55f, 0.3f), 9, 4f, 0.11f, 0.45f, GroundHeight.At(hero));
@@ -309,7 +311,7 @@ public class EnemyAbility : MonoBehaviour
         BeginAction();
         Vector3 direction = Aim();
         Face(direction);
-        Line(transform.position + direction * 15f);
+        Line(transform.position + direction * 5f);   // короткая метка вместо длинного луча
         // Раздувает горловой мешок и воротник, затем плюёт сгустком кислоты.
         Anim?.Hold(ModelWalkAnimator.Pose.Aim);
         yield return Wait(0.65f);
@@ -318,8 +320,8 @@ public class EnemyAbility : MonoBehaviour
         {
             Anim?.Fire();
             EnemyProjectile.Create(transform.position + direction * 1.2f, direction, ai.target, 10, EnemyProjectile.Style.Acid);
-            EnemyFx.Blobs(Muzzle("Head", transform.position + direction * 0.9f + Vector3.up), new Color(0.6f, 0.95f, 0.2f), 4, 2.5f, 0.08f, 0.3f,
-                GroundHeight.At(transform.position));
+            EnemyFx.MuzzleFlash(Muzzle("Head", transform.position + direction * 0.9f + Vector3.up), direction, new Color(0.6f, 0.95f, 0.2f));
+            GameAudio.Play(Sfx.Zap, 0.25f, 0.15f);
         }
         EndAction(2.4f);
     }
@@ -362,7 +364,7 @@ public class EnemyAbility : MonoBehaviour
                 transform.position = after;
                 if (!hit && ai.target != null && SegmentDistance(before, after, ai.target.position) < 1.2f)
                 {
-                    ai.target.GetComponent<PlayerHealth>()?.TakeDamage(18);
+                    ai.target.GetComponent<PlayerHealth>()?.TakeDamage(18, HeroDamageCause.Charge);
                     hit = true;
                 }
                 if ((after - before).sqrMagnitude < 0.000001f)
@@ -390,7 +392,7 @@ public class EnemyAbility : MonoBehaviour
         Anim?.Hold(ModelWalkAnimator.Pose.Swell);
         yield return Wait(1.2f);
         if (DistanceToTarget <= 3.5f && ArenaLayout.Instance.PathClear(transform.position, ai.target.position, 0f))
-            ai.target.GetComponent<PlayerHealth>()?.TakeDamage(25);
+            ai.target.GetComponent<PlayerHealth>()?.TakeDamage(25, HeroDamageCause.Explosion);
         Detonated = true;
         Vector3 ground = transform.position;
         ground.y = GroundHeight.At(ground);
@@ -489,21 +491,24 @@ public class EnemyAbility : MonoBehaviour
         // Both the aim line and the shot start at the barrel tip (marker: local z 1.0, length 0.9).
         Vector3 muzzle = transform.TransformPoint(new Vector3(0f, 0.25f, 1.45f));
         muzzle.y = transform.position.y;
-        Line(muzzle + direction * 28f, muzzle);
-        warning.widthMultiplier = 0.07f;
+        // Вместо длинной линии: круг-прицел на точке, куда снайпер целится (сужается заливкой к моменту выстрела).
+        Vector3 aimPoint = muzzle + direction * Mathf.Min(28f, Mathf.Max(3f, FlatDistance(muzzle, ai.target.position)));
+        CircleAt(aimPoint, 1.1f, 1.2f);
         // Пригибается и замирает, целясь костяным «стволом» на морде; выстрел — иглой с отдачей.
         Anim?.Hold(ModelWalkAnimator.Pose.Aim);
         yield return Wait(1.2f);
         Anim?.Release();
-        warning.widthMultiplier = 0.12f;
-        muzzle = transform.TransformPoint(new Vector3(0f, 0.25f, 1.45f));
+        warning.enabled = false;
+        ClearFill();
+        muzzle =transform.TransformPoint(new Vector3(0f, 0.25f, 1.45f));
         muzzle.y = transform.position.y;
         if (ai.target != null && ArenaLayout.Instance.PathClear(transform.position, muzzle + direction * 0.3f, 0.15f))
         {
             Anim?.Fire();
             EnemyProjectile shot = EnemyProjectile.Create(muzzle + direction * 0.3f, direction, ai.target, 22, EnemyProjectile.Style.Quill);
             shot.speed = 24f;
-            EnemyFx.Puff(new Vector3(muzzle.x, 0.9f, muzzle.z), new Color(0.95f, 0.9f, 0.75f), 0.35f, 0.25f, direction * 2f);
+            EnemyFx.MuzzleFlash(new Vector3(muzzle.x, 0.9f, muzzle.z), direction, new Color(0.95f, 0.9f, 0.75f), 1.5f);
+            GameAudio.Play(Sfx.Zap, 0.4f, 0.1f);
         }
         EndAction(4.5f);
     }

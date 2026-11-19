@@ -43,6 +43,12 @@ Use the editor version recorded in `ProjectSettings/ProjectVersion.txt`. In Powe
 - Build through **File > Build Settings**, selecting the target platform and enabled scene. No custom command-line build method exists.
 
 ## Coding Style & Naming Conventions
+### Bilingual game text (owner request, 2026-11-12)
+- Every new or changed player-facing text must include **both Russian and English** in `Assets/Resources/Localization/game-text.json` in the same task; preserve existing entry IDs.
+- Compose canonical text with `GameText.Source("entry.id")` and create UI labels through `GameUi.Label` / `LocalizedUiText`, which translates composed strings and refreshes them on language changes. Never put translated display text into save IDs, object names or gameplay conditions.
+- Include serialized weapon/upgrade descriptions in the catalog. Use whole phrases when possible; preserve rich-text tags, numbers and whitespace around dynamic fragments. Check uppercase headings and composed messages too.
+- Run `node tools/localization.cjs --generate` after catalog changes, then `node tools/localization.cjs`. `GameTextSources.cs` is generated canonical data for Unity constructors; edit the JSON, never this generated file. Language selection is in Settings and is saved in `Application.persistentDataPath/settings.json` (`en` / `ru`). First launch defaults to English.
+
 Use four-space indentation and braces on separate lines. Prefer PascalCase for new classes and methods, camelCase for fields and parameters, and an `I` prefix for interfaces. Match new MonoBehaviour filenames to class names. Existing names are inconsistent; avoid unrelated renames. No formatter or linter configuration is present.
 
 ## Testing Guidelines

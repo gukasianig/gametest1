@@ -12,6 +12,19 @@ public class UpgradeIcon : MaskableGraphic
         get => effect;
         set { effect = value; SetVerticesDirty(); }
     }
+    [SerializeField] private bool showPlusBadge;
+    public bool ShowPlusBadge
+    {
+        get => showPlusBadge;
+        set { showPlusBadge = value; SetVerticesDirty(); }
+    }
+    [SerializeField] private bool showGlyph = true;
+    // false: only the "+" badge is drawn (the glyph is a sprite shown by a sibling Image).
+    public bool ShowGlyph
+    {
+        get => showGlyph;
+        set { showGlyph = value; SetVerticesDirty(); }
+    }
     private VertexHelper vertices;
     private Vector2 centre;
     private float scale;
@@ -23,6 +36,47 @@ public class UpgradeIcon : MaskableGraphic
         Rect rect = rectTransform.rect;
         centre = rect.center;
         scale = Mathf.Min(rect.width, rect.height) * 0.46f;
+        float fullScale = scale;
+        Vector2 fullCentre = centre;
+        if (showGlyph)
+        {
+            if (showPlusBadge)
+            {
+                scale = fullScale * 0.8f;
+                centre = fullCentre + new Vector2(-0.12f, 0.1f) * fullScale;
+            }
+            DrawGlyph();
+        }
+        if (showPlusBadge)
+        {
+            scale = fullScale;
+            centre = fullCentre;
+            DrawPlusBadge();
+        }
+    }
+
+    private void DrawPlusBadge()
+    {
+        Vector2 at = new Vector2(0.68f, -0.68f);
+        Color ring = new Color(0.03f, 0.08f, 0.1f);
+        Color green = new Color(0.18f, 0.74f, 0.45f);
+        const float outer = 0.4f, inner = 0.31f;
+        for (int i = 0; i < 24; i++)
+        {
+            float a = i * Mathf.PI * 2 / 24, b = (i + 1) * Mathf.PI * 2 / 24;
+            Triangle(at, at + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * outer, at + new Vector2(Mathf.Cos(b), Mathf.Sin(b)) * outer, ring);
+        }
+        for (int i = 0; i < 24; i++)
+        {
+            float a = i * Mathf.PI * 2 / 24, b = (i + 1) * Mathf.PI * 2 / 24;
+            Triangle(at, at + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * inner, at + new Vector2(Mathf.Cos(b), Mathf.Sin(b)) * inner, green);
+        }
+        Line(at + new Vector2(-0.16f, 0f), at + new Vector2(0.16f, 0f), 0.09f, Color.white);
+        Line(at + new Vector2(0f, -0.16f), at + new Vector2(0f, 0.16f), 0.09f, Color.white);
+    }
+
+    private void DrawGlyph()
+    {
         switch (effect)
         {
             case UpgradeEffect.Damage:
@@ -123,6 +177,7 @@ public class UpgradeIcon : MaskableGraphic
                 Line(new Vector2(0.5f, 0.1f), new Vector2(0.8f, 0.45f), 0.14f);
                 break;
             case UpgradeEffect.Armor:
+            case UpgradeEffect.SteelWill:
                 Fill(new Vector2(-0.6f, 0.75f), new Vector2(0.6f, 0.75f), new Vector2(0.6f, -0.05f), new Vector2(0f, -0.9f), new Vector2(-0.6f, -0.05f));
                 Line(new Vector2(0f, 0.5f), new Vector2(0f, -0.45f), 0.08f, new Color(0.03f, 0.08f, 0.1f));
                 break;

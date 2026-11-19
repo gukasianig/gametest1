@@ -9,7 +9,7 @@ public static class GameSettings
     public static readonly int[] FpsOptions = { 30, 60, 120, 144, -1 };
     public static readonly FullScreenMode[] ScreenModes =
         { FullScreenMode.FullScreenWindow, FullScreenMode.ExclusiveFullScreen, FullScreenMode.Windowed };
-    public static readonly string[] ScreenModeNames = { "Полный экран (окно)", "Полный экран", "В окне" };
+    public static readonly string[] ScreenModeNames = { GameText.Source("gamesettings.151"), GameText.Source("gamesettings.152"), GameText.Source("gamesettings.153") };
 
     public static int FpsIndex
     {
@@ -105,6 +105,7 @@ public static class GameSettings
     public static void Save()
     {
         PlayerPrefs.Save();
+        GameText.Save();
     }
 }
 
@@ -114,39 +115,44 @@ public static class SettingsPanel
     public static RectTransform Build(Transform parent, System.Action onBack)
     {
         RectTransform panel = GameUi.Box(parent, "Settings", Vector2.zero, Vector2.one, GameUi.Background, true);
-        GameUi.Label(panel, "НАСТРОЙКИ", new Vector2(0.2f, 0.87f), new Vector2(0.8f, 0.96f), 36);
+        GameUi.Label(panel, GameText.Source("gamesettings.154"), new Vector2(0.2f, 0.87f), new Vector2(0.8f, 0.96f), 36);
 
         List<System.Action> refreshers = new List<System.Action>();
         float y = 0.82f;
-        const float Step = 0.06f;
+        const float Step = 0.052f;
 
-        Header(panel, "Звук", ref y);
-        Row(panel, "Музыка", ref y, Step, refreshers,
+        Row(panel, GameText.Source("settings.language"), ref y, Step, refreshers,
+            d => GameText.SetLanguage(GameText.Language == GameLanguage.English ? GameLanguage.Russian : GameLanguage.English),
+            () => GameText.LanguageName);
+
+        Header(panel, GameText.Source("gamesettings.155"), ref y);
+        Row(panel, GameText.Source("gamesettings.156"), ref y, Step, refreshers,
             d => GameAudio.MusicVolume = StepVolume(GameAudio.MusicVolume, d),
             () => Percent(GameAudio.MusicVolume));
-        Row(panel, "Эффекты", ref y, Step, refreshers,
+        Row(panel, GameText.Source("gamesettings.157"), ref y, Step, refreshers,
             d => { GameAudio.SfxVolume = StepVolume(GameAudio.SfxVolume, d); GameAudio.Play(Sfx.Hit); },
             () => Percent(GameAudio.SfxVolume));
 
-        Header(panel, "Графика", ref y);
-        Row(panel, "Качество", ref y, Step, refreshers,
+        Header(panel, GameText.Source("gamesettings.158"), ref y);
+        Row(panel, GameText.Source("gamesettings.159"), ref y, Step, refreshers,
             d => { GameSettings.Quality = Wrap(GameSettings.Quality + d, QualitySettings.names.Length); GameSettings.ApplyGraphics(); },
-            () => QualitySettings.names[GameSettings.Quality]);
-        Row(panel, "Ограничение FPS", ref y, Step, refreshers,
+            () => QualitySettings.names[GameSettings.Quality] == "High Fidelity"
+                ? GameText.Source("settings.high_fidelity") : QualitySettings.names[GameSettings.Quality]);
+        Row(panel, GameText.Source("gamesettings.160"), ref y, Step, refreshers,
             d => { GameSettings.FpsIndex = Wrap(GameSettings.FpsIndex + d, GameSettings.FpsOptions.Length); GameSettings.ApplyGraphics(); },
             () =>
             {
                 int fps = GameSettings.FpsOptions[GameSettings.FpsIndex];
-                string text = fps < 0 ? "Без ограничения" : fps + " FPS";
+                string text = fps < 0 ? GameText.Source("gamesettings.161") : fps + " FPS";
                 return GameSettings.VSync ? text + " (VSync)" : text;
             });
-        Row(panel, "Вертикальная синхр.", ref y, Step, refreshers,
+        Row(panel, GameText.Source("gamesettings.162"), ref y, Step, refreshers,
             d => { GameSettings.VSync = !GameSettings.VSync; GameSettings.ApplyGraphics(); },
             () => OnOff(GameSettings.VSync));
-        Row(panel, "Режим экрана", ref y, Step, refreshers,
+        Row(panel, GameText.Source("gamesettings.163"), ref y, Step, refreshers,
             d => { GameSettings.ScreenModeIndex = Wrap(GameSettings.ScreenModeIndex + d, GameSettings.ScreenModes.Length); GameSettings.ApplyScreen(); },
             () => GameSettings.ScreenModeNames[GameSettings.ScreenModeIndex]);
-        Row(panel, "Разрешение", ref y, Step, refreshers,
+        Row(panel, GameText.Source("gamesettings.164"), ref y, Step, refreshers,
             d =>
             {
                 List<Vector2Int> list = GameSettings.Resolutions();
@@ -157,20 +163,24 @@ public static class SettingsPanel
             },
             () => GameSettings.ScreenSize.x + " × " + GameSettings.ScreenSize.y);
 
-        Header(panel, "Интерфейс", ref y);
-        Row(panel, "Цифры урона", ref y, Step, refreshers,
+        Header(panel, GameText.Source("gamesettings.165"), ref y);
+        Row(panel, GameText.Source("gamesettings.166"), ref y, Step, refreshers,
             d => GameSettings.DamageNumbers = !GameSettings.DamageNumbers,
             () => OnOff(GameSettings.DamageNumbers));
-        Row(panel, "Тряска камеры", ref y, Step, refreshers,
+        Row(panel, GameText.Source("gamesettings.167"), ref y, Step, refreshers,
             d => GameSettings.ScreenShakeEnabled = !GameSettings.ScreenShakeEnabled,
             () => OnOff(GameSettings.ScreenShakeEnabled));
 
-        Button back = GameUi.Button(panel, "Назад", new Vector2(0.4f, 0.03f), new Vector2(0.6f, 0.1f), () =>
+        Button back = GameUi.Button(panel, GameText.Source("challengescreen.088"), new Vector2(0.4f, 0.03f), new Vector2(0.6f, 0.1f), () =>
         {
             GameSettings.Save();
             if (onBack != null) onBack();
         });
         UiArtwork.Round(back.GetComponent<Image>());
+        panel.gameObject.AddComponent<SettingsPanelRefresh>().Refresh = () =>
+        {
+            foreach (System.Action refresh in refreshers) refresh();
+        };
         panel.gameObject.SetActive(false);
         return panel;
     }
@@ -179,7 +189,7 @@ public static class SettingsPanel
     {
         Text label = GameUi.Label(panel, title.ToUpperInvariant(), new Vector2(0.22f, y - 0.04f), new Vector2(0.78f, y), 16, GameUi.Accent);
         label.alignment = TextAnchor.MiddleLeft;
-        y -= 0.04f;
+        y -= 0.035f;
     }
 
     private static void Row(RectTransform panel, string title, ref float y, float step, List<System.Action> refreshers,
@@ -210,5 +220,5 @@ public static class SettingsPanel
     }
 
     private static string Percent(float value) { return Mathf.RoundToInt(value * 100f) + "%"; }
-    private static string OnOff(bool value) { return value ? "Вкл" : "Выкл"; }
+    private static string OnOff(bool value) { return value ? GameText.Source("gamesettings.168") : GameText.Source("gamesettings.169"); }
 }

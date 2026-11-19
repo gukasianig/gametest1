@@ -50,7 +50,7 @@ public static class EnemyRosterChecks
             {
                 EnemyAI prefabAI = entry.prefab.GetComponent<EnemyAI>();
                 Health prefabHP = entry.prefab.GetComponent<Health>();
-                int expectedHP = entry.minWave == 6 ? 300 : entry.minWave == 3 ? 30 : 100;
+                int expectedHP = entry.minWave == 6 ? 300 : entry.minWave == 3 ? 30 : 80;
                 float expectedSpeed = entry.minWave == 6 ? 1.5f : entry.minWave == 3 ? 5f : 3f;
                 Require(prefabHP.maxHealth == expectedHP && Mathf.Approximately(prefabAI.speed, expectedSpeed), "Authored stats changed.");
                 var before = new HashSet<EnemyAI>(UnityEngine.Object.FindObjectsOfType<EnemyAI>());
@@ -66,7 +66,7 @@ public static class EnemyRosterChecks
                 int scaledHP = Mathf.RoundToInt(expectedHP * (1f + (waves.wave - 1) * waves.settings.healthGrowthPerWave));
                 Require(spawned.GetComponent<Health>().CurrentHealth == scaledHP, "Wave health not initialized.");
             }
-            File.WriteAllText("Logs/enemy-roster-report.txt", "PASS: Weak/Fast/Tank prefabs; authored HP 100/30/300 and speeds 3/5/1.5; wave/time gates 1+0s, 3+25s, 6+75s; guaranteed first introduction within budget; all three spawned grounded with player target and scaled HP.\nFocused Play setup/logic check; no long combat balance test.\n");
+            File.WriteAllText("Logs/enemy-roster-report.txt", "PASS: Weak/Fast/Tank prefabs; authored HP 80/30/300 and speeds 3/5/1.5; wave/time gates 1+0s, 3+25s, 6+75s; guaranteed first introduction within budget; all three spawned grounded with player target and scaled HP.\nFocused Play setup/logic check; no long combat balance test.\n");
         }
         catch (Exception exception)
         {

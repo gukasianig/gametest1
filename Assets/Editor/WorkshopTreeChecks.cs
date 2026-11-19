@@ -117,10 +117,19 @@ public static class WorkshopTreeChecks
         {
             MetaProgress.Data.currency = 100000;
             foreach (MetaUnlock unlock in MetaProgress.Unlocks) MetaProgress.Unlock(unlock.id);
-            for (int w = 0; w < 13; w++)
+            for (int w = 1; w < 13; w++)
                 for (int e = 1; e <= 4; e++)
                     Check(!WeaponElements.Buy(w, (WeaponElement)e) && !WeaponElements.Equip(w, (WeaponElement)e), "Locked module bought or equipped " + w + ":" + e);
-            Pass("Weapon modules are locked: none of 52 can be bought or equipped; purchase checks skipped until the lock is removed");
+            // Пистолет (12.11.2026) открыт: только три ветки, по 3 ранга; стихии на нём недопустимы.
+            Check(!WeaponElements.Buy(0, WeaponElement.Fire) && !WeaponElements.Buy(1, WeaponElement.Revolver), "Wrong element accepted for pistol/other weapon");
+            foreach (WeaponElement branch in new[] { WeaponElement.Revolver, WeaponElement.Dual, WeaponElement.Sticky })
+            {
+                int before = MetaProgress.Currency;
+                Check(WeaponElements.Buy(0, branch) && MetaProgress.Currency == before - 120, "Pistol branch purchase failed " + branch);
+                Check(WeaponElements.Buy(0, branch) && WeaponElements.Buy(0, branch) && !WeaponElements.Buy(0, branch), "Pistol branch rank cap " + branch);
+            }
+            Check(WeaponElements.Equip(0, WeaponElement.Dual) && WeaponElements.Equipped(0) == WeaponElement.Dual, "Pistol branch equip failed");
+            Pass("Pistol: 3 branches x 3 ranks buyable and equippable; the 48 other modules stay locked (compile-level edit, check not re-run in Unity)");
             yield break;
         }
         Check(!WeaponElements.Buy(2, WeaponElement.Fire), "Module bought for a locked weapon");
@@ -272,12 +281,13 @@ public static class WorkshopTreeChecks
         Pass("Existing MetaProgressChecks: tree purchase, bonuses, menu locks, modifiers, save and reward cycle");
     }
 
-    public static void Capture(Canvas canvas, string path, int width = 1600, int height = 900, Action validate = null)
+    public static void Capture(Canvas canvas, string path, int width = 1600, int height = 900, Action validate = null, bool settleMotion = true)
     {
         RenderMode mode = canvas.renderMode;
         Camera previousCamera = canvas.worldCamera;
         float previousDistance = canvas.planeDistance;
         WorkshopTree tree = canvas.GetComponentInChildren<WorkshopTree>();
+        if (tree != null && settleMotion) tree.CompletePresentation();
         if (tree != null) tree.RememberScrollPosition();
         GameObject item = new GameObject("UI check camera", typeof(Camera));
         Camera camera = item.GetComponent<Camera>();
@@ -299,6 +309,7 @@ public static class WorkshopTreeChecks
             canvas.GetComponent<CanvasScaler>().SendMessage("Handle");
             Canvas.ForceUpdateCanvases();
             if (tree != null) tree.RefreshLayout();
+            if (tree != null && settleMotion) tree.CompletePresentation();
             Canvas.ForceUpdateCanvases();
             if (validate != null) validate();
             camera.Render();

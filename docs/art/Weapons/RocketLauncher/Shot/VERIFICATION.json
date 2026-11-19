@@ -1,0 +1,14 @@
+{
+  "meshParts": 4,
+  "triangles": 620,
+  "boundsBlenderXYZ": [
+    0.28,
+    1.13,
+    0.28
+  ],
+  "noseAxis": "+Y",
+  "glowPart": "Flame (RocketGlow)",
+  "fbxRoundTrip": "PASS",
+  "closedMeshParts": 4,
+  "degenerateTriangles": 0
+}

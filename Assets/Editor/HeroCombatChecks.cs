@@ -161,7 +161,7 @@ public static class HeroCombatChecks
         Require(shooter.SelectWeapon(0), "Could not select starting weapon");
 
         movement.CheckInput = Vector2.right;
-        yield return Until(() => animation.IsPlaying("Run"), "Moving did not play Run");
+        yield return Until(() => animation.IsPlaying("Run") || animation.IsPlaying("RunBack") || animation.IsPlaying("StrafeLeft") || animation.IsPlaying("StrafeRight"), "Moving did not play a locomotion clip");
         Vector3 beforeDash = player.transform.position;
         movement.RequestDash();
         yield return Until(() => movement.Dashing && animation.IsPlaying("Dash"), "Dash did not play Dash");

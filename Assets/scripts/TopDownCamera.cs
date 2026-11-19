@@ -13,6 +13,7 @@ public class TopDownCamera : MonoBehaviour
     // Позиция без тряски: следование считается от неё, смещение ScreenShake добавляется сверху.
     private Vector3 basePosition;
     private bool baseKnown;
+    private float zoom = 1f;
 
     void Start()
     {
@@ -27,7 +28,16 @@ public class TopDownCamera : MonoBehaviour
     {
         if (target == null || Time.timeScale <= 0f) return;
 
-        Vector3 desiredPosition = target.position + offset;
+        // Кооператив: камера смотрит в центр между героями и отъезжает, когда они расходятся (до ×1,55).
+        Vector3 focus = target.position;
+        float zoomTarget = 1f;
+        if (CoopMode.Active && CoopMode.TryFrame(out Vector3 centre, out float spread))
+        {
+            focus = centre;
+            zoomTarget = 1f + Mathf.Clamp01((spread - 10f) / (CoopMode.MaxSpread - 10f)) * 0.55f;
+        }
+        zoom = Mathf.Lerp(zoom, zoomTarget, 1f - Mathf.Exp(-3f * Time.deltaTime));
+        Vector3 desiredPosition = focus + offset * zoom;
 
         if (!baseKnown) { basePosition = transform.position; baseKnown = true; }
         basePosition = Vector3.Lerp(

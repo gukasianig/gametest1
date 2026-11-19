@@ -10,6 +10,7 @@ public class EnemyProjectile : MonoBehaviour
     public int damage = 12;
     public float speed = 8f;
     public Style style;
+    public HeroDamageCause cause = HeroDamageCause.Projectile;
     private float age;
     private Vector3 baseScale;
 
@@ -18,7 +19,8 @@ public class EnemyProjectile : MonoBehaviour
     static readonly Color BoneColor = new Color(0.96f, 0.9f, 0.74f);
     static readonly Color BallColor = new Color(1f, 0.52f, 0.15f);
 
-    public static EnemyProjectile Create(Vector3 position, Vector3 direction, Transform target, int damage, Style style = Style.Ball)
+    public static EnemyProjectile Create(Vector3 position, Vector3 direction, Transform target, int damage, Style style = Style.Ball,
+        HeroDamageCause cause = HeroDamageCause.Projectile)
     {
         direction.y = 0f;
         direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
@@ -36,6 +38,7 @@ public class EnemyProjectile : MonoBehaviour
                 core.transform.SetParent(root.transform, false);
                 core.transform.localPosition = new Vector3(0f, 0f, 0.22f);
                 core.transform.localScale = Vector3.one * 0.55f;
+                Skin(root, "Acid shot");   // модель из make_items.py; до следа, иначе ApplyEnemy скроет и след
                 Trail(root, AcidColor, 0.28f, 0.22f);
                 break;
             }
@@ -47,6 +50,8 @@ public class EnemyProjectile : MonoBehaviour
                 root.transform.rotation = Quaternion.LookRotation(direction);
                 GameObject shaft = EnemyFx.Prim(PrimitiveType.Cylinder, start, BoneColor);
                 shaft.transform.SetParent(root.transform, false);
+                // 11.11.2026: без этого стержень оставался со смещением, равным мировой точке выстрела (SetParent(…, false)).
+                shaft.transform.localPosition = Vector3.zero;
                 shaft.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
                 shaft.transform.localScale = new Vector3(0.09f, 0.42f, 0.09f);
                 GameObject tip = EnemyFx.Prim(PrimitiveType.Cube, start, new Color(0.45f, 0.3f, 0.5f));
@@ -54,12 +59,14 @@ public class EnemyProjectile : MonoBehaviour
                 tip.transform.localPosition = new Vector3(0f, 0f, -0.38f);
                 tip.transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
                 tip.transform.localScale = new Vector3(0.16f, 0.16f, 0.08f);
+                Skin(root, "Bone quill");
                 Trail(root, new Color(1f, 0.95f, 0.6f), 0.12f, 0.16f);
                 break;
             }
             default:
                 root = EnemyFx.Prim(PrimitiveType.Sphere, start, BallColor);
                 root.transform.localScale = Vector3.one * 0.4f;
+                Skin(root, "Hostile orb");
                 Trail(root, BallColor, 0.3f, 0.2f);
                 break;
         }
@@ -69,8 +76,18 @@ public class EnemyProjectile : MonoBehaviour
         shot.target = target;
         shot.damage = damage;
         shot.style = style;
+        shot.cause = cause;
         shot.baseScale = root.transform.localScale;
         return shot;
+    }
+
+    // Модель снаряда (tools/blender/make_items.py) вместо примитивов: вписывается без поворота корня, затем поворот возвращается.
+    static void Skin(GameObject root, string key)
+    {
+        Quaternion turn = root.transform.rotation;
+        root.transform.rotation = Quaternion.identity;
+        ModelSkins.ApplyEnemy(root, key);
+        root.transform.rotation = turn;
     }
 
     static void Trail(GameObject root, Color color, float width, float time)
@@ -98,7 +115,7 @@ public class EnemyProjectile : MonoBehaviour
         float t = Mathf.Clamp01(Vector3.Dot(target.position - start, segment) / Mathf.Max(segment.sqrMagnitude, 0.00001f));
         if (Vector3.Distance(start + segment * t, target.position) < 0.75f)
         {
-            target.GetComponent<PlayerHealth>().TakeDamage(damage);
+            target.GetComponent<PlayerHealth>().TakeDamage(damage, cause);
             Impact(start + segment * t);
             Destroy(gameObject);
             return;
@@ -155,6 +172,7 @@ public sealed class MortarShell : MonoBehaviour
         spot.transform.SetParent(go.transform, false);
         spot.transform.localPosition = new Vector3(0.25f, 0.2f, 0f);
         spot.transform.localScale = Vector3.one * 0.45f;
+        ModelSkins.ApplyEnemy(go, "Mortar spore");   // модель споры (make_items.py), до следа
         TrailRenderer trail = go.AddComponent<TrailRenderer>();
         trail.time = 0.3f;
         trail.widthMultiplier = 0.3f;

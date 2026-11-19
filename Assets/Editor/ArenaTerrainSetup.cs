@@ -1,10 +1,10 @@
-// 09.11.2026: SampleScene (заводская арена) удалена; эти пакетные методы больше не работают — оставлены для истории.
+// Пакетные методы работают на GreenArenaPlay (с 18.11.2026); бывшая SampleScene удалена.
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-// Подключение Blender-модели арены (Assets/Art/Arena/ArenaFactory.fbx): материал с палитрой, объект в SampleScene.
+// Подключение Blender-модели арены (Assets/Art/Arena/ArenaFactory.fbx): материал с палитрой, объект в сцене.
 // Меню Arena → Setup Blender terrain; batch: -executeMethod ArenaTerrainSetup.SetupBatch -quit
 public static class ArenaTerrainSetup
 {
@@ -56,7 +56,7 @@ public static class ArenaTerrainSetup
     // Убрать объёмное поле из сцены (модель остаётся в Assets/Art/Arena).
     public static void RemoveBatch()
     {
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         ArenaTerrain t = Object.FindObjectOfType<ArenaTerrain>(true);
         if (t != null) { UnityEngine.SceneManagement.Scene sc = t.gameObject.scene; Object.DestroyImmediate(t.gameObject); EditorSceneManager.MarkSceneDirty(sc); }
         EditorSceneManager.SaveOpenScenes();
@@ -65,7 +65,7 @@ public static class ArenaTerrainSetup
 
     public static void SetupBatch()
     {
-        EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+        EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
         Setup();
         EditorSceneManager.SaveOpenScenes();
         EditorApplication.Exit(0);

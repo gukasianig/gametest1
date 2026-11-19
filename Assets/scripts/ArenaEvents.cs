@@ -69,6 +69,7 @@ public class ArenaEvents : MonoBehaviour
             if (clock >= endsAt) End(true);
             return;
         }
+        if (GameSession.TestMode) { nextAt = float.MaxValue; return; }   // в тест-арене события только по кнопке
         if (clock >= nextAt && session.Elapsed < session.survivalSeconds - stopBeforeBossSeconds) Begin(Pick());
         else if (clock >= nextAt) nextAt = float.MaxValue;
     }
@@ -98,21 +99,21 @@ public class ArenaEvents : MonoBehaviour
         switch (kind)
         {
             case ArenaEventKind.MeteorShower:
-                title = "МЕТЕОРИТНЫЙ ДОЖДЬ — уходи с красных кругов!";
+                title = GameText.Source("arenaevents.001");
                 break;
             case ArenaEventKind.MagneticStorm:
                 EnemySpeedFactor = 1.3f;
                 ExperienceFactor = 2f;
-                title = "МАГНИТНАЯ БУРЯ — враги быстрее, опыт ×2";
+                title = GameText.Source("arenaevents.002");
                 break;
             case ArenaEventKind.RepairField:
                 fieldCenter = FindSpot(14f, 26f, FieldRadius);
                 SpawnField(fieldCenter);
-                title = "РЕМОНТНАЯ ЗОНА — встань в зелёный круг";
+                title = GameText.Source("arenaevents.003");
                 break;
             case ArenaEventKind.SupplyDrop:
                 SupplyDrop();
-                title = "СБРОС ПРИПАСОВ — забери кристаллы у маяка";
+                title = GameText.Source("arenaevents.004");
                 endsAt = clock + 12f;
                 break;
             case ArenaEventKind.HoldPoint:
@@ -122,25 +123,25 @@ public class ArenaEvents : MonoBehaviour
                 props.Add(Flat("Hold point", holdCentre, HoldRadius * 2f, new Color(0.55f, 0.45f, 0.1f), 0.04f));
                 holdFill = Flat("Hold fill", holdCentre, 0.1f, new Color(1f, 0.8f, 0.2f), 0.06f);
                 props.Add(holdFill);
-                title = "УДЕРЖИ ТОЧКУ — стой в золотом круге " + Mathf.RoundToInt(holdSeconds) + " с";
+                title = GameText.Source("arenaevents.005") + Mathf.RoundToInt(holdSeconds) + GameText.Source("arenaevents.006");
                 endsAt = clock + 32f;
                 break;
             case ArenaEventKind.Ambush:
                 StartCoroutine(AmbushRoutine());
-                title = "ЗАСАДА — враги окружают!";
+                title = GameText.Source("arenaevents.007");
                 endsAt = clock + 6f;
                 break;
             case ArenaEventKind.ToxicPools:
                 SpawnPools();
-                title = "ТОКСИЧНЫЕ ЛУЖИ — вредят и вам, и врагам";
+                title = GameText.Source("arenaevents.008");
                 break;
             case ArenaEventKind.Wildfire:
                 SpawnWildfire();
-                title = "ПОЖАР — очаги разрастаются, обходи огонь";
+                title = GameText.Source("arenaevents.009");
                 break;
             case ArenaEventKind.GuardChest:
                 StartChest();
-                title = "ЗАЩИТИ СУНДУК — продержись " + Mathf.RoundToInt(chestSeconds) + " с";
+                title = GameText.Source("arenaevents.010") + Mathf.RoundToInt(chestSeconds) + GameText.Source("arenaevents.006");
                 endsAt = clock + chestSeconds + 6f;
                 break;
         }
@@ -184,7 +185,7 @@ public class ArenaEvents : MonoBehaviour
         bannerGroup.blocksRaycasts = false;
         bannerStripe = GameUi.Box(banner, "Stripe", new Vector2(0f, 0f), new Vector2(1f, 0.05f), Color.white).GetComponent<Image>();
         GameUi.Box(banner, "Stripe Top", new Vector2(0f, 0.95f), new Vector2(1f, 1f), new Color(1f, 1f, 1f, 0.15f));
-        GameUi.Label(banner, "СОБЫТИЕ АРЕНЫ", new Vector2(0.2f, 0.74f), new Vector2(0.8f, 0.94f), 14, new Color(0.65f, 0.72f, 0.8f));
+        GameUi.Label(banner, GameText.Source("arenaevents.011"), new Vector2(0.2f, 0.74f), new Vector2(0.8f, 0.94f), 14, new Color(0.65f, 0.72f, 0.8f));
         bannerName = GameUi.Readable(GameUi.Label(banner, "", new Vector2(0.1f, 0.34f), new Vector2(0.9f, 0.78f), 40), 2f);
         bannerName.fontStyle = FontStyle.Bold;
         bannerHint = GameUi.Readable(GameUi.Label(banner, "", new Vector2(0.1f, 0.07f), new Vector2(0.9f, 0.36f), 21, new Color(0.93f, 0.95f, 0.97f)), 1f);
@@ -236,9 +237,10 @@ public class ArenaEvents : MonoBehaviour
         foreach (GroundFireZone fire in fires) if (fire != null) fire.Extinguish();
         fires.Clear();
         bool lost = (Current == ArenaEventKind.HoldPoint && !holdWon) || (Current == ArenaEventKind.GuardChest && chestLost);
+        if (announce && !lost) WorkshopProjects.RecordEvent();
         nextAt = clock + Random.Range(minGap, maxGap);
         GameSession session = GameSession.Instance;
-        if (announce && session != null) session.Announce(lost ? (Current == ArenaEventKind.GuardChest ? "Сундук потерян" : "Точка потеряна") : "Событие закончилось", 2f);
+        if (announce && session != null) session.Announce(lost ? (Current == ArenaEventKind.GuardChest ? GameText.Source("arenaevents.012") : GameText.Source("arenaevents.013")) : GameText.Source("arenaevents.014"), 2f);
     }
 
     // --- On-screen line under the timer: the running event, its time left and the hold-point progress.
@@ -249,15 +251,15 @@ public class ArenaEvents : MonoBehaviour
     {
         switch (kind)
         {
-            case ArenaEventKind.MeteorShower: return "МЕТЕОРИТНЫЙ ДОЖДЬ";
-            case ArenaEventKind.MagneticStorm: return "МАГНИТНАЯ БУРЯ";
-            case ArenaEventKind.RepairField: return "РЕМОНТНАЯ ЗОНА";
-            case ArenaEventKind.SupplyDrop: return "СБРОС ПРИПАСОВ";
-            case ArenaEventKind.HoldPoint: return "УДЕРЖИ ТОЧКУ";
-            case ArenaEventKind.Ambush: return "ЗАСАДА";
-            case ArenaEventKind.Wildfire: return "ПОЖАР";
-            case ArenaEventKind.GuardChest: return "ЗАЩИТИ СУНДУК";
-            default: return "ТОКСИЧНЫЕ ЛУЖИ";
+            case ArenaEventKind.MeteorShower: return GameText.Source("arenaevents.015");
+            case ArenaEventKind.MagneticStorm: return GameText.Source("arenaevents.016");
+            case ArenaEventKind.RepairField: return GameText.Source("arenaevents.017");
+            case ArenaEventKind.SupplyDrop: return GameText.Source("arenaevents.018");
+            case ArenaEventKind.HoldPoint: return GameText.Source("arenaevents.019");
+            case ArenaEventKind.Ambush: return GameText.Source("arenaevents.020");
+            case ArenaEventKind.Wildfire: return GameText.Source("arenaevents.021");
+            case ArenaEventKind.GuardChest: return GameText.Source("arenaevents.022");
+            default: return GameText.Source("arenaevents.023");
         }
     }
 
@@ -292,12 +294,12 @@ public class ArenaEvents : MonoBehaviour
             if (banner != null && banner.gameObject.activeSelf) banner.gameObject.SetActive(false);
             return;
         }
-        string line = Title(Current) + "  " + Mathf.CeilToInt(Remaining) + " с";
+        string line = Title(Current) + "  " + Mathf.CeilToInt(Remaining) + GameText.Source("arenaevents.006");
         if (Current == ArenaEventKind.HoldPoint)
-            line = holdWon ? "ТОЧКА УДЕРЖАНА" : "УДЕРЖИ ТОЧКУ  " + Mathf.FloorToInt(holdProgress) + " / " + Mathf.RoundToInt(holdSeconds) + " с  •  осталось " + Mathf.CeilToInt(Remaining) + " с";
+            line = holdWon ? GameText.Source("arenaevents.024") : GameText.Source("arenaevents.025") + Mathf.FloorToInt(holdProgress) + " / " + Mathf.RoundToInt(holdSeconds) + GameText.Source("arenaevents.026") + Mathf.CeilToInt(Remaining) + GameText.Source("arenaevents.006");
         if (Current == ArenaEventKind.GuardChest)
-            line = chestOpened ? "СУНДУК ОТКРЫТ" : chestLost ? "СУНДУК РАЗРУШЕН" :
-                "СУНДУК  " + Mathf.CeilToInt(Mathf.Max(0f, chestSeconds - chestTimer)) + " с  •  прочность " + Mathf.CeilToInt(chestHealth / ChestMaxHealth * 100f) + "%";
+            line = chestOpened ? GameText.Source("arenaevents.027") : chestLost ? GameText.Source("arenaevents.028") :
+                GameText.Source("arenaevents.029") + Mathf.CeilToInt(Mathf.Max(0f, chestSeconds - chestTimer)) + GameText.Source("arenaevents.030") + Mathf.CeilToInt(chestHealth / ChestMaxHealth * 100f) + "%";
         hudText.text = line;
         hudText.color = Tone(Current);
         plateStripe.color = Tone(Current);
@@ -314,15 +316,15 @@ public class ArenaEvents : MonoBehaviour
     {
         switch (kind)
         {
-            case ArenaEventKind.MeteorShower: return "Уходи с красных кругов — туда падают метеориты";
-            case ArenaEventKind.MagneticStorm: return "Враги быстрее, но опыт ×2 — собирай кристаллы";
-            case ArenaEventKind.RepairField: return "Иди по стрелке и встань в зелёный круг — он лечит";
-            case ArenaEventKind.SupplyDrop: return "Иди по стрелке к жёлтому маяку и собери кристаллы";
-            case ArenaEventKind.HoldPoint: return "Иди по стрелке и стой в золотом круге, пока идёт счёт";
-            case ArenaEventKind.Ambush: return "Враги появятся вокруг тебя — будь готов к рывку";
-            case ArenaEventKind.Wildfire: return "Огонь разрастается — не заходи в него, заманивай врагов";
-            case ArenaEventKind.GuardChest: return "Не дай врагам сломать сундук в центре арены — когда время выйдет, он даст особую награду";
-            default: return "Не стой в зелёной кислоте — она жжёт и врагов";
+            case ArenaEventKind.MeteorShower: return GameText.Source("arenaevents.031");
+            case ArenaEventKind.MagneticStorm: return GameText.Source("arenaevents.032");
+            case ArenaEventKind.RepairField: return GameText.Source("arenaevents.033");
+            case ArenaEventKind.SupplyDrop: return GameText.Source("arenaevents.034");
+            case ArenaEventKind.HoldPoint: return GameText.Source("arenaevents.035");
+            case ArenaEventKind.Ambush: return GameText.Source("arenaevents.036");
+            case ArenaEventKind.Wildfire: return GameText.Source("arenaevents.037");
+            case ArenaEventKind.GuardChest: return GameText.Source("arenaevents.038");
+            default: return GameText.Source("arenaevents.039");
         }
     }
 
@@ -375,7 +377,7 @@ public class ArenaEvents : MonoBehaviour
         arrow.rectTransform.anchoredPosition = local;
         arrow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, angle);
         arrowDistance.rectTransform.anchoredPosition = local + (onScreen ? new Vector2(0f, 45f) : -local.normalized * 55f);
-        arrowDistance.text = Mathf.RoundToInt(metres) + " м";
+        arrowDistance.text = Mathf.RoundToInt(metres) + GameText.Source("arenaevents.040");
     }
 
     private void FindPlayer()
@@ -424,7 +426,7 @@ public class ArenaEvents : MonoBehaviour
             tick = 0.5f;
             Vector3 offset = player.position - fieldCenter;
             offset.y = 0f;
-            if (playerHealth != null && offset.magnitude <= FieldRadius) playerHealth.Heal(3);
+            if (playerHealth != null && offset.magnitude <= FieldRadius) playerHealth.Heal(Mathf.Max(1, Mathf.RoundToInt(3 * RunModifiers.RepairHeal)));
         }
     }
 
@@ -469,10 +471,24 @@ public class ArenaEvents : MonoBehaviour
         Paint(beam, new Color(1f, 0.8f, 0.2f));
         props.Add(beam);
         props.Add(Flat("Supply marker", centre, 6f, new Color(0.9f, 0.7f, 0.15f), 0.05f));
+        // Ящик сброса (модель make_items.py) падает с неба в центр метки; без модели ящика нет.
+        if (ModelSkins.CurrentSet != null && ModelSkins.CurrentSet.Find("Supply crate") != null)
+        {
+            GameObject crate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            crate.name = "Supply crate";
+            Destroy(crate.GetComponent<Collider>());
+            crate.transform.position = centre + Vector3.up * 0.4f;
+            crate.transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+            crate.transform.localScale = new Vector3(1.15f, 0.8f, 1.15f);
+            ModelSkins.ApplyEnemy(crate, "Supply crate");
+            crate.AddComponent<ItemModelParts.Fall>().ground = crate.transform.position;
+            props.Add(crate);
+        }
         int reward = 6 + Mathf.Min(10, StartedCount * 2);
         for (int i = 0; i < 14; i++)
         {
-            Vector2 around = Random.insideUnitCircle * 2.6f;
+            // Кристаллы кольцом вокруг ящика (не внутри него).
+            Vector2 around = Random.insideUnitCircle.normalized * Random.Range(1.2f, 2.8f);
             ExperiencePickup.Spawn(centre + new Vector3(around.x, 0f, around.y), reward);
         }
     }
@@ -502,7 +518,7 @@ public class ArenaEvents : MonoBehaviour
         ScreenShake.AddAt(holdCentre, 0.2f);
         GameAudio.Play(Sfx.Zap, 0.6f);
         GameSession session = GameSession.Instance;
-        if (session != null) session.Announce("ТОЧКА УДЕРЖАНА — награда!", 3f);
+        if (session != null) session.Announce(GameText.Source("arenaevents.041"), 3f);
         endsAt = Mathf.Min(endsAt, clock + 1.5f);
     }
 
@@ -613,7 +629,7 @@ public class ArenaEvents : MonoBehaviour
             foreach (Health health in buffer)
                 if (health != null && !health.isDead && WeaponTargets.Flat(centre, health.transform.position) <= PoolRadius)
                     health.TakeDamage(12);
-            if (playerHealth != null && WeaponTargets.Flat(centre, player.position) <= PoolRadius) playerHealth.TakeDamage(5);
+            if (playerHealth != null && WeaponTargets.Flat(centre, player.position) <= PoolRadius) playerHealth.TakeDamage(5, HeroDamageCause.Acid);
         }
     }
 
@@ -711,7 +727,19 @@ public class ArenaEvents : MonoBehaviour
         ChestPart(chestLid, PrimitiveType.Cube, new Vector3(0f, 0.22f, -0.67f), new Vector3(2.1f, 0.44f, 1.35f), wood);
         ChestPart(chestLid, PrimitiveType.Cube, new Vector3(0f, 0.22f, -0.67f), new Vector3(2.16f, 0.12f, 1.41f), gold);
         ChestPart(chestLid, PrimitiveType.Cube, new Vector3(0f, 0.06f, -1.38f), new Vector3(0.34f, 0.42f, 0.1f), gold);
-        ChestPart(chestRoot, PrimitiveType.Sphere, new Vector3(0f, 1.9f, 0f), new Vector3(0.4f, 0.4f, 0.4f), new Color(0.85f, 0.5f, 1f));
+        GameObject gem = ChestPart(chestRoot, PrimitiveType.Sphere, new Vector3(0f, 1.9f, 0f), new Vector3(0.4f, 0.4f, 0.4f), new Color(0.85f, 0.5f, 1f));
+        // Модель сундука (make_items.py) вместо кубов; самоцвет над ним остаётся, крышку модели открывает TickChest.
+        lidRest = Quaternion.identity;
+        lidSign = 1f;
+        ModelSkins.ApplyEnemy(root, "Guard chest");
+        Transform modelLid = ItemModelParts.Find(chestRoot, "Lid");
+        if (modelLid != null)
+        {
+            gem.GetComponent<Renderer>().enabled = true;
+            chestLid = modelLid;
+            lidRest = modelLid.localRotation;
+            lidSign = LidOpenSign(modelLid);
+        }
         chestRenderers = chestRoot.GetComponentsInChildren<Renderer>();
         GameObject lightObject = new GameObject("Chest glow");
         lightObject.transform.SetParent(chestRoot, false);
@@ -722,6 +750,23 @@ public class ArenaEvents : MonoBehaviour
         chestLight.range = 9f;
         chestLight.intensity = 2.2f;
         chestLight.shadows = LightShadows.None;
+    }
+
+    private Quaternion lidRest = Quaternion.identity;
+    private float lidSign = 1f;
+
+    // В какую сторону поворачивать крышку модели, чтобы её край поднимался (оси FBX заранее неизвестны).
+    private static float LidOpenSign(Transform lid)
+    {
+        Renderer shape = lid.GetComponent<Renderer>();
+        if (shape == null) return 1f;
+        Quaternion rest = lid.localRotation;
+        lid.localRotation = rest * Quaternion.Euler(60f, 0f, 0f);
+        float up = shape.bounds.center.y;
+        lid.localRotation = rest * Quaternion.Euler(-60f, 0f, 0f);
+        float down = shape.bounds.center.y;
+        lid.localRotation = rest;
+        return up >= down ? 1f : -1f;
     }
 
     private void TickChest()
@@ -738,7 +783,7 @@ public class ArenaEvents : MonoBehaviour
         if (chestOpened)
         {
             float open = Mathf.Clamp01((clock - chestOpenAt) / 0.6f);
-            chestLid.localRotation = Quaternion.Euler(Mathf.Lerp(0f, 105f, 1f - (1f - open) * (1f - open)), 0f, 0f);
+            chestLid.localRotation = lidRest * Quaternion.Euler(lidSign * Mathf.Lerp(0f, 105f, 1f - (1f - open) * (1f - open)), 0f, 0f);
             if (!rewardOffered && clock >= chestOpenAt + 0.9f) OfferReward();
             return;
         }
@@ -830,6 +875,7 @@ public class ArenaEvents : MonoBehaviour
     {
         chestOpened = true;
         chestOpenAt = clock;
+        GameAudio.Play(Sfx.Chest, 1f, 0f);
         // Враги отпускают сундук, чтобы не бегать вокруг него во время награды.
         ReleaseTargets();
         EnemyFx.Ring(chestCentre, ChestZoneRadius, new Color(1f, 0.85f, 0.3f), 0.9f, 0.6f);
@@ -1018,7 +1064,7 @@ public class ArenaEvents : MonoBehaviour
             if (health != null && WeaponTargets.Flat(centre, health.transform.position) <= radius + WeaponTargets.BodyRadius(health) * 0.5f)
                 health.TakeDamage(enemyDamage);
         FindPlayer();
-        if (playerHealth != null && WeaponTargets.Flat(centre, player.position) <= radius) playerHealth.TakeDamage(playerDamage);
+        if (playerHealth != null && WeaponTargets.Flat(centre, player.position) <= radius) playerHealth.TakeDamage(playerDamage, HeroDamageCause.Meteor);
         Vector3 impact = new Vector3(centre.x, GroundHeight.At(centre), centre.z);
         EnemyFx.Explosion(impact, radius * 0.85f, 0.8f);
         // Метеорит оставляет воронку-ожог и ударную волну.

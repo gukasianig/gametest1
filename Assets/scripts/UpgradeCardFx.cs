@@ -7,6 +7,7 @@ public class UpgradeCardFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 {
     private Outline border;
     private Shadow shadow;
+    private Image glow;
     private CanvasGroup group;
     private RectTransform rect;
     private Color tint = GameUi.Accent;
@@ -19,10 +20,21 @@ public class UpgradeCardFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         rect = GetComponent<RectTransform>();
         UiArtwork.Round(GetComponent<Image>());
         border = gameObject.AddComponent<Outline>();
-        border.effectDistance = new Vector2(1f, -1f);
+        border.effectDistance = new Vector2(2f, -2f);
         shadow = gameObject.AddComponent<Shadow>();
-        shadow.effectDistance = new Vector2(0f, -4f);
-        shadow.effectColor = new Color(0f, 0f, 0f, 0.35f);
+        shadow.effectDistance = new Vector2(0f, -7f);
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+        // Мягкая подсветка цвета редкости под текстом: заметнее при наведении.
+        GameObject glowObject = new GameObject("Rarity Glow", typeof(RectTransform), typeof(Image));
+        glowObject.transform.SetParent(transform, false);
+        glowObject.transform.SetAsFirstSibling();
+        RectTransform glowRect = glowObject.GetComponent<RectTransform>();
+        glowRect.anchorMin = Vector2.zero;
+        glowRect.anchorMax = Vector2.one;
+        glowRect.offsetMin = glowRect.offsetMax = Vector2.zero;
+        glow = glowObject.GetComponent<Image>();
+        glow.raycastTarget = false;
+        UiArtwork.Round(glow);
         group = gameObject.AddComponent<CanvasGroup>();
     }
 
@@ -44,9 +56,10 @@ public class UpgradeCardFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         float intro = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(age / 0.22f));
         emphasis = Mathf.Lerp(emphasis, hovered || selected ? 1f : 0f, 1f - Mathf.Exp(-18f * Time.unscaledDeltaTime));
         group.alpha = intro;
-        float size = Mathf.Lerp(0.98f, 1f, intro) + emphasis * 0.008f - (pressed ? 0.012f : 0f);
+        float size = Mathf.Lerp(0.98f, 1f, intro) + emphasis * 0.018f - (pressed ? 0.012f : 0f);
         rect.localScale = Vector3.one * size;
-        border.effectColor = new Color(tint.r, tint.g, tint.b, 0.18f + emphasis * 0.4f);
+        border.effectColor = new Color(tint.r, tint.g, tint.b, 0.4f + emphasis * 0.55f);
+        if (glow != null) glow.color = new Color(tint.r, tint.g, tint.b, 0.07f + emphasis * 0.14f);
         if (icon != null) icon.localScale = Vector3.one * (1f + emphasis * 0.04f);
     }
 

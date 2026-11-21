@@ -174,6 +174,11 @@ public static class HeroCombatChecks
 
         var enemy = new GameObject("Hero check target") { tag = "Enemy" };
         enemy.transform.position = player.transform.position + player.transform.forward * 7f;
+        // AutoShoter ищет цели через EnemyAI.All (20.11.2026), а не по тегу.
+        Health enemyHealth = enemy.AddComponent<Health>();
+        enemyHealth.SetHealth(100000);
+        enemyHealth.experienceReward = 0;
+        enemy.AddComponent<EnemyAI>().MovementLocked = true;
         Transform rightForearm = socket.parent.parent;
         Quaternion resting = rightForearm.localRotation;
         yield return Until(() => Quaternion.Angle(resting, rightForearm.localRotation) > 4f, "No recoil on fire");

@@ -328,7 +328,7 @@ public class TestArena : MonoBehaviour
 
     private void SpawnCrystals()
     {
-        for (int i = 0; i < 10; i++) ExperiencePickup.Spawn(SpotNear(UnityEngine.Random.Range(2f, 4f)), 5);
+        for (int i = 0; i < 10; i++) ExperiencePickup.Spawn(SpotNear(UnityEngine.Random.Range(2f, 4f)), 5, merge: false);
         Say(GameText.Source("testarena.402"));
     }
 

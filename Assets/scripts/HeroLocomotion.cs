@@ -252,13 +252,19 @@ public sealed class HeroLocomotion : MonoBehaviour
         Transform socket = throwingHand != null ? throwingHand.Find(ModelSkins.OffhandSocketName) : null;
         if (left != null && OffhandAvailable && socket != null)
             AimArm(leftUpperArm, leftForearm, leftHand, socket, ModelSkins.FindOffhandMuzzle(transform), VisualAim(left,leftUpperArm.position,ref leftVisualAim,firing), -1f);
-        else if (right != null && OffhandAvailable && shooter != null && shooter.startWeaponIndex > 0 && shooter.baseWeapon != null && shooter.baseWeapon.kind == WeaponKind.Standard)
+        else if (right != null && OffhandAvailable && shooter != null && shooter.TwoHandedHold)
             SupportWeapon();
     }
 
     private Vector3 VisualAim(Transform target, Vector3 shoulder, ref Vector3 direction, bool firing)
     {
         Vector3 point = AimPoint(target);
+        if (shooter != null && shooter.LevelAim)
+        {
+            // Не ниже 12° под горизонт и не выше 6°: ракетница на уровне плеча, а не «в землю» у ближнего врага.
+            Vector3 flat = point - shoulder; float run = new Vector2(flat.x, flat.z).magnitude;
+            if (run > .01f) point.y = shoulder.y + Mathf.Clamp(flat.y, -run * .21f, run * .1f);
+        }
         Vector3 intended = (point-shoulder).normalized;
         // Follow motion softly between shots; the actual volley still aligns exactly before spawning bullets.
         if (firing || direction.sqrMagnitude < .01f) direction = intended;
@@ -310,7 +316,7 @@ public sealed class HeroLocomotion : MonoBehaviour
         if (a < .001f || b < .001f) return;
         Vector3 direction = (target - shoulder).normalized;
         // Analytic two-bone IK: preserve limb lengths and keep the elbow below/outside the shoulder.
-        float extension = side > 0 && shooter != null && shooter.startWeaponIndex > 0 ? .60f : .90f;
+        float extension = side > 0 && shooter != null && shooter.TwoHandedHold ? .60f : .90f;
         float reach = Mathf.Clamp((a + b) * extension, Mathf.Abs(a - b) + .001f, a + b - .001f);
         Vector3 wrist = shoulder + direction * reach;
         Vector3 pole = Vector3.ProjectOnPlane(-transform.up + transform.right * side * .55f, direction).normalized;

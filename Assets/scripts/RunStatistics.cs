@@ -163,9 +163,37 @@ public class RunStatistics : MonoBehaviour
             text.Append(GameText.Source("runstatistics.295")).Append(shooter.range.ToString("0.#")).Append(GameText.Source("arenaevents.040"));
             text.Append(GameText.Source("runstatistics.296")).Append(weapon.bulletSpeed.ToString("0.#")).Append(GameText.Source("runstatistics.297"));
             text.Append(GameText.Source("runstatistics.298")).Append(shooter.CurrentSpread.ToString("0.#")).Append('°');
+            AppendEvolution(text);
         }
         body.text = text.ToString();
         hint.text = finished ? GameText.Source("runstatistics.299") : GameText.Source("runstatistics.300");
+    }
+
+    // Статус эволюции оружия (21.11.2026): готовая эволюция или прогресс рецепта «Урон пуль» + парная карточка, затем сундук.
+    private void AppendEvolution(StringBuilder text)
+    {
+        int slot = shooter.EvolutionSlot;
+        if (slot < 0) return;
+        AutoShoter.EvolutionData evo = AutoShoter.Evolutions[slot];
+        if (shooter.Evolved)
+        {
+            text.Append(GameText.Source("runstatistics.evo.done")).Append(evo.title).Append("</color>");
+            return;
+        }
+        if (progression == null) return;
+        int damage = progression.EffectRanks(UpgradeEffect.Damage), partner = progression.EffectRanks(evo.partner);
+        bool ready = damage >= PlayerProgression.EvolutionDamageRanks && partner >= evo.partnerRanks;
+        text.Append(GameText.Source("runstatistics.evo.next")).Append(evo.title).Append("</color>: ");
+        AppendRecipePart(text, progression.EffectTitle(UpgradeEffect.Damage), damage, PlayerProgression.EvolutionDamageRanks);
+        text.Append(", ");
+        AppendRecipePart(text, progression.EffectTitle(evo.partner), partner, evo.partnerRanks);
+        text.Append(GameText.Source(ready ? "runstatistics.evo.ready" : "runstatistics.evo.chest"));
+    }
+
+    private static void AppendRecipePart(StringBuilder text, string title, int have, int need)
+    {
+        text.Append(have >= need ? "<color=#7BE08A>" : "<color=#C8D2DE>").Append(title).Append(' ')
+            .Append(Mathf.Min(have, need)).Append('/').Append(need).Append("</color>");
     }
 
     private Text Label(Transform parent, string name, Vector2 min, Vector2 max, int size, Color color)
@@ -175,7 +203,7 @@ public class RunStatistics : MonoBehaviour
         label.rectTransform.anchorMin = min;
         label.rectTransform.anchorMax = max;
         label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
-        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        label.font = GameUi.DefaultFont;
         label.fontSize = size;
         label.color = color;
         label.resizeTextForBestFit = true;

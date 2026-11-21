@@ -19,8 +19,8 @@ MonoBehaviour:
     symbol: DMG
     effect: 0
     rarity: 0
-    amount: 0.2
-    maxRanks: 20
+    amount: 0.12
+    maxRanks: 24
     minimumLevel: 1
     weight: 10
   - id: attack
@@ -29,8 +29,8 @@ MonoBehaviour:
     symbol: RPM
     effect: 1
     rarity: 0
-    amount: 0.15
-    maxRanks: 14
+    amount: 0.1
+    maxRanks: 20
     minimumLevel: 1
     weight: 10
   - id: movement
@@ -39,7 +39,7 @@ MonoBehaviour:
     symbol: SPD
     effect: 2
     rarity: 0
-    amount: 0.1
+    amount: 0.07
     maxRanks: 10
     minimumLevel: 1
     weight: 10
@@ -49,7 +49,7 @@ MonoBehaviour:
     symbol: MAG
     effect: 3
     rarity: 0
-    amount: 0.25
+    amount: 0.2
     maxRanks: 8
     minimumLevel: 1
     weight: 10
@@ -59,7 +59,7 @@ MonoBehaviour:
     symbol: GRN
     effect: 4
     rarity: 1
-    amount: 0.3
+    amount: 0.4
     maxRanks: 14
     minimumLevel: 2
     weight: 10
@@ -69,7 +69,7 @@ MonoBehaviour:
     symbol: ORB
     effect: 5
     rarity: 1
-    amount: 0.25
+    amount: 0.35
     maxRanks: 16
     minimumLevel: 2
     weight: 10
@@ -79,7 +79,7 @@ MonoBehaviour:
     symbol: AOE
     effect: 6
     rarity: 1
-    amount: 0.2
+    amount: 0.25
     maxRanks: 8
     minimumLevel: 2
     weight: 10
@@ -109,7 +109,7 @@ MonoBehaviour:
     symbol: CRT
     effect: 9
     rarity: 1
-    amount: 0.05
+    amount: 0.07
     maxRanks: 8
     minimumLevel: 3
     weight: 10
@@ -119,7 +119,7 @@ MonoBehaviour:
     symbol: CPW
     effect: 10
     rarity: 1
-    amount: 0.25
+    amount: 0.35
     maxRanks: 6
     minimumLevel: 4
     weight: 10
@@ -159,7 +159,7 @@ MonoBehaviour:
     symbol: DMD
     effect: 14
     rarity: 0
-    amount: 0.2
+    amount: 0.12
     maxRanks: 8
     minimumLevel: 1
     weight: 10
@@ -179,7 +179,7 @@ MonoBehaviour:
     symbol: DMT
     effect: 16
     rarity: 0
-    amount: 0.2
+    amount: 0.12
     maxRanks: 8
     minimumLevel: 1
     weight: 10
@@ -189,8 +189,8 @@ MonoBehaviour:
     symbol: ARM
     effect: 17
     rarity: 0
-    amount: 0.05
-    maxRanks: 8
+    amount: 0.035
+    maxRanks: 10
     minimumLevel: 2
     weight: 10
   - id: regen
@@ -199,7 +199,7 @@ MonoBehaviour:
     symbol: REG
     effect: 18
     rarity: 0
-    amount: 0.4
+    amount: 0.25
     maxRanks: 8
     minimumLevel: 2
     weight: 8
@@ -209,7 +209,7 @@ MonoBehaviour:
     symbol: VMP
     effect: 19
     rarity: 1
-    amount: 0.2
+    amount: 0.3
     maxRanks: 5
     minimumLevel: 3
     weight: 8
@@ -219,7 +219,7 @@ MonoBehaviour:
     symbol: DCD
     effect: 20
     rarity: 0
-    amount: 0.4
+    amount: 0.3
     maxRanks: 5
     minimumLevel: 2
     weight: 8
@@ -229,7 +229,7 @@ MonoBehaviour:
     symbol: DDS
     effect: 21
     rarity: 0
-    amount: 1.5
+    amount: 1
     maxRanks: 4
     minimumLevel: 2
     weight: 8
@@ -259,7 +259,7 @@ MonoBehaviour:
     symbol: ELT
     effect: 24
     rarity: 0
-    amount: 0.15
+    amount: 0.1
     maxRanks: 5
     minimumLevel: 3
     weight: 8
@@ -269,7 +269,7 @@ MonoBehaviour:
     symbol: RNG
     effect: 25
     rarity: 0
-    amount: 0.1
+    amount: 0.07
     maxRanks: 5
     minimumLevel: 2
     weight: 8
@@ -279,7 +279,7 @@ MonoBehaviour:
     symbol: OSP
     effect: 26
     rarity: 0
-    amount: 0.2
+    amount: 0.12
     maxRanks: 5
     minimumLevel: 2
     weight: 8
@@ -289,7 +289,7 @@ MonoBehaviour:
     symbol: OCR
     effect: 27
     rarity: 1
-    amount: 0.4
+    amount: 0.5
     maxRanks: 3
     minimumLevel: 4
     weight: 6
@@ -299,7 +299,7 @@ MonoBehaviour:
     symbol: PSP
     effect: 28
     rarity: 0
-    amount: 0.25
+    amount: 0.2
     maxRanks: 5
     minimumLevel: 2
     weight: 8
@@ -309,7 +309,7 @@ MonoBehaviour:
     symbol: LCK
     effect: 29
     rarity: 1
-    amount: 0.25
+    amount: 0.35
     maxRanks: 4
     minimumLevel: 3
     weight: 6
@@ -319,7 +319,7 @@ MonoBehaviour:
     symbol: XPG
     effect: 30
     rarity: 0
-    amount: 0.1
+    amount: 0.06
     maxRanks: 8
     minimumLevel: 2
     weight: 8
@@ -363,6 +363,156 @@ MonoBehaviour:
     maxRanks: 3
     minimumLevel: 2
     weight: 10
-  commonWeight: 70
-  rareWeight: 25
-  specialWeight: 5
+  - id: dodge
+    title: Уклонение
+    icon: {fileID: 0}
+    symbol: DDG
+    effect: 38
+    rarity: 0
+    amount: 0.03
+    maxRanks: 8
+    minimumLevel: 3
+    weight: 8
+  - id: projectile_guard
+    title: Защита от снарядов
+    icon: {fileID: 0}
+    symbol: PRG
+    effect: 39
+    rarity: 0
+    amount: 0.08
+    maxRanks: 5
+    minimumLevel: 2
+    weight: 8
+  - id: dash_shield
+    title: Щит рывка
+    icon: {fileID: 0}
+    symbol: DSH
+    effect: 40
+    rarity: 0
+    amount: 0.15
+    maxRanks: 4
+    minimumLevel: 2
+    weight: 8
+  - id: trophy
+    title: Трофей
+    icon: {fileID: 0}
+    symbol: TRP
+    effect: 41
+    rarity: 0
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 2
+    weight: 6
+  - id: burn_rounds
+    title: Зажигательные пули
+    icon: {fileID: 0}
+    symbol: BRN
+    effect: 42
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 4
+    weight: 7
+  - id: poison_rounds
+    title: Ядовитые пули
+    icon: {fileID: 0}
+    symbol: PSN
+    effect: 43
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 4
+    weight: 7
+  - id: frost_rounds
+    title: Ледяные пули
+    icon: {fileID: 0}
+    symbol: FRS
+    effect: 44
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 4
+    weight: 7
+  - id: shock_rounds
+    title: Шоковые пули
+    icon: {fileID: 0}
+    symbol: SHK
+    effect: 45
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 4
+    weight: 7
+  - id: split_shot
+    title: Разделение пули
+    icon: {fileID: 0}
+    symbol: SPL
+    effect: 46
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 4
+    weight: 7
+  - id: retaliate
+    title: Ответный импульс
+    icon: {fileID: 0}
+    symbol: RTL
+    effect: 47
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 3
+    weight: 7
+  - id: pulse_aura
+    title: Импульсная аура
+    icon: {fileID: 0}
+    symbol: AUR
+    effect: 48
+    rarity: 1
+    amount: 1
+    maxRanks: 4
+    minimumLevel: 3
+    weight: 7
+  - id: charged_shot
+    title: Заряженный выстрел
+    icon: {fileID: 0}
+    symbol: CHG
+    effect: 49
+    rarity: 1
+    amount: 1
+    maxRanks: 3
+    minimumLevel: 4
+    weight: 7
+  - id: last_chance
+    title: Последний шанс
+    icon: {fileID: 0}
+    symbol: LST
+    effect: 50
+    rarity: 2
+    amount: 1
+    maxRanks: 1
+    minimumLevel: 6
+    weight: 10
+  - id: gamble
+    title: Азарт
+    icon: {fileID: 0}
+    symbol: GMB
+    effect: 51
+    rarity: 2
+    amount: 1
+    maxRanks: 1
+    minimumLevel: 5
+    weight: 10
+  - id: time_greed
+    title: Жадность времени
+    icon: {fileID: 0}
+    symbol: TGR
+    effect: 52
+    rarity: 2
+    amount: 1
+    maxRanks: 1
+    minimumLevel: 5
+    weight: 10
+  commonWeight: 60
+  rareWeight: 32
+  specialWeight: 8

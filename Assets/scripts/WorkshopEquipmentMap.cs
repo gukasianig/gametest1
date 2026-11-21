@@ -1,8 +1,47 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public partial class WorkshopTree
 {
+    // Раздел проектов до 2-го забега (WorkshopProjects.SectionUnlocked): карточки проектов скрыты, вместо них плашка-замок.
+    private readonly List<GameObject> projectTiles = new List<GameObject>();
+    private RectTransform projectsLock;
+    private Text projectsLockTitle;
+    private readonly Image[] projectsLockPips = new Image[WorkshopProjects.SectionRuns];
+
+    private void BuildProjectsLock()
+    {
+        projectsLock = EquipmentCard("Projects lock", 505f, 905f, 640f, 220f).rectTransform;
+        var badge = Fixed("Projects lock key", projectsLock, 78f, 110f, 84f, 84f).gameObject.AddComponent<Image>();
+        badge.color = new Color(.03f, .09f, .12f, 1f);
+        badge.raycastTarget = false;
+        UiArtwork.Round(badge);
+        UiArtwork.Picture(badge.transform, KeySprite(), new Vector2(.16f, .16f), new Vector2(.84f, .84f)).raycastTarget = false;
+        projectsLockTitle = LabelAt(projectsLock, "", 375f, 70f, 470f, 56f, 20, Gold);
+        projectsLockTitle.transform.parent.name = "Projects lock title";
+        Text hint = LabelAt(projectsLock, GameText.Source("projects.locked.hint"), 375f, 132f, 470f, 48f, 15, new Color(.72f, .82f, .88f));
+        hint.transform.parent.name = "Projects lock hint";
+        for (int i = 0; i < projectsLockPips.Length; i++)
+        {
+            projectsLockPips[i] = Fixed("Projects lock run " + i, projectsLock, 330f + i * 90f, 182f, 80f, 10f).gameObject.AddComponent<Image>();
+            projectsLockPips[i].raycastTarget = false;
+            UiArtwork.Round(projectsLockPips[i]);
+        }
+    }
+
+    private void RefreshProjectsLock()
+    {
+        bool open = WorkshopProjects.SectionUnlocked;
+        foreach (GameObject tile in projectTiles) tile.SetActive(open);
+        if (projectsLock == null) return;
+        projectsLock.gameObject.SetActive(!open);
+        if (open) return;
+        int runs = Mathf.Clamp(MetaProgress.Data.runs, 0, WorkshopProjects.SectionRuns);
+        projectsLockTitle.text = GameText.Source("projects.locked.title") + runs + "/" + WorkshopProjects.SectionRuns + ")";
+        for (int i = 0; i < projectsLockPips.Length; i++) projectsLockPips[i].color = i < runs ? GameUi.Accent : new Color(.1f, .19f, .23f);
+    }
+
     private Image EquipmentCard(string name, float x, float y, float width, float height)
     {
         var rect = Fixed(name, board, x, y, width, height);
@@ -44,9 +83,9 @@ public partial class WorkshopTree
         for (int i = 0; i < MetaProgress.Catalog.Length; i++)
         {
             float x = 260f + i % 2 * 330f, y = 220f + i / 2 * 225f;
-            EquipmentCard("Hero tile " + i, x, y + 5f, 295f, 200f);
+            var tile = EquipmentCard("Hero tile " + i, x, y + 5f, 295f, 200f);
             var upgrade = MetaProgress.Catalog[i];
-            AddNode(new Node { body = upgrade, title = upgrade.title }, x, y, 92f, UiArtwork.Upgrade(upgrade.effect), board);
+            AddNode(new Node { body = upgrade, title = upgrade.title, frame = tile.rectTransform }, x, y, 92f, UiArtwork.Upgrade(upgrade.effect), board);
         }
         int slot = 0;
         for (int i = 0; shooter.weapons != null && i < shooter.weapons.Length; i++)
@@ -58,7 +97,11 @@ public partial class WorkshopTree
             var group = EquipmentCard("Weapon group " + i, x, y + 120f, GroupWidth, 240f);
             weaponGroups.Add(group);
             var parent = group.rectTransform;
-            AddNode(new Node { weapon = i, title = WeaponTitle(i) }, GroupWidth * .5f, 80f, 82f, WeaponIcon(i), parent);
+            // 21.11.2026: оружие без своего дерева веток (WeaponElements.IsLocked) показывается одним узлом по центру карточки,
+            // без замочков-заглушек. Как только HasBranches вернёт true, узлы веток появятся сами.
+            bool keyed = WeaponElements.IsLocked(i);
+            AddNode(new Node { weapon = i, title = WeaponTitle(i), frame = parent }, GroupWidth * .5f, keyed ? 125f : 80f, 82f, WeaponIcon(i), parent);
+            if (keyed) continue;
             bool branched = WeaponElements.HasBranches(i);
             int first = branched ? (int)WeaponElements.FirstBranch(i) : 1;
             int last = branched ? (int)WeaponElements.LastBranch(i) : 4;
@@ -66,7 +109,7 @@ public partial class WorkshopTree
             {
                 float offset = branched ? (e - first - 1) * 66f : (e - 2.5f) * ElementStep;
                 var element = (WeaponElement)e;
-                AddNode(new Node { weapon = i, element = element, title = WeaponTitle(i) + ": " + WeaponElements.Names[e] },
+                AddNode(new Node { weapon = i, element = element, title = WeaponTitle(i) + ": " + WeaponElements.Names[e], frame = parent },
                     GroupWidth * .5f + offset, 168f, 40f, Art(WeaponElements.Icons[e]), parent);
             }
         }
@@ -75,9 +118,11 @@ public partial class WorkshopTree
         {
             float x = i < 3 ? 235f + i * 270f : 370f + (i - 3) * 270f;
             float y = i < 3 ? 810f : 1030f;
-            EquipmentCard("Project tile " + i, x, y + 5f, 250f, 190f);
-            AddNode(new Node { project = WorkshopProjects.Ids[i], title = WorkshopProjects.Title(WorkshopProjects.Ids[i]) },
+            var projectTile = EquipmentCard("Project tile " + i, x, y + 5f, 250f, 190f);
+            projectTiles.Add(projectTile.gameObject);
+            AddNode(new Node { project = WorkshopProjects.Ids[i], title = WorkshopProjects.Title(WorkshopProjects.Ids[i]), frame = projectTile.rectTransform },
                 x, y, 92f, UiArtwork.Upgrade(icons[i]), board);
         }
+        BuildProjectsLock();
     }
 }

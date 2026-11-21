@@ -110,8 +110,15 @@ public class SpecialWeapons : MonoBehaviour
     // so lines to far targets are not skewed by the muzzle offset.
     private Vector3 Origin()
     {
+        // Ракетница целится двумя руками (AutoShoter.PoseAiming): ракета выходит из жерла модели.
+        if (weapon != null && weapon.kind == WeaponKind.Rocket && shooter != null && !support)
+        {
+            Transform muzzle = ModelSkins.FindMuzzle(shooter.transform);
+            if (muzzle != null) return muzzle.position;
+        }
         Vector3 point = transform.position;
-        point.y = 0.9f;
+        // 19.11: высота от земли, а не от плоскости 0 — на холмах GreenArenaPlay снаряды вылетали под землёй.
+        point.y = GroundHeight.At(point) + 0.9f;
         return point;
     }
 
@@ -486,7 +493,7 @@ public class WeaponProjectile : MonoBehaviour
 {
     private SpecialWeapons owner;
     private Vector3 direction;
-    private float speed, traveled, maxTravel, age, maxAge;
+    private float speed, traveled, maxTravel, age, maxAge, lift;
     private int damage;
     private bool ice;
     private static readonly List<Health> buffer = new List<Health>();
@@ -518,6 +525,8 @@ public class WeaponProjectile : MonoBehaviour
         shot.speed = Mathf.Max(1f, data.bulletSpeed);
         shot.maxTravel = data.range + 6f;
         shot.maxAge = Mathf.Max(0.5f, data.bulletLifeTime);
+        // Снаряд держит высоту над землёй (как пила): на подъёме не прячется в холм.
+        shot.lift = Mathf.Clamp(origin.y - GroundHeight.At(origin), 0.5f, 1.8f);
     }
 
     private void Update()
@@ -534,6 +543,8 @@ public class WeaponProjectile : MonoBehaviour
         foreach (Health health in buffer)
             if (WeaponTargets.Flat(next, health.transform.position) <= 0.6f + WeaponTargets.BodyRadius(health)) { hit = true; break; }
         if (wall || hit || traveled >= maxTravel || age >= maxAge) { Burst(wall ? start : next); return; }
+        float ground = GroundHeight.At(next) + lift;
+        next.y = Mathf.Abs(next.y - ground) > 3f ? ground : Mathf.Lerp(next.y, ground, 1f - Mathf.Exp(-14f * Time.deltaTime));
         transform.position = next;
     }
 
@@ -563,15 +574,19 @@ public class WeaponSaw : MonoBehaviour
 {
     private SpecialWeapons owner;
     private Vector3 direction;
-    private float outDistance, traveled, age, radius, speed;
+    private float outDistance, traveled, age, radius, speed, lift, spin;
     private bool returning;
     private int damage;
+    private Vector3 fullScale;
     private readonly HashSet<Health> hit = new HashSet<Health>();
     private static readonly List<Health> buffer = new List<Health>();
+    // 19.11 (владелец): диск 1,4 м был слишком крупным и появлялся у ствола сразу целиком. Видимый размер 0,85 м
+    // (зона урона по-прежнему beamWidth), диск вырастает за 0,15 с и летит с наклоном по ходу.
+    private const float VisualSize = 0.85f, GrowTime = 0.15f, Tilt = 14f;
 
     public static void Create(SpecialWeapons owner, Vector3 origin, Vector3 direction, int damage, float outDistance)
     {
-        GameObject item = SpecialWeapons.Prim(PrimitiveType.Cylinder, "Saw", origin, new Vector3(1.4f, 0.06f, 1.4f), new Color(0.95f, 0.6f, 0.2f));
+        GameObject item = SpecialWeapons.Prim(PrimitiveType.Cylinder, "Saw", origin, new Vector3(VisualSize, 0.05f, VisualSize), new Color(0.95f, 0.6f, 0.2f));
         WeaponSaw saw = item.AddComponent<WeaponSaw>();
         saw.owner = owner;
         saw.direction = direction;
@@ -579,7 +594,24 @@ public class WeaponSaw : MonoBehaviour
         saw.outDistance = Mathf.Max(2f, outDistance);
         saw.radius = Mathf.Max(0.3f, owner.Weapon.beamWidth);
         saw.speed = Mathf.Max(2f, owner.Weapon.bulletSpeed);
+        // Высота над землёй, а не над нулём: на рельефе диск идёт по склону, а не уходит в холм.
+        // Точка вылета спецоружия считается от плоскости 0 (≈0,9 м): на холме она под землёй, поэтому берём её как высоту над землёй.
+        float ground = GroundHeight.At(origin);
+        saw.lift = Mathf.Clamp(origin.y - ground, 0.45f, 1.1f);
+        item.transform.position = new Vector3(origin.x, ground + saw.lift, origin.z);
+        saw.fullScale = item.transform.localScale;
+        item.transform.localScale = saw.fullScale * 0.25f;
+        saw.Orient();
         owner.Register(item);
+    }
+
+    private void Orient()
+    {
+        Vector3 travel = direction;
+        if (returning && owner != null) { travel = owner.transform.position - transform.position; travel.y = 0f; }
+        if (travel.sqrMagnitude < 0.0001f) travel = Vector3.forward;
+        // Наклон «носом» по ходу полёта, вращение диска в его собственной плоскости.
+        transform.rotation = Quaternion.LookRotation(travel.normalized) * Quaternion.Euler(Tilt, 0f, 0f) * Quaternion.Euler(0f, spin, 0f);
     }
 
     private void Update()
@@ -587,7 +619,9 @@ public class WeaponSaw : MonoBehaviour
         if (!SpecialWeapons.Running) return;
         float step = speed * Time.deltaTime;
         age += Time.deltaTime;
-        transform.Rotate(0f, 900f * Time.deltaTime, 0f);
+        spin = (spin + 900f * Time.deltaTime) % 360f;
+        if (age < GrowTime) transform.localScale = fullScale * Mathf.Lerp(0.25f, 1f, Mathf.SmoothStep(0f, 1f, age / GrowTime));
+        else if (transform.localScale != fullScale) transform.localScale = fullScale;
         Vector3 position = transform.position;
         // Звук вращения: громче рядом с героем, выше на быстрой пиле и на возврате.
         float near = owner != null ? Mathf.Lerp(1f, 0.45f, Mathf.Clamp01(WeaponTargets.Flat(position, owner.transform.position) / 18f)) : 0.6f;
@@ -604,9 +638,15 @@ public class WeaponSaw : MonoBehaviour
             Transform hero = owner != null ? owner.transform : null;
             if (hero == null || age > 8f) { Destroy(gameObject); return; }
             Vector3 target = new Vector3(hero.position.x, position.y, hero.position.z);
-            if (Vector3.Distance(position, target) <= 0.9f) { Destroy(gameObject); return; }
+            if (WeaponTargets.Flat(position, target) <= 0.9f) { Destroy(gameObject); return; }
             transform.position = Vector3.MoveTowards(position, target, step * 1.15f);
         }
+        Vector3 placed = transform.position;
+        float ground = GroundHeight.At(placed) + lift;
+        placed.y = Mathf.Abs(placed.y - ground) > 3f ? ground : Mathf.Lerp(placed.y, ground, 1f - Mathf.Exp(-18f * Time.deltaTime));
+        if (placed.y < GroundHeight.At(placed) + 0.25f) placed.y = GroundHeight.At(placed) + 0.25f;
+        transform.position = placed;
+        Orient();
         WeaponTargets.Collect(buffer);
         foreach (Health health in buffer)
             if (!hit.Contains(health) && WeaponTargets.Flat(transform.position, health.transform.position) <= radius + WeaponTargets.BodyRadius(health))
@@ -668,8 +708,12 @@ public class WeaponMine : MonoBehaviour
 }
 
 // Stationary gun: shoots the nearest enemy in range for a limited time.
+// 19.11.2026: модель-миниган (make_items.py): стволы Barrels раскручиваются перед очередью и плавно останавливаются,
+// каждый выстрел — короткая очередь из трёх трассеров (урон прежний, один раз за выстрел), отдача головы, гильзы,
+// вспышка у дула; в конце срока турель оседает и исчезает с дымком.
 public class WeaponTurret : MonoBehaviour
 {
+    private const float SpinMax = 1800f, SpinUp = 2400f, SpinDown = 700f, Burst = 3, BurstGap = 0.045f, FadeTime = 0.35f;
     private SpecialWeapons owner;
     private float age, timer;
     private Transform barrel;
@@ -684,43 +728,112 @@ public class WeaponTurret : MonoBehaviour
         WeaponTurret turret = item.AddComponent<WeaponTurret>();
         turret.owner = owner;
         turret.barrel = barrel.transform;
-        // Модель турели (make_items.py): поворотная голова Head и точка выстрела TurretMuzzle.
+        // Модель турели (make_items.py): поворотная голова Head, блок стволов Barrels и точка выстрела TurretMuzzle.
         turret.head = ItemModelParts.Find(item.transform, "Head");
+        turret.barrels = ItemModelParts.Find(item.transform, "Barrels");
         turret.muzzle = ItemModelParts.Find(item.transform, "TurretMuzzle");
+        if (turret.head != null) turret.headRest = turret.head.localPosition;
+        turret.skin = item.transform.Find("SkinModel");
         turret.pop = new ItemModelParts.Pop(item.transform);
         owner.Register(item);
     }
 
-    private Transform head, muzzle;
+    private Transform head, barrels, muzzle, skin;
+    private Vector3 headRest;
     private ItemModelParts.Pop pop;
     private Vector3 aim;
     private bool aiming;
+    private float spin, lastShot = -10f, kick;
+    private int tracersLeft;
+    private float nextTracer;
+    private Vector3 tracerTarget;
+
+    public int TracersLeft => tracersLeft;
+    public float Spin => spin;
 
     private void Update()
     {
         if (!SpecialWeapons.Running) return;
         WeaponData data = owner.Weapon;
+        float life = Mathf.Max(2f, data.lifetime);
         age += Time.deltaTime;
         timer += Time.deltaTime;
         pop.Tick(age);
-        // Голова плавно доворачивает к последней цели (до 540°/с).
-        if (aiming && head != null && muzzle != null) ItemModelParts.AimYaw(head, muzzle.position, aim, 540f * Time.deltaTime);
-        if (age >= Mathf.Max(2f, data.lifetime)) { Destroy(gameObject); return; }
+        // Конец срока: турель оседает и сжимается, затем исчезает с дымком.
+        if (age >= life - FadeTime && skin != null)
+        {
+            float f = Mathf.Clamp01((age - (life - FadeTime)) / FadeTime);
+            skin.localScale = skinSize * Mathf.Max(0.01f, 1f - f * f);
+        }
+        if (age >= life)
+        {
+            EnemyFx.Puff(transform.position + Vector3.up * 0.5f, new Color(0.6f, 0.62f, 0.6f), 0.5f, 0.5f, Vector3.up * 0.8f);
+            Destroy(gameObject);
+            return;
+        }
+        Animate(data);
         if (timer < Mathf.Max(0.05f, data.placedFireRate)) return;
         Transform target = WeaponTargets.Pick(transform.position, data.range, TargetRule.Nearest);
         if (target == null) return;
-        timer = 0f;
+        lastSeen = Time.time;
         Vector3 to = target.position;
         to.y = 0.9f;
         aim = to;
         aiming = true;
+        // Стволы сначала раскручиваются: стрельба только на половине оборотов (первая очередь чуть позже).
+        if (barrels != null && spin < SpinMax * 0.5f) return;
+        timer = 0f;
         if (head != null && muzzle != null) ItemModelParts.AimYaw(head, muzzle.position, aim, 360f);
         Vector3 from = muzzle != null ? muzzle.position : transform.position + Vector3.up * 0.7f;
         barrel.rotation = Quaternion.LookRotation(new Vector3(to.x - from.x, 0f, to.z - from.z));
-        if (muzzle != null) EnemyFx.Puff(from, new Color(1f, 0.85f, 0.4f), 0.12f, 0.12f, Vector3.zero);
         GameAudio.Play(Sfx.Zap, 0.35f);
         owner.Hit(target.GetComponent<Health>(), owner.SupportDamage(owner.TurretDamage));
-        BeamFlash.Create(from, to, new Color(1f, 0.9f, 0.4f), 0.08f, 0.06f);
+        lastShot = Time.time;
+        tracerTarget = to;
+        tracersLeft = (int)Burst;
+        nextTracer = Time.time;
+    }
+
+    private Vector3 skinSize = Vector3.one;
+    private bool skinKnown;
+    private float lastSeen = -10f;
+
+    // Раскрутка стволов, доворот головы, отдача и очередь трассеров.
+    private void Animate(WeaponData data)
+    {
+        if (skin != null && !skinKnown && age > 0.3f) { skinSize = skin.localScale; skinKnown = true; }
+        bool engaged = Time.time - lastSeen < 0.8f;
+        spin = Mathf.MoveTowards(spin, engaged ? SpinMax : 0f, (engaged ? SpinUp : SpinDown) * Time.deltaTime);
+        if (barrels != null && muzzle != null && spin > 1f)
+        {
+            Vector3 axis = muzzle.position - barrels.position;
+            if (axis.sqrMagnitude > 1e-6f) barrels.Rotate(axis.normalized, spin * Time.deltaTime, Space.World);
+        }
+        // Голова плавно доворачивает к последней цели (до 540°/с).
+        if (aiming && head != null && muzzle != null) ItemModelParts.AimYaw(head, muzzle.position, aim, 540f * Time.deltaTime);
+        kick = Mathf.MoveTowards(kick, 0f, Time.deltaTime * 0.6f);
+        if (head != null && muzzle != null && head.parent != null)
+        {
+            // Отдача назад по линии стволов, в метрах мира (у модели свой масштаб внутри SkinModel).
+            Vector3 back = head.position - muzzle.position;
+            back.y = 0f;
+            head.localPosition = headRest + (back.sqrMagnitude > 1e-6f ? head.parent.InverseTransformVector(back.normalized * kick) : Vector3.zero);
+        }
+        while (tracersLeft > 0 && Time.time >= nextTracer)
+        {
+            tracersLeft--;
+            nextTracer += BurstGap;
+            Vector3 from = muzzle != null ? muzzle.position : transform.position + Vector3.up * 0.7f;
+            Vector3 jitter = new Vector3(Random.Range(-0.25f, 0.25f), Random.Range(-0.15f, 0.2f), Random.Range(-0.25f, 0.25f));
+            BeamFlash.Create(from, tracerTarget + jitter, new Color(1f, 0.85f, 0.35f), 0.05f, 0.05f);
+            EnemyFx.Puff(from, new Color(1f, 0.8f, 0.35f), 0.14f, 0.07f, Vector3.zero);
+            kick = 0.035f;
+            // Гильза вылетает вбок из ящика.
+            Vector3 side = head != null ? head.right : transform.right;
+            Vector3 breech = muzzle != null && head != null ? from - (muzzle.position - head.position).normalized * 0.35f : from;
+            EnemyFx.Blobs(breech + side * 0.12f,
+                new Color(0.95f, 0.72f, 0.3f), 1, 2.5f, 0.05f, 0.45f, GroundHeight.At(transform.position));
+        }
     }
 }
 

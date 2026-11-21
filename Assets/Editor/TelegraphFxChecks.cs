@@ -207,12 +207,12 @@ public static class TelegraphFxChecks
         yield return Wait(0.4f);
         // Край пятна (диаметр 3,2 м) над землёй во всех направлениях.
         GameObject splat = null;
-        foreach (FxPiece piece in UnityEngine.Object.FindObjectsOfType<FxPiece>()) if (piece.flat) splat = piece.gameObject;
+        foreach (FxSplat piece in UnityEngine.Object.FindObjectsOfType<FxSplat>()) splat = piece.gameObject;
         Check(splat != null, "Slope splat missing");
         float worst = 99f;
         for (int i = 0; i < 16; i++)
         {
-            Vector3 edge = splat.transform.TransformPoint(new Vector3(Mathf.Cos(i * Mathf.PI / 8f), 0.5f, Mathf.Sin(i * Mathf.PI / 8f)) * 0.48f);
+            Vector3 edge = splat.transform.TransformPoint(new Vector3(Mathf.Cos(i * Mathf.PI / 8f) * 0.48f, 0f, Mathf.Sin(i * Mathf.PI / 8f) * 0.48f));
             worst = Mathf.Min(worst, edge.y - GroundHeight.At(edge));
         }
         Check(worst > -0.02f, "Slope splat edge is under the ground by " + (-worst).ToString("0.00") + " m");

@@ -103,16 +103,17 @@ public static class CombatMechanicsChecks
         UpgradeDefinition critPower = progression.catalog.entries.Find(e => e.id == "crit_power");
         UpgradeDefinition pierce = progression.catalog.entries.Find(e => e.id == "pierce");
         Require(critChance != null && critPower != null && pierce != null, "New upgrades are not in the catalog.");
-        Require(progression.catalog.entries.Count == 35, "Catalog size: " + progression.catalog.entries.Count);
+        Require(progression.catalog.entries.Count == 50, "Catalog size: " + progression.catalog.entries.Count);
         typeof(PlayerProgression).GetProperty("Level").SetValue(progression, 6);
         Require(progression.Available(critChance) && pierce != null && progression.Available(pierce), "Crit chance / pierce not offered at level 6.");
         Require(!progression.Available(critPower), "Crit power is offered before any crit chance.");
         SetRanks(progression, 4, 2, 2);
-        Require(Mathf.Approximately(CombatStats.CritChance, 0.2f), "Crit chance " + CombatStats.CritChance);
-        Require(Mathf.Approximately(CombatStats.CritMultiplier, 2f), "Crit multiplier " + CombatStats.CritMultiplier);
+        // Expectations follow the catalog (balance 19.11.2026 changed the amounts: 0.07 chance / +0.35 power per rank).
+        Require(Mathf.Approximately(CombatStats.CritChance, critChance.amount * 4f), "Crit chance " + CombatStats.CritChance);
+        Require(Mathf.Approximately(CombatStats.CritMultiplier, CombatStats.BaseCritMultiplier + critPower.amount * 2f), "Crit multiplier " + CombatStats.CritMultiplier);
         Require(CombatStats.Pierce == 2, "Pierce " + CombatStats.Pierce);
         Require(progression.Available(critPower), "Crit power is not offered after crit chance.");
-        Pass("Catalog has 35 upgrades; crit power needs crit chance; ranks give 20% / x2.0 / pierce 2.");
+        Pass("Catalog has 50 upgrades; crit power needs crit chance; ranks give " + CombatStats.CritChance.ToString("P0") + " / x" + CombatStats.CritMultiplier.ToString("0.##") + " / pierce 2.");
 
         // 2. Crit rolls: always crit at 100%, never at 0%, average near the chance.
         CombatStats.Set(1f, 0.5f, 0);
@@ -233,11 +234,15 @@ public static class CombatMechanicsChecks
         for (int i = 0; i < trials; i++) { DropPickup.TryDrop(player.transform.position, false); }
         drops = DropPickup.ActiveCount;
         DropPickup.Clear();
-        Require(drops > trials * 0.02f && drops < trials * 0.09f, "Drop rate off: " + drops + "/" + trials);
-        DropPickup.TryDrop(player.transform.position, true);
-        Require(DropPickup.ActiveCount == 1, "Elite did not drop a kit.");
+        Require(drops > trials * 0.01f && drops < trials * 0.04f, "Drop rate off: " + drops + "/" + trials);   // 1.2% kit + 1% magnet
+        // Elites drop a kit/magnet with 35%/20% chance (no longer guaranteed); far from the hero, extra small chests are removed.
+        int eliteDrops = 0;
+        Vector3 eliteSpot = player.transform.position + Vector3.right * 60f;
+        for (int i = 0; i < 200; i++) { DropPickup.TryDrop(eliteSpot, true); eliteDrops = DropPickup.ActiveCount; }
         DropPickup.Clear();
-        Pass("Drop rate " + drops + "/" + trials + " (expected about 5%), elites always drop a repair kit.");
+        foreach (SmallChest chest in UnityEngine.Object.FindObjectsOfType<SmallChest>()) UnityEngine.Object.Destroy(chest.gameObject);
+        Require(eliteDrops > 200 * 0.35f, "Elite drop rate off: " + eliteDrops + "/200");
+        Pass("Drop rate " + drops + "/" + trials + " (expected about 2.2%), elites dropped " + eliteDrops + "/200 (expected about 55%).");
 
         // 7. Ricochet: after hitting the first enemy the bullet jumps to a second one standing off the line.
         origin = player.transform.position;
@@ -309,11 +314,46 @@ public static class CombatMechanicsChecks
             if (unit.Weapon.kind == WeaponKind.Mines) mineUnit = unit;
         }
         Require(droneUnit != null && turretUnit != null && mineUnit != null, "Support units were not created.");
-        Require(Mathf.Approximately(droneUnit.DroneDamage, 2f) && droneUnit.SupportDamage(droneUnit.DroneDamage) >= 2, "Drone damage multiplier " + droneUnit.DroneDamage);
-        Require(turretUnit.TurretLimit == 2 && Mathf.Approximately(turretUnit.TurretDamage, 1.6f), "Turret limit/damage " + turretUnit.TurretLimit + " / " + turretUnit.TurretDamage);
+        // Expectations follow the catalog amounts (balance 19.11.2026: +12% per damage rank).
+        float droneExpected = 1f + droneDamage.amount * 5f, turretExpected = 1f + turretDamage.amount * 3f;
+        Require(Mathf.Approximately(droneUnit.DroneDamage, droneExpected) && droneUnit.SupportDamage(droneUnit.DroneDamage) >= 1, "Drone damage multiplier " + droneUnit.DroneDamage);
+        Require(turretUnit.TurretLimit == 2 && Mathf.Approximately(turretUnit.TurretDamage, turretExpected), "Turret limit/damage " + turretUnit.TurretLimit + " / " + turretUnit.TurretDamage);
         Require(mineUnit.MineLimit == 4, "Mine limit after 2 ranks (expected 4): " + mineUnit.MineLimit);
         Require(progression.Available(droneDamage) && progression.Available(turretDamage), "Damage cards must appear after the first unit.");
-        Pass("Support upgrades with an ordinary weapon: 2 drones x2.0 damage, turret limit " + turretUnit.TurretLimit + " x1.6, mine limit " + mineUnit.MineLimit + "; damage cards appear only after the first unit.");
+        Pass("Support upgrades with an ordinary weapon: 2 drones x" + droneExpected.ToString("0.##") + " damage, turret limit " + turretUnit.TurretLimit + " x" + turretExpected.ToString("0.##") + ", mine limit " + mineUnit.MineLimit + "; damage cards appear only after the first unit.");
+
+        // Reroll and banish on the real level-up screen: two of each per run (runs before section 9, whose old balance expectations are stale).
+        ranks["cursed_glass"] = 0; ranks["cursed_haste"] = 0; ranks["cursed_greed"] = 0;
+        typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
+        progression.AddExperience(1000);
+        yield return null;
+        Require(progression.Choosing && progression.Offered.Count > 0, "Level-up screen did not open.");
+        Require(progression.RerollsLeft == 2, "Rerolls at the start: " + progression.RerollsLeft);
+        Require(progression.Reroll() && progression.Reroll(), "Rerolls failed.");
+        Require(!progression.Reroll() && progression.RerollsLeft == 0, "A third reroll was allowed.");
+
+        // Banish (D06): toggling costs nothing; banishing a card spends a charge, replaces it and removes it for the run.
+        Require(progression.BanishesLeft == 2 && !progression.BanishMode, "Banishes at the start: " + progression.BanishesLeft);
+        Require(progression.ToggleBanishMode() && progression.BanishMode && progression.ToggleBanishMode() && !progression.BanishMode
+            && progression.BanishesLeft == 2, "Banish toggle.");
+        UpgradeDefinition banishedCard = progression.Offered[0];
+        int levelBeforeBanish = progression.Level, pendingBeforeBanish = progression.PendingChoices;
+        Require(progression.ToggleBanishMode() && progression.SelectOfferedUpgrade(0), "Banish failed.");
+        bool stillOffered = false;
+        foreach (UpgradeDefinition card in progression.Offered) stillOffered |= card.id == banishedCard.id;
+        Require(progression.Choosing && !progression.BanishMode && progression.BanishesLeft == 1 && progression.IsBanished(banishedCard.id)
+            && !stillOffered && !progression.Available(banishedCard) && progression.Rank(banishedCard.id) == 0
+            && progression.PendingChoices == pendingBeforeBanish && progression.Level == levelBeforeBanish, "Banish state after use.");
+        Require(progression.ToggleBanishMode() && progression.SelectOfferedUpgrade(0) && progression.BanishesLeft == 0, "Second banish.");
+        Require(!progression.ToggleBanishMode() && !progression.BanishMode, "A third banish was allowed.");
+        Pass("Banish: 2 per run, banished card \"" + banishedCard.id + "\" is replaced and no longer available, no rank granted.");
+        int guard = 0;
+        while (progression.Choosing && guard++ < 200) progression.SelectOfferedUpgrade(0);
+        Require(!progression.Choosing && Time.timeScale > 0f, "Level-up screen did not close after picking cards.");
+        Pass("Reroll: 2 per run, the third is refused; picking through " + guard + " level-ups closes the screen.");
+        // Cards picked while closing the screen are random: reset ranks so section 9 starts from its own setup.
+        ranks.Clear();
+        typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
 
         // 9. The remaining cards: survival, combat, progress and cursed upgrades, card texts, reroll.
         origin = player.transform.position;
@@ -329,7 +369,7 @@ public static class CombatMechanicsChecks
             string text = (string)preview.Invoke(progression, new object[] { definition });
             Require(!string.IsNullOrEmpty(text), "Empty card text for " + definition.id);
         }
-        Pass("All 35 cards produce a text preview.");
+        Pass("All " + progression.catalog.entries.Count + " cards produce a text preview.");
 
         foreach (string id in new[] { "crit_chance", "crit_power", "pierce", "ricochet", "drone_count", "drone_damage", "turret_count", "turret_damage", "mine_count" }) ranks[id] = 0;
         float baseRange = shooter.range;
@@ -338,21 +378,26 @@ public static class CombatMechanicsChecks
         ranks["pellets"] = 2; ranks["range"] = 5; ranks["elite_hunter"] = 4; ranks["explosive"] = 2;
         ranks["experience"] = 5; ranks["luck"] = 4; ranks["orbit_speed"] = 5; ranks["pickup_speed"] = 4; ranks["dash_distance"] = 2;
         typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
-        Require(Mathf.Approximately(CombatStats.Armor, 0.2f) && Mathf.Approximately(CombatStats.RegenPerSecond, 2f) &&
-            Mathf.Approximately(CombatStats.VampirismPerKill, 1f), "Survival stats.");
+        // Expectations follow the catalog amounts (balance 19.11.2026), not fixed numbers.
+        float Amount(string id) { UpgradeDefinition d = progression.catalog.entries.Find(e => e.id == id); return d != null ? d.amount : 0f; }
+        float armorExpected = Mathf.Min(0.6f, Amount("armor") * 4f), regenExpected = Amount("regen") * 5f, vampExpected = Amount("vampirism") * 5f;
+        float rangeExpected = 1f + Amount("range") * 5f, eliteExpected = 1f + Amount("elite_hunter") * 4f;
+        Require(armorExpected > 0f && Mathf.Approximately(CombatStats.Armor, armorExpected) && Mathf.Approximately(CombatStats.RegenPerSecond, regenExpected) &&
+            Mathf.Approximately(CombatStats.VampirismPerKill, vampExpected), "Survival stats " + CombatStats.Armor + " / " + CombatStats.RegenPerSecond + " / " + CombatStats.VampirismPerKill);
         Require(shooter.CurrentPelletCount == basePellets + 2 && shooter.CurrentSpread > 0f, "Pellets " + shooter.CurrentPelletCount + " spread " + shooter.CurrentSpread);
-        Require(shooter.range > baseRange * 1.45f, "Range " + baseRange + " -> " + shooter.range);
-        Pass("Stats written: armor 20%, regen 2 HP/s, vampirism 1/kill, +2 pellets with spread, range x1.5.");
+        Require(Mathf.Abs(shooter.range - baseRange * rangeExpected) < 0.01f, "Range " + baseRange + " -> " + shooter.range + " (expected x" + rangeExpected + ")");
+        Pass("Stats written: armor " + armorExpected.ToString("P0") + ", regen " + regenExpected + " HP/s, vampirism " + vampExpected + "/kill, +2 pellets with spread, range x" + rangeExpected.ToString("0.##") + ".");
 
         // Armor and regeneration.
         yield return Wait(0.6f);
         health.Heal(100000);
         int full = health.CurrentHP;
         health.TakeDamage(100);
-        Require(health.CurrentHP == full - 80, "Armor damage taken: " + (full - health.CurrentHP));
+        int armorTaken = Mathf.Max(1, Mathf.RoundToInt(100 * (1f - armorExpected)));
+        Require(health.CurrentHP == full - armorTaken, "Armor damage taken: " + (full - health.CurrentHP) + " (expected " + armorTaken + ")");
         int hurtHp = health.CurrentHP;
         yield return Wait(2.2f);
-        Require(health.CurrentHP >= hurtHp + 3, "Regeneration: " + hurtHp + " -> " + health.CurrentHP);
+        Require(health.CurrentHP >= hurtHp + Mathf.FloorToInt(regenExpected * 2.2f * 0.8f), "Regeneration: " + hurtHp + " -> " + health.CurrentHP);
         // Vampirism: a kill heals 1 HP.
         int beforeKill = health.CurrentHP;
         GameObject victim = UnityEngine.Object.Instantiate(weak.prefab, origin + forward * 14f + Vector3.right * 10f, Quaternion.identity);
@@ -360,7 +405,7 @@ public static class CombatMechanicsChecks
         yield return null;
         victim.GetComponent<Health>().TakeDamage(100000);
         Require(health.CurrentHP >= beforeKill + 1, "Vampirism: " + beforeKill + " -> " + health.CurrentHP);
-        Pass("Armor removes 20% of a hit, regeneration heals over time, a kill heals through vampirism.");
+        Pass("Armor turns a 100 hit into " + armorTaken + ", regeneration heals over time, a kill heals through vampirism.");
 
         // Elite hunter and explosive bullets.
         GameObject elite = UnityEngine.Object.Instantiate(weak.prefab, origin + forward * 14f + Vector3.left * 12f, Quaternion.identity);
@@ -369,7 +414,8 @@ public static class CombatMechanicsChecks
         Health eliteHealth = elite.GetComponent<Health>();
         eliteHealth.SetHealth(1000);
         new WeaponElementAttack(0).Hit(eliteHealth, 20);
-        Require(eliteHealth.CurrentHealth == 1000 - 32, "Elite hunter damage " + (1000 - eliteHealth.CurrentHealth));
+        int eliteHit = Mathf.RoundToInt(20 * eliteExpected);
+        Require(Mathf.Abs(1000 - eliteHealth.CurrentHealth - eliteHit) <= 1, "Elite hunter damage " + (1000 - eliteHealth.CurrentHealth) + " (expected " + eliteHit + ")");
         UnityEngine.Object.Destroy(elite);
         var blastPair = new List<Health>();
         foreach (Vector3 spot in new[] { origin + forward * 8f, origin + forward * 8f + side * 1.8f })
@@ -392,7 +438,7 @@ public static class CombatMechanicsChecks
         Require(blastPair[0].CurrentHealth == 900, "Explosive bullet direct hit " + blastPair[0].CurrentHealth);
         Require(blastPair[1].CurrentHealth == 960, "Explosion damage to the neighbour: " + (1000 - blastPair[1].CurrentHealth));
         foreach (Health h in blastPair) if (h != null) UnityEngine.Object.Destroy(h.gameObject);
-        Pass("Elite hunter x1.6 on elites; an explosive bullet hits the target and deals 40% to a neighbour 1.8 m away.");
+        Pass("Elite hunter x" + eliteExpected.ToString("0.##") + " on elites; an explosive bullet hits the target and deals 40% to a neighbour 1.8 m away.");
 
         // Progress: dash cooldown/distance, experience, luck, orbit speed.
         yield return Wait(4f);
@@ -403,15 +449,24 @@ public static class CombatMechanicsChecks
         int levelBefore = progression.Level;
         ExperiencePickup.Spawn(player.transform.position, 4);
         yield return Wait(0.5f);
-        Require(progression.Level == levelBefore && progression.Experience - xpBefore == 6, "Experience bonus: " + (progression.Experience - xpBefore));
+        int xpExpected = Mathf.Max(1, Mathf.RoundToInt(4 * (1f + CombatStats.ExperienceGain)));
+        Require(CombatStats.ExperienceGain > 0f && progression.Level == levelBefore && progression.Experience - xpBefore == xpExpected,
+            "Experience bonus: " + (progression.Experience - xpBefore) + " (expected " + xpExpected + ")");
         int luckyTrials = 2000;
         for (int i = 0; i < luckyTrials; i++) DropPickup.TryDrop(player.transform.position, false);
         int luckyDrops = DropPickup.ActiveCount;
         DropPickup.Clear();
-        Require(luckyDrops > luckyTrials * 0.075f, "Luck did not raise drops: " + luckyDrops + "/" + luckyTrials);
+        float luck = CombatStats.DropLuck;
+        float luckyRate = DropPickup.HealthChance * (1f + 0.5f * luck) + DropPickup.MagnetChance * (1f + luck);
+        Require(luck > 0f && luckyDrops > luckyTrials * Mathf.Max(DropPickup.HealthChance + DropPickup.MagnetChance, luckyRate * 0.6f),
+            "Luck did not raise drops: " + luckyDrops + "/" + luckyTrials + " (expected about " + Mathf.RoundToInt(luckyRate * luckyTrials) + ")");
         OrbitManager orbitManager = player.GetComponent<OrbitManager>();
-        Require(orbitManager == null || orbitManager.orbitSpeed >= 300f, "Orbit speed " + (orbitManager == null ? -1f : orbitManager.orbitSpeed));
-        Pass("Dash cooldown 2.4 s, +50% experience (4 -> 6), luck raised drops to " + luckyDrops + "/" + luckyTrials + ", orbit speed doubled.");
+        float orbitBase = orbitManager == null ? 0f : (float)typeof(OrbitManager).GetField("baseOrbitSpeed", flags2).GetValue(orbitManager);
+        float orbitExpected = 1f + Amount("orbit_speed") * 5f;
+        Require(orbitManager == null || Mathf.Abs(orbitManager.orbitSpeed - orbitBase * orbitExpected) < 0.5f,
+            "Orbit speed " + (orbitManager == null ? -1f : orbitManager.orbitSpeed) + " (base " + orbitBase + " x" + orbitExpected + ")");
+        Pass("Dash cooldown " + Mathf.Max(1f, movement.dashCooldown - CombatStats.Primary.DashCooldownReduction).ToString("0.##") + " s, experience 4 -> " + xpExpected +
+            ", luck raised drops to " + luckyDrops + "/" + luckyTrials + ", orbit speed x" + orbitExpected.ToString("0.##") + ".");
 
         // Cursed cards.
         ranks["cursed_glass"] = 1; ranks["cursed_haste"] = 1; ranks["cursed_greed"] = 1;
@@ -422,19 +477,5 @@ public static class CombatMechanicsChecks
         health.ReduceMaxHealth(0.3f);
         Require(health.maxHP == Mathf.RoundToInt(maxBefore * 0.7f) && health.CurrentHP <= health.maxHP, "Cursed max health: " + maxBefore + " -> " + health.maxHP);
         Pass("Cursed cards: damage x1.6, attack speed x1.4, enemies +15% speed and +25% HP, max HP -30% without healing.");
-
-        // Reroll on the real level-up screen: two rerolls per run, then it stops; picking cards still works.
-        ranks["cursed_glass"] = 0; ranks["cursed_haste"] = 0; ranks["cursed_greed"] = 0;
-        typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
-        progression.AddExperience(1000);
-        yield return null;
-        Require(progression.Choosing && progression.Offered.Count > 0, "Level-up screen did not open.");
-        Require(progression.RerollsLeft == 2, "Rerolls at the start: " + progression.RerollsLeft);
-        Require(progression.Reroll() && progression.Reroll(), "Rerolls failed.");
-        Require(!progression.Reroll() && progression.RerollsLeft == 0, "A third reroll was allowed.");
-        int guard = 0;
-        while (progression.Choosing && guard++ < 200) progression.SelectOfferedUpgrade(0);
-        Require(!progression.Choosing && Time.timeScale > 0f, "Level-up screen did not close after picking cards.");
-        Pass("Reroll: 2 per run, the third is refused; picking through " + guard + " level-ups closes the screen.");
     }
 }

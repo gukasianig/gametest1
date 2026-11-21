@@ -31,7 +31,7 @@ Maintain these notes as part of each task, without waiting for a reminder or ask
 This is a Unity 2022.3.62f3 C# game using Universal Render Pipeline (URP).
 - `Assets/scripts/` contains player movement, shooting, health, enemy AI, waves, and orbiting weapons; `Interfaces/` contains shared damage and projectile contracts.
 - `Assets/Scenes/GreenArenaPlay.unity` is the only game and build scene (SampleScene was removed on 2026-11-09; its git history keeps it). Gameplay prefabs currently live directly under `Assets/`.
-- `Assets/Settings/` holds URP settings; `Assets/TextMesh Pro/` and `Assets/TutorialInfo/` contain supporting package and template assets.
+- `Assets/Settings/` holds URP settings; `Assets/TextMesh Pro/` contains supporting package assets (the `TutorialInfo` template was removed on 2026-11-21).
 - `Packages/manifest.json` defines dependencies; `ProjectSettings/` holds shared Unity configuration.
 - `Library/`, `Temp/`, `Logs/`, and generated solution/project files are ignored. Do not edit or commit them.
 

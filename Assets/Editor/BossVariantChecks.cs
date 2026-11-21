@@ -117,13 +117,14 @@ public static class BossVariantChecks
         yield return Spawn(session, BossKind.SwarmQueen);
         BossController queen = session.Boss;
         queen.transform.position = hero.transform.position + hero.transform.forward * 9f + Vector3.up * (queen.transform.position.y - hero.transform.position.y);
-        double by = EditorApplication.timeSinceStartup + 25;
+        double by = EditorApplication.timeSinceStartup + 40;
         int minions = 0;
         bool acid = false, captured = false;
-        while (queen.AttackIndex < 3 && EditorApplication.timeSinceStartup < by)
+        // 19.11.2026: атаки идут в случайном порядке — ждём и рой, и любую кислотную атаку (залп, спираль, лужи).
+        while ((queen.AttackIndex < 3 || minions < 6 || !acid) && EditorApplication.timeSinceStartup < by)
         {
             minions = Math.Max(minions, Array.FindAll(UnityEngine.Object.FindObjectsOfType<EnemyAI>(), a => a.name == "Swarm minion").Length);
-            if (!acid) foreach (EnemyProjectile shot in UnityEngine.Object.FindObjectsOfType<EnemyProjectile>()) acid = true;
+            if (!acid && (UnityEngine.Object.FindObjectsOfType<EnemyProjectile>().Length > 0 || UnityEngine.Object.FindObjectsOfType<BossHazard>().Length > 0)) acid = true;
             if (!captured && minions > 0) { Capture("boss-queen"); captured = true; }
             yield return null;
         }

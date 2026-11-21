@@ -97,6 +97,7 @@ public struct RunReward
     public int threat;            // угроза забега (сумма испытаний)
     public bool newBestThreat;    // победа на угрозе выше прежнего рекорда
     public int firstVictoryBonus; // разовый бонус за первую победу (0, если не первая)
+    public int trophy;            // Детали за элит от карточки «Трофей» (уже в amount)
 }
 
 public static class MetaProgress
@@ -334,6 +335,8 @@ public static class MetaProgress
         float multiplier = RunModifiers.RewardMultiplier;
         RunReward result = new RunReward { multiplier = multiplier,
             amount = Mathf.RoundToInt(Reward(victory, seconds, kills, level) * multiplier) };
+        result.trophy = Mathf.Max(0, CombatStats.RunTrophyParts);
+        result.amount += result.trophy;
         result.threat = RunModifiers.Threat;
         if (victory && Data.victories == 0) { result.firstVictoryBonus = FirstVictoryBonus; result.amount += FirstVictoryBonus; }
         if (victory && result.threat > 0 && result.threat > Data.bestThreat) { result.newBestThreat = true; Data.bestThreat = result.threat; }

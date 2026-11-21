@@ -1,0 +1,24 @@
+{
+  "note": "Новые карточки 19.11.2026. Сейчас в Assets/Resources/UI/Upgrades лежат временные иконки из make_card_placeholders.ps1. Сгенерировать по basePrompt из style-e-jobs.json + subject, положить исходник в docs/art/Upgrades/StyleE/<name>.png, затем перенести эти jobs (с source) в style-e-jobs.json и запустить install_style_e.ps1 — PNG заменится, .meta/GUID сохранятся.",
+  "basePromptFrom": "tools/icons/style-e-jobs.json",
+  "jobs": [
+    { "name": "Dodge", "subject": "a worn olive military combat boot mid-sidestep leaving two translucent cyan afterimage silhouettes behind it" },
+    { "name": "ProjectileGuard", "subject": "an olive striped riveted armor shield deflecting an incoming brass bullet with a small amber spark" },
+    { "name": "DashShield", "subject": "a military boot with a brass stopwatch on the ankle wrapped in a thin glowing amber protective energy shell" },
+    { "name": "Trophy", "subject": "an olive ammo crate overflowing with brass machine parts and gears, a small red crown target emblem on the lid" },
+    { "name": "BurnRounds", "subject": "a brass incendiary bullet with a glowing red-orange tip and small licking flames" },
+    { "name": "PoisonRounds", "subject": "a brass bullet with a translucent toxic green glass tip dripping green liquid" },
+    { "name": "FrostRounds", "subject": "a steel bullet coated in pale blue frost and ice crystals with a cold mist" },
+    { "name": "ShockRounds", "subject": "a dark steel bullet crackling with a bright yellow-white lightning arc" },
+    { "name": "SplitShot", "subject": "a brass bullet bursting apart into three smaller bullet fragments fanning outward" },
+    { "name": "Retaliate", "subject": "an olive riveted shield emitting a strong amber shockwave ring outward from its center" },
+    { "name": "PulseAura", "subject": "a round olive military emitter device on the ground radiating concentric cyan pulse rings" },
+    { "name": "ChargedShot", "subject": "an oversized heavy brass shell glowing with blue-white electric charge and energy coils" },
+    { "name": "LastChance", "subject": "a mechanical red heart in a brass cage with a bright golden halo ring and a tiny spark of revival" },
+    { "name": "Gamble", "subject": "a cursed four-leaf clover made of dark crimson metal with black cracks and a pair of dice" },
+    { "name": "TimeGreed", "subject": "a cursed crimson experience crystal fused with a cracked brass hourglass" },
+    { "name": "CritPierce", "subject": "a brass bullet piercing through a steel plate with a red starburst critical-hit target mark" },
+    { "name": "BurningShot", "subject": "three brass shotgun shells fanned out, their tips burning with orange flames" },
+    { "name": "BlastDash", "subject": "a military boot dashing forward with an orange explosion blast erupting behind its heel" }
+  ]
+}

@@ -34,12 +34,24 @@ public sealed class HeroStats
 
     // Progress.
     public float PickupSpeedBonus;      // +share of crystal pull speed
-    public float DropLuck;              // +share of repair kit / magnet chance
+    public float DropLuck;              // luck: rare/special card weight, drops, small chest, +crit (19.11.2026)
     public float ExperienceGain;        // +share of experience from crystals
 
     // Cursed upgrade penalties (act on the whole arena: CombatStats takes the strongest of all heroes).
     public float EnemySpeedCurse = 1f;
     public float EnemyHealthCurse = 1f;
+
+    // Карточки 19.11.2026 (CardEffects.cs): защита, стихии, особые выстрелы, импульсы.
+    public float Dodge;                 // шанс избежать удара (0..0.25)
+    public float ProjectileGuard;       // доля урона снарядов, которая не проходит (0..0.4)
+    public float DashInvulnerabilityBonus; // секунды к неуязвимости рывка
+    public int TrophyParts;             // Деталей за каждую элиту
+    public int BurnRank, PoisonRank, FrostRank, ShockRank; // стихийные карточки
+    public int SplitShot;               // осколков после первого попадания (0 = нет)
+    public int Retaliate;               // ранг ответного импульса
+    public int PulseAura;               // ранг импульсной ауры
+    public int ChargedShot;             // ранг заряженного выстрела
+    public bool LastChance, CritPierce, BurningShot, BlastDash, Gamble;
 
     public void Set(float critChance, float critBonus, int pierce, int ricochet = 0)
     {
@@ -59,6 +71,9 @@ public sealed class HeroStats
         RangeMultiplier = 1f;
         PickupSpeedBonus = DropLuck = ExperienceGain = 0f;
         EnemySpeedCurse = EnemyHealthCurse = 1f;
+        Dodge = ProjectileGuard = DashInvulnerabilityBonus = 0f;
+        TrophyParts = BurnRank = PoisonRank = FrostRank = ShockRank = SplitShot = Retaliate = PulseAura = ChargedShot = 0;
+        LastChance = CritPierce = BurningShot = BlastDash = Gamble = false;
     }
 
     // Rolls one hit: returns the (possibly increased) damage. A crit always deals at least 1 more than a normal hit.
@@ -126,6 +141,10 @@ public static class CombatStats
     public static float DropLuck { get { float best = Primary.DropLuck; foreach (HeroStats s in all) best = Mathf.Max(best, s.DropLuck); return best; } }
     public static float EnemySpeedCurse { get { float best = Primary.EnemySpeedCurse; foreach (HeroStats s in all) best = Mathf.Max(best, s.EnemySpeedCurse); return best; } }
     public static float EnemyHealthCurse { get { float best = Primary.EnemyHealthCurse; foreach (HeroStats s in all) best = Mathf.Max(best, s.EnemyHealthCurse); return best; } }
+    // «Азарт» у любого героя: аптечки на арене превращаются в магниты.
+    public static bool GambleActive { get { bool any = Primary.Gamble; foreach (HeroStats s in all) any |= s.Gamble; return any; } }
+    // Детали за элит (карточка «Трофей»), копятся за забег и прибавляются к награде.
+    public static int RunTrophyParts;
 
     public static void Set(float critChance, float critBonus, int pierce, int ricochet = 0) { Primary.Set(critChance, critBonus, pierce, ricochet); }
     public static void Reset() { Primary.Reset(); }

@@ -56,6 +56,10 @@ public class SmallChest : MonoBehaviour
         if (Time.deltaTime <= 0f) return;
         age += Time.deltaTime;
         visual.localPosition = Vector3.up * (0.15f + 0.12f * Mathf.Sin(age * 3f));
+        // 19.11.2026: сундук падает с подскоком и пружинит при появлении.
+        float pop = Mathf.Clamp01(age / 0.45f);
+        visual.localScale = Vector3.one * Mathf.Max(0.01f, 1f + 2.4f * Mathf.Pow(pop - 1f, 3f) + 1.4f * Mathf.Pow(pop - 1f, 2f));
+        if (pop < 1f) visual.localPosition += Vector3.up * (Mathf.Sin(pop * Mathf.PI) * 0.9f);
         visual.localRotation = Quaternion.Euler(0f, age * 60f, 0f);
         glow.intensity = 1.6f + 0.8f * Mathf.Sin(age * 5f);
         sparkle -= Time.deltaTime;

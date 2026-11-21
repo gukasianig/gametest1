@@ -3,7 +3,7 @@ using UnityEngine;
 
 // Короткие эффекты врагов из примитивов: взрыв, брызги, пыль, пятна на земле, ударное кольцо.
 // Материалы непрозрачные Unlit (кэш по цвету): «затухание» сделано уменьшением размера и сменой цвета,
-// поэтому не нужны прозрачные варианты шейдера и всё остаётся в стиле low-poly.
+// поэтому не нужны прозрачные варианты шейдера и всё остаётся в стиле low-poly. Исключение — пятна GroundSplat (FxSplat, прозрачные, 20.11).
 public static class EnemyFx
 {
     static readonly Dictionary<int, Material> materials = new Dictionary<int, Material>();
@@ -73,16 +73,104 @@ public static class EnemyFx
         return go;
     }
 
+    // Пул частиц (20.11.2026): сферы и кубы FxPiece (брызги, пыль, взрывы) берутся из стека, а не CreatePrimitive/Destroy.
+    // Потолок живых частиц — MaxPieces: при переполнении переиспользуется самая «догоревшая».
+    public const int MaxPieces = 96;
+    static readonly Stack<FxPiece>[] idlePieces = { new Stack<FxPiece>(), new Stack<FxPiece>() };
+    static readonly List<FxPiece> livePieces = new List<FxPiece>();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void InitPool()
+    {
+        ClearPool();
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    static void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        if (mode == UnityEngine.SceneManagement.LoadSceneMode.Single) ClearPool();
+    }
+
+    static void ClearPool()
+    {
+        foreach (Stack<FxPiece> stack in idlePieces) stack.Clear();
+        livePieces.Clear();
+    }
+
+    public static int LivePieceCount => livePieces.Count;
+
+    static int PoolSlot(PrimitiveType type) { return type == PrimitiveType.Sphere ? 0 : type == PrimitiveType.Cube ? 1 : -1; }
+
     public static FxPiece Piece(PrimitiveType type, Vector3 position, float size, float life, Material[] ramp)
     {
-        GameObject go = Prim(type, position, Color.white);
-        go.GetComponent<Renderer>().sharedMaterial = ramp[0];
-        FxPiece piece = go.AddComponent<FxPiece>();
-        piece.life = life;
-        piece.size = size;
-        piece.ramp = ramp;
-        go.transform.localScale = Vector3.one * size * 0.01f;
+        int slot = PoolSlot(type);
+        if (slot >= 0 && livePieces.Count >= MaxPieces) RecycleOldest();
+        FxPiece piece = null;
+        if (slot >= 0)
+        {
+            Stack<FxPiece> idle = idlePieces[slot];
+            while (piece == null && idle.Count > 0) piece = idle.Pop();
+        }
+        if (piece == null)
+        {
+            GameObject go = Prim(type, position, Color.white);
+            piece = go.AddComponent<FxPiece>();
+            piece.poolSlot = slot;
+        }
+        else
+        {
+            piece.transform.SetPositionAndRotation(position, Quaternion.identity);
+            piece.gameObject.SetActive(true);
+        }
+        piece.Restart(size, life, ramp);
+        if (slot >= 0)
+        {
+            piece.liveIndex = livePieces.Count;
+            livePieces.Add(piece);
+        }
         return piece;
+    }
+
+    static void RecycleOldest()
+    {
+        FxPiece oldest = null;
+        float best = -1f;
+        for (int i = livePieces.Count - 1; i >= 0; i--)
+        {
+            FxPiece p = livePieces[i];
+            if (p == null) { Untrack(i); continue; }
+            if (p.Progress > best) { best = p.Progress; oldest = p; }
+        }
+        if (oldest != null) Release(oldest);
+    }
+
+    static void Untrack(int index)
+    {
+        int last = livePieces.Count - 1;
+        if (index < last)
+        {
+            livePieces[index] = livePieces[last];
+            if (livePieces[index] != null) livePieces[index].liveIndex = index;
+        }
+        livePieces.RemoveAt(last);
+    }
+
+    internal static void Forget(FxPiece piece)
+    {
+        int i = piece.liveIndex;
+        piece.liveIndex = -1;
+        if (i >= 0 && i < livePieces.Count && livePieces[i] == piece) Untrack(i);
+    }
+
+    // Частица догорела: в стек своего типа (или Destroy, если тип не пулится).
+    internal static void Release(FxPiece piece)
+    {
+        Forget(piece);
+        if (piece.poolSlot < 0) { Object.Destroy(piece.gameObject); return; }
+        if (!piece.gameObject.activeSelf) return;
+        piece.gameObject.SetActive(false);
+        idlePieces[piece.poolSlot].Push(piece);
     }
 
     // Брызги/осколки: шарики разлетаются по дуге, падают и исчезают.
@@ -116,15 +204,73 @@ public static class EnemyFx
     {
         // На склоне пятно ложится по наклону и чуть поднимается — иначе половина уходила под землю.
         float ground = Mathf.Max(position.y, GroundHeight.At(position)) + 0.03f + GroundHeight.Lift(position, radius);
-        GameObject go = Prim(PrimitiveType.Cylinder, new Vector3(position.x, ground, position.z), color);
-        go.transform.rotation = GroundHeight.Tilt(position, Random.Range(0f, 360f));
-        FxPiece p = go.AddComponent<FxPiece>();
-        p.life = life;
-        p.size = radius * 2f;
-        p.flat = true;
-        p.grow = 0.06f;
-        p.ramp = new[] { Mat(color) };
-        go.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+        // Мягкое полупрозрачное пятно с рваным краем (не глухой чёрный диск): плоский квад, общая текстура, угасание к концу.
+        var go = new GameObject("Fx splat");
+        go.transform.SetPositionAndRotation(new Vector3(position.x, ground, position.z), GroundHeight.Tilt(position, Random.Range(0f, 360f)));
+        go.AddComponent<MeshFilter>().sharedMesh = SplatQuad();
+        MeshRenderer renderer = go.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = SplatMaterial(color);
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+        FxSplat splat = go.AddComponent<FxSplat>();
+        splat.life = Mathf.Max(0.1f, life);
+        splat.size = radius * 2f;
+        go.transform.localScale = Vector3.one * 0.01f;
+    }
+
+    static Mesh splatQuad;
+    static Texture2D splatTexture;
+    static readonly Dictionary<int, Material> splatMaterials = new Dictionary<int, Material>();
+
+    static Mesh SplatQuad()
+    {
+        if (splatQuad != null) return splatQuad;
+        splatQuad = new Mesh { name = "Fx splat quad" };
+        splatQuad.vertices = new[] { new Vector3(-0.5f, 0f, -0.5f), new Vector3(-0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, -0.5f) };
+        splatQuad.uv = new[] { new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f) };
+        splatQuad.normals = new[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
+        splatQuad.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+        splatQuad.RecalculateBounds();
+        return splatQuad;
+    }
+
+    // Цвет — в материале, форма и альфа (≤0.7 в центре, мягкий рваный край) — в общей текстуре.
+    static Material SplatMaterial(Color color)
+    {
+        Color32 c = color;
+        int key = c.r | c.g << 8 | c.b << 16;
+        if (splatMaterials.TryGetValue(key, out Material m) && m != null) return m;
+        color.a = 1f;
+        m = SeeThrough(color, 1f);
+        m.name = "Fx splat";
+        m.SetTexture("_BaseMap", SplatTexture());
+        m.SetFloat("_Cull", 0f);
+        splatMaterials[key] = m;
+        return m;
+    }
+
+    static Texture2D SplatTexture()
+    {
+        if (splatTexture != null) return splatTexture;
+        const int size = 128;
+        splatTexture = new Texture2D(size, size, TextureFormat.RGBA32, true) { name = "Fx splat", wrapMode = TextureWrapMode.Clamp };
+        var pixels = new Color32[size * size];
+        float half = size * 0.5f;
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dx = (x + 0.5f - half) / half, dy = (y + 0.5f - half) / half;
+                float r = Mathf.Sqrt(dx * dx + dy * dy), angle = Mathf.Atan2(dy, dx);
+                // Неровный край: несколько синусоид по углу + мелкий шум.
+                float edge = 0.78f + 0.07f * Mathf.Sin(angle * 5f + 1.3f) + 0.05f * Mathf.Sin(angle * 11f + 0.4f)
+                    + 0.04f * (Mathf.PerlinNoise(x * 0.09f, y * 0.09f) - 0.5f);
+                float body = Mathf.Clamp01((edge - r) / 0.22f);
+                float alpha = 0.7f * body * body * (0.75f + 0.25f * Mathf.PerlinNoise(x * 0.05f + 7f, y * 0.05f + 3f));
+                pixels[y * size + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(Mathf.Clamp01(alpha) * 255f));
+            }
+        splatTexture.SetPixels32(pixels);
+        splatTexture.Apply(true, true);
+        return splatTexture;
     }
 
     // Расходящееся кольцо по земле.
@@ -250,21 +396,56 @@ public sealed class FxPiece : MonoBehaviour
     int stage;
     Vector3 spinAxis;
     Renderer cached;
+    bool begun;
+    // Пул EnemyFx: тип (0 сфера, 1 куб, -1 не пулится) и место в списке живых частиц.
+    internal int poolSlot = -1;
+    internal int liveIndex = -1;
 
-    void Start()
+    internal float Progress => life > 0f ? age / life : 1f;
+
+    // Полный сброс при выдаче из пула: все поля, которые выставляют Blobs/Puff/Explosion и другие вызовы Piece.
+    internal void Restart(float pieceSize, float pieceLife, Material[] pieceRamp)
     {
+        velocity = Vector3.zero;
+        gravity = drag = spin = 0f;
+        grow = 0.15f;
+        groundY = float.NegativeInfinity;
+        flat = stretch = false;
+        life = pieceLife;
+        size = pieceSize;
+        ramp = pieceRamp;
+        age = 0f;
+        stage = 0;
+        begun = false;
+        if (cached == null) cached = GetComponent<Renderer>();
+        if (cached != null && pieceRamp != null && pieceRamp.Length > 0) cached.sharedMaterial = pieceRamp[0];
+        transform.localScale = Vector3.one * pieceSize * 0.01f;
+    }
+
+    // Как прежний Start: вызывается в первом кадре после выдачи, когда вызывающий уже выставил flat/spin.
+    void Begin()
+    {
+        begun = true;
         spinAxis = Random.onUnitSphere;
-        cached = GetComponent<Renderer>();
+        if (cached == null) cached = GetComponent<Renderer>();
         transform.rotation = flat ? transform.rotation : Random.rotation;
     }
 
+    void Start()
+    {
+        if (!begun) Begin();
+    }
+
+    void OnDestroy() { EnemyFx.Forget(this); }
+
     void Update()
     {
+        if (!begun) Begin();
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
         age += dt;
         float t = age / life;
-        if (t >= 1f) { Destroy(gameObject); return; }
+        if (t >= 1f) { EnemyFx.Release(this); return; }
 
         velocity += Vector3.down * gravity * dt;
         if (drag > 0f) velocity /= 1f + drag * dt;
@@ -454,4 +635,34 @@ public sealed class TelegraphFill : MonoBehaviour
     }
 
     void OnDestroy() { if (mesh != null) Destroy(mesh); }
+}
+
+// Пятно на земле: быстро раскрывается (0,08 с), держится и плавно гаснет за последние 40% жизни.
+public class FxSplat : MonoBehaviour
+{
+    public float life = 2f, size = 1f;
+    float age;
+    Renderer cached;
+    MaterialPropertyBlock block;
+    Color tint;
+
+    void Start()
+    {
+        cached = GetComponent<Renderer>();
+        block = new MaterialPropertyBlock();
+        tint = cached.sharedMaterial.GetColor("_BaseColor");
+    }
+
+    void Update()
+    {
+        age += Time.deltaTime;
+        if (age >= life) { Destroy(gameObject); return; }
+        float open = Mathf.Clamp01(age / 0.08f);
+        float s = size * (0.6f + 0.4f * (1f - (1f - open) * (1f - open)));
+        transform.localScale = new Vector3(s, 1f, s);
+        float t = age / life;
+        tint.a = t < 0.6f ? 1f : 1f - (t - 0.6f) / 0.4f;
+        block.SetColor("_BaseColor", tint);
+        cached.SetPropertyBlock(block);
+    }
 }

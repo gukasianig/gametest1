@@ -101,8 +101,8 @@ public static class WorkshopProjectsChecks
             Check(b.min.x >= r.xMin - 1 && b.max.x <= r.xMax + 1 && b.min.y >= r.yMin - 1 && b.max.y <= r.yMax + 1, "Selected project is offscreen");
         }
         Check(tree.Scroll.horizontalScrollbar != null && tree.Scroll.verticalScrollbar != null, "Missing scrollbars");
-        var goal = tree.transform.Find("Workshop tracked goal").GetComponentInChildren<Text>();
-        Check(goal.rectTransform.rect.height >= 20f, "Goal strip too small");
+        // Полоса цели внизу убрана по просьбе владельца (18.11); цель видна в окне проекта и бейджем на узле.
+        Check(tree.transform.Find("Workshop tracked goal") == null, "Removed goal strip is back");
     }
 
     private static Rect Box(RectTransform relative, RectTransform target)
@@ -198,6 +198,15 @@ public static class WorkshopProjectsChecks
         throw new Exception("Missing equipment button: " + name);
     }
 
+    // Нижний блок «ВЕТКА ОРУЖИЯ» в панели: кнопки покупки/выбора ветки и вкладки.
+    private static bool BranchBlockVisible(WorkshopTree tree)
+    {
+        bool visible = EquipmentButton(tree, "Weapon branch purchase").gameObject.activeInHierarchy || EquipmentButton(tree, "Weapon branch equip").gameObject.activeInHierarchy;
+        foreach (Button button in tree.GetComponentsInChildren<Button>(true))
+            if (button.name.StartsWith("Weapon branch tab ") && button.gameObject.activeInHierarchy) visible = true;
+        return visible;
+    }
+
     private static void SelectWeaponNode(WorkshopTree tree, int weapon, WeaponElement element = WeaponElement.None)
     {
         string path = "Tree viewport/Tree content/Tree board/Weapon group " + weapon + "/Node weapon:" + weapon + (element == WeaponElement.None ? "" : ":" + element);
@@ -211,7 +220,7 @@ public static class WorkshopProjectsChecks
         var tree = Object.FindObjectOfType<WorkshopTree>();
         var hero = PlayerProgression.Instance;
         var shooter = hero.GetComponent<AutoShoter>();
-        MetaProgress.UseMemory();
+        MetaProgress.UseMemory(); MetaProgress.Data.runs = WorkshopProjects.SectionRuns;
         Check(!WeaponTuning.Buy(-1) && !WeaponTuning.Buy(5) && !WeaponTuning.Buy(11) && !WeaponTuning.Buy(13), "Invalid/support tuning accepted");
         MetaProgress.Data.currency = 59;
         Check(!WeaponTuning.Buy(0) && MetaProgress.Currency == 59, "Unaffordable tuning accepted");
@@ -261,7 +270,7 @@ public static class WorkshopProjectsChecks
             foreach (string suffix in new[] { "", ".bak", ".tmp" }) if (File.Exists(savePath + suffix)) File.Delete(savePath + suffix);
         }
         Pass("Old/new meta v1 round trip preserves branch/project/body ranks; actual tuning purchase persists separately per weapon");
-        MetaProgress.Data.currency = 10000;
+        MetaProgress.Data.currency = 10000; MetaProgress.Data.runs = WorkshopProjects.SectionRuns;
         tree.Refresh();
         SelectWeaponNode(tree, 0);
         EquipmentButton(tree, "Weapon enhancement purchase").onClick.Invoke();
@@ -272,11 +281,14 @@ public static class WorkshopProjectsChecks
         EquipmentButton(tree, "Weapon branch equip").onClick.Invoke();
         Check(WeaponElements.Equipped(0) == WeaponElement.None, "Branch unequip failed");
         SelectWeaponNode(tree, 2);
-        Check(!EquipmentButton(tree, "Weapon branch purchase").interactable, "Locked branch can be bought");
+        Check(WeaponElements.IsLocked(2), "Weapon 2 unexpectedly has branches; update this check");
+        Check(!BranchBlockVisible(tree), "Branch block shown for a weapon without branches");
         EquipmentButton(tree, "Weapon enhancement purchase").onClick.Invoke();
         Check(MetaProgress.IsWeaponUnlocked(2) && WeaponTuning.Rank(2) == 0, "Weapon unlock mixed with tuning");
         EquipmentButton(tree, "Weapon enhancement purchase").onClick.Invoke();
-        Check(WeaponTuning.Rank(2) == 1 && !EquipmentButton(tree, "Weapon branch purchase").interactable, "Locked branch blocked base enhancement");
+        Check(WeaponTuning.Rank(2) == 1 && !BranchBlockVisible(tree), "Locked branch blocked base enhancement");
+        SelectWeaponNode(tree, 0);
+        Check(BranchBlockVisible(tree), "Branch block hidden for the pistol");
         SelectWeaponNode(tree, 0);
         GameText.SetLanguage(GameLanguage.Russian);
         tree.FitTree();
@@ -291,7 +303,7 @@ public static class WorkshopProjectsChecks
         WorkshopTreeChecks.Capture(tree.GetComponentInParent<Canvas>(), "Logs/workshop-equipment-en-1024.png", 1024, 768, () => ValidateTreeSpacing(tree));
         SelectWeaponNode(tree, 1);
         WorkshopTreeChecks.Capture(tree.GetComponentInParent<Canvas>(), "Logs/workshop-equipment-en-wide.png", 2560, 1080, () => ValidateTreeSpacing(tree));
-        Pass("Actual UI unlock/enhance/branch/unequip, still-locked other branches, project page restore; RU/EN screenshots and 3 display formats");
+        Pass("Actual UI unlock/enhance/branch/unequip, branch block hidden for weapons without branches, project page restore; RU/EN screenshots and 3 display formats");
         tree.gameObject.SetActive(false);
         var menu = hero.GetComponent<StartMenu>();
         menu.ShowWeapons();
@@ -327,7 +339,7 @@ public static class WorkshopProjectsChecks
     {
         yield return LayoutChecks();
         var tree = Object.FindObjectOfType<WorkshopTree>();
-        MetaProgress.UseMemory(); MetaProgress.DevUnlockAllWeapons = true; MetaProgress.Data.currency = 10000;
+        MetaProgress.UseMemory(); MetaProgress.DevUnlockAllWeapons = true; MetaProgress.Data.currency = 10000; MetaProgress.Data.runs = WorkshopProjects.SectionRuns;
         Check(WeaponTuning.Buy(0) && WeaponTuning.Buy(0), "Cannot seed preview tuning");
         Check(WeaponElements.Buy(0, WeaponElement.Revolver), "Cannot seed preview branch");
         tree.Refresh();
@@ -354,7 +366,7 @@ public static class WorkshopProjectsChecks
     private static IEnumerator LayoutChecks()
     {
         yield return null;
-        MetaProgress.UseMemory(); MetaProgress.Data.currency = 10000;
+        MetaProgress.UseMemory(); MetaProgress.Data.currency = 10000; MetaProgress.Data.runs = WorkshopProjects.SectionRuns;
         MetaProgress.DevUnlockAllWeapons = true;
         var hero = PlayerProgression.Instance;
         var menu = hero.GetComponent<StartMenu>(); menu.ShowWorkshop();
@@ -365,8 +377,17 @@ public static class WorkshopProjectsChecks
         var shooter = hero.GetComponent<AutoShoter>();
         int weapons = 0, modules = 0;
         for (int i = 0; i < shooter.weapons.Length; i++)
-            if (shooter.weapons[i] != null && shooter.weapons[i].IsSelectable) { weapons++; modules += WeaponElements.HasBranches(i) ? 3 : 4; }
-        Check(before == expected + weapons + modules, "Layout lost existing nodes");
+            if (shooter.weapons[i] != null && shooter.weapons[i].IsSelectable) { weapons++; modules += WeaponElements.IsLocked(i) ? 0 : WeaponElements.HasBranches(i) ? 3 : 4; }
+        Check(before == expected + weapons + modules, "Layout lost existing nodes: " + before + " / " + (expected + weapons + modules));
+        // Оружие без своего дерева веток: в карточке только узел оружия, без замочков-заглушек (21.11.2026).
+        var board = tree.transform.Find("Tree viewport/Tree content/Tree board");
+        for (int i = 0; i < shooter.weapons.Length; i++)
+        {
+            if (shooter.weapons[i] == null || !shooter.weapons[i].IsSelectable) continue;
+            Transform group = board.Find("Weapon group " + i);
+            int own = group.GetComponentsInChildren<Button>(true).Length;
+            Check(own == (WeaponElements.IsLocked(i) ? 1 : 1 + (WeaponElements.HasBranches(i) ? 3 : 4)), "Weapon group " + i + " has " + own + " nodes");
+        }
         GameText.SetLanguage(GameLanguage.Russian);
         tree.CenterRoot();
         WorkshopTreeChecks.Capture(tree.GetComponentInParent<Canvas>(), "Logs/workshop-layout-centre-ru.png", 1280, 720, () =>
@@ -414,6 +435,36 @@ public static class WorkshopProjectsChecks
         menu.ShowWorkshop();
         var tree = Object.FindObjectOfType<WorkshopTree>();
         yield return null;
+        var board = tree.transform.Find("Tree viewport/Tree content/Tree board");
+        Transform projectsLock = board.Find("Projects lock");
+        int nodesBefore = tree.NodeCount;
+        for (int runs = 0; runs < WorkshopProjects.SectionRuns; runs++)
+        {
+            MetaProgress.Data.runs = runs;
+            tree.Refresh();
+            Check(!WorkshopProjects.SectionUnlocked && projectsLock != null && projectsLock.gameObject.activeSelf, "Projects lock plate missing at " + runs + " runs");
+            Check(projectsLock.GetComponentInChildren<Text>().text.Contains(runs + "/" + WorkshopProjects.SectionRuns), "Lock plate progress text at " + runs + " runs");
+            foreach (string id in WorkshopProjects.Ids)
+                Check(!board.Find("Node project:" + id).gameObject.activeSelf, "Project node visible before unlock: " + id);
+            for (int i = 0; i < WorkshopProjects.Ids.Length; i++) Check(!board.Find("Project tile " + i).gameObject.activeSelf, "Project tile visible before unlock");
+            tree.FocusProject("generator");
+            Check(tree.SelectedTitle != WorkshopProjects.Title("generator"), "Locked project could be focused");
+        }
+        tree.FocusSection("projects");
+        Check(tree.SelectedTitle != WorkshopProjects.Title("generator"), "Projects shortcut selected a hidden project");
+        GameText.SetLanguage(GameLanguage.Russian);
+        tree.FitTree();
+        WorkshopTreeChecks.Capture(tree.GetComponentInParent<Canvas>(), "Logs/workshop-projects-locked-ru.png", 1280, 720, () => { Validate(tree); ValidateTreeSpacing(tree); });
+        // A component (Brute core) opens the section early even without 2 runs.
+        Seed("core", 1);
+        Check(WorkshopProjects.SectionUnlocked, "Component progress did not open projects");
+        MetaProgress.UseMemory();
+        MetaProgress.Data.runs = WorkshopProjects.SectionRuns;
+        tree.Refresh();
+        Check(WorkshopProjects.SectionUnlocked && !projectsLock.gameObject.activeSelf && tree.NodeCount == nodesBefore, "Projects did not open after 2 runs");
+        foreach (string id in WorkshopProjects.Ids)
+            Check(board.Find("Node project:" + id).gameObject.activeSelf, "Project node hidden after unlock: " + id);
+        Pass("Projects section: lock plate with 0/2 and 1/2 runs, hidden nodes/tiles, focus ignored; a core or 2 runs open all 5 projects");
         foreach (string id in WorkshopProjects.Ids)
         {
             tree.FocusProject(id);

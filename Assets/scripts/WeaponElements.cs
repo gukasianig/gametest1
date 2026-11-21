@@ -155,9 +155,12 @@ public sealed class WeaponElementAttack
         Rank = WeaponElements.Rank(weapon, Element);
     }
 
-    public void Hit(Health target, int damage, bool forceCrit = false)
+    private float nextCardChain;
+
+    // Возвращает true, если удар был критическим (связка «Критический пробой»).
+    public bool Hit(Health target, int damage, bool forceCrit = false)
     {
-        if (target == null || target.isDead || damage <= 0 || !target.CompareTag("Enemy")) return;
+        if (target == null || target.isDead || damage <= 0 || !target.CompareTag("Enemy")) return false;
         Vector3 position = target.transform.position;
         damage = Mathf.Max(1, Mathf.RoundToInt(damage * Stats.TargetMultiplier(target)));
         bool crit;
@@ -165,33 +168,36 @@ public sealed class WeaponElementAttack
         Health.NextHitCrit = crit;
         target.TakeDamage(damage);
         Health.NextHitCrit = false;
-        if (Rank <= 0) return;
+        // Стихийные карточки забега (19.11.2026) работают с любым оружием и модулем Мастерской.
+        HeroCardEffects.ElementHit(Stats, target, position, damage, ref nextCardChain);
+        if (Rank <= 0) return crit;
         if (Element == WeaponElement.Sticky)
         {
             if (!target.isDead) StickyCharge.Attach(target, damage, Rank, Stats);
-            return;
+            return crit;
         }
-        if (WeaponElements.IsBranch(Element)) return;   // Револьвер и Двойные действуют в AutoShoter.Shoot
+        if (WeaponElements.IsBranch(Element)) return crit;   // Револьвер и Двойные действуют в AutoShoter.Shoot
         if (Element == WeaponElement.Lightning)
         {
-            if (Time.time < nextChain) return;
+            if (Time.time < nextChain) return crit;
             nextChain = Time.time + .4f;
-            Chain(target, position, damage);
-            return;
+            ChainFrom(target, position, damage, Rank, .3f);
+            return crit;
         }
-        if (target.isDead) return;
+        if (target.isDead) return crit;
         if (Element == WeaponElement.Frost)
             SlowEffect.Apply(target, 1f - (.1f + .1f * Rank), 2f);
         else ElementStatus.Apply(target, Element, damage * Rank * (Element == WeaponElement.Fire ? .08f : .05f));
+        return crit;
     }
 
-    private void Chain(Health first, Vector3 from, int damage)
+    public static void ChainFrom(Health first, Vector3 from, int damage, int jumps, float share)
     {
         var candidates = new List<Health>();
         var hit = new HashSet<Health> { first };
         WeaponTargets.Collect(candidates);
-        float strength = damage * .3f;
-        for (int jump = 0; jump < Rank; jump++)
+        float strength = damage * share;
+        for (int jump = 0; jump < jumps; jump++)
         {
             Health nearest = null;
             float distance = 5f;

@@ -54,6 +54,8 @@ public class PlayerHealth : MonoBehaviour, IDamagable
         }
     }
 
+    private bool lastChanceUsed;
+    public bool LastChanceUsed => lastChanceUsed;
     private float invulnerableUntil;
     public bool Invulnerable => Time.time < invulnerableUntil;
 
@@ -72,10 +74,28 @@ public class PlayerHealth : MonoBehaviour, IDamagable
     {
         if (isDead || damage <= 0 || Invulnerable || (GameSession.Instance != null && GameSession.Instance.State != GameRunState.Playing)) return;
         damage = Mathf.Max(1, Mathf.RoundToInt(damage * RunModifiers.HeroDamageTaken));   // испытание «Тяжёлые удары»
+        // Карточки 19.11.2026: уклонение и защита от снарядов.
+        if (Stats.Dodge > 0f && Random.value < Stats.Dodge)
+        {
+            GrantInvulnerability(.18f);
+            HeroCardEffects.DodgeFx(this);
+            return;
+        }
+        if (Stats.ProjectileGuard > 0f && (cause == HeroDamageCause.Projectile || cause == HeroDamageCause.Mortar || cause == HeroDamageCause.BossProjectile))
+            damage = Mathf.Max(1, Mathf.RoundToInt(damage * (1f - Stats.ProjectileGuard)));
         int raw = damage;
         // Синергия «Стальная воля»: при низком HP броня +15% (предел 75% вместо 60%).
         float armor = Mathf.Min(0.6f, Stats.Armor) + (SteelWillActive ? 0.15f : 0f);
         if (armor > 0f) damage = Mathf.Max(1, Mathf.RoundToInt(damage * (1f - Mathf.Min(0.75f, armor))));
+        // «Последний шанс»: смертельный удар один раз за забег оставляет 30% HP.
+        if (damage >= currentHP && Stats.LastChance && !lastChanceUsed)
+        {
+            lastChanceUsed = true;
+            currentHP = Mathf.Max(1, Mathf.RoundToInt(maxHP * HeroCardEffects.LastChanceHealth));
+            GrantInvulnerability(2f);
+            HeroCardEffects.LastChanceFx(this);
+            return;
+        }
         int lostHP = Mathf.Min(currentHP, damage);
         currentHP = Mathf.Max(0, currentHP - damage);
         if (currentHP > 0) GrantInvulnerability(.18f);
@@ -196,7 +216,7 @@ public class PlayerHealth : MonoBehaviour, IDamagable
         label.rectTransform.anchorMax = Vector2.one;
         label.rectTransform.offsetMin = new Vector2(12f, 4f);
         label.rectTransform.offsetMax = new Vector2(-12f, -4f);
-        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        label.font = GameUi.DefaultFont;
         label.text = GameText.Source("gamesession.150");
         label.fontSize = 26;
         label.alignment = TextAnchor.MiddleCenter;

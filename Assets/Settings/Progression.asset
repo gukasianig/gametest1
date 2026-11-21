@@ -12,9 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6e78ad2f8b44a33a2f1ed46777a6a69, type: 3}
   m_Name: Progression
   m_EditorClassIdentifier:
-  firstLevelExperience: 10
-  experienceGrowth: 8
-  experienceExponent: 1.3
+  firstLevelExperience: 12
+  experienceGrowth: 10
+  experienceExponent: 1.45
+  earlyLevelExperience:
+  - 6
+  - 10
+  - 16
   attractionRadius: 4
   collectionRadius: 0.8
   attractionSpeed: 9

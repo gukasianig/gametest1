@@ -105,6 +105,8 @@ public class Health : MonoBehaviour, IDamagable
         {
             PlayerHealth hero = killer.GetComponent<PlayerHealth>();
             if (hero != null) hero.OnEnemyKilled();
+            // Карточка «Трофей»: Детали за элиту прибавляются к награде забега.
+            if (name.StartsWith("Elite")) CombatStats.RunTrophyParts += CombatStats.Of(killer).TrophyParts;
         }
         if (CompareTag("Enemy") && experienceReward > 0) DropPickup.TryDrop(transform.position, name.StartsWith("Elite"));
         if (CompareTag("Enemy")) ExperiencePickup.Spawn(transform.position, Mathf.RoundToInt(experienceReward * ArenaEvents.ExperienceFactor));

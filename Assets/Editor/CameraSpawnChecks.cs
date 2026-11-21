@@ -17,6 +17,18 @@ public static class CameraSpawnChecks
         };
     }
 
+    private static bool batch;
+
+    // Batch: Unity.exe -batchmode -projectPath . -executeMethod CameraSpawnChecks.RunBatch (без -quit), отчёт Logs/camera-spawn-check.txt.
+    public static void RunBatch()
+    {
+        Directory.CreateDirectory("Logs");
+        File.WriteAllText(Request, "batch");
+        batch = true;
+        UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Scenes/GreenArenaPlay.unity");
+        EditorApplication.isPlaying = true;
+    }
+
     private static void Require(bool condition, string message)
     {
         if (!condition) throw new Exception(message);
@@ -114,6 +126,7 @@ public static class CameraSpawnChecks
             camera.transform.SetPositionAndRotation(originalPosition, originalRotation);
             UnityEngine.Random.state = randomState;
             UnityEngine.Object.Destroy(probe);
+            if (batch || Application.isBatchMode) EditorApplication.Exit(0);
         }
     }
 }

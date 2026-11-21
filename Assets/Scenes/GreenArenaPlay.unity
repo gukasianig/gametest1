@@ -21021,7 +21021,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 1463986406}
-  offset: {x: 0, y: 18, z: -6}
+  offset: {x: 0, y: 13, z: -4.333}
   smoothSpeed: 5
   zoomSpeed: 50
   minHeight: 10
@@ -118072,66 +118072,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1811362638}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1814289242
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1814289243}
-  - component: {fileID: 1814289244}
-  m_Layer: 0
-  m_Name: enemyspawner
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1814289243
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1814289242}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1814289244
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1814289242}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3eb466d352f51264db4a5adf7a8f6523, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  enemies:
-  - enemyPrefab: {fileID: 7105570210147486190, guid: cfe2b73893ae7f34fa2ffbd6b2b24d07,
-      type: 3}
-    count: 3
-    spawnRate: 1
-  - enemyPrefab: {fileID: 442116053428028982, guid: a1dff1e5f841fdf429b6124474a38324,
-      type: 3}
-    count: 3
-    spawnRate: 1
-  - enemyPrefab: {fileID: 3693176705045482367, guid: 210fbf6b8d31a02458dcaf42609cbb25,
-      type: 3}
-    count: 1
-    spawnRate: 2
-  timeBetweenWaves: 3
-  player: {fileID: 1463986406}
-  spawnDistance: 15
 --- !u!1001 &1817256496
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -138271,7 +138211,6 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 1793915551}
   - {fileID: 200909753}
-  - {fileID: 1814289243}
   - {fileID: 196302423}
   - {fileID: 2095695692}
   - {fileID: 736218829}

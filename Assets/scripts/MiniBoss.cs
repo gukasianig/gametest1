@@ -4,13 +4,20 @@ using UnityEngine;
 // Мини-босс «Громила» (11.11.2026, решение владельца): великан из модели врага-танка на середине забега (5-я минута).
 // Медленно идёт к ближайшему герою и по очереди: удар по земле (красный круг 1,1 с) и рывок (полоса 0,8 с).
 // Награда — гарантированный малый сундук (в нём может быть эволюция оружия) и кольцо кристаллов. Полоса HP — у GameSession.
+// 19.11.2026: сильнее (HP 2000 → 2800, урон выше), новые атаки — бросок камней, рёв с подкреплением, двойной удар;
+// случайный порядок без повторов подряд, вторая фаза ниже 50% HP (паузы короче), позы атак через ModelWalkAnimator.
 public class MiniBoss : MonoBehaviour
 {
     public const float SpawnShare = 0.5f;          // доля времени забега до появления
-    public const int BaseHealth = 2000;
+    public const int BaseHealth = 2800;
     public const float Scale = 2.4f;
     public const float SlamRadius = 5f;
-    public const int SlamDamage = 25, ChargeDamage = 22;
+    public const int SlamDamage = 30, ChargeDamage = 27, RockDamage = 24;
+    public static readonly Color Accent = new Color(1f, 0.32f, 0.2f);
+    public bool Enraged { get; private set; }
+    public string LastAttack { get; private set; } = "";
+    private ModelWalkAnimator animator;
+    private ModelWalkAnimator Anim => animator != null ? animator : (animator = ModelWalkAnimator.Of(this));
     public static readonly string Title = GameText.Source("miniboss.190");
 
     public static MiniBoss Active { get; private set; }
@@ -54,16 +61,188 @@ public class MiniBoss : MonoBehaviour
 
     private IEnumerator Loop()
     {
-        yield return new WaitForSeconds(2.5f);
+        yield return Wait(2.5f);
+        int previous = -1;
         while (Health != null && !Health.isDead)
         {
             while (!Running) yield return null;
-            yield return Slam();
-            yield return new WaitForSeconds(3.5f);
-            while (!Running) yield return null;
-            yield return Charge();
-            yield return new WaitForSeconds(3.5f);
+            // 0 удар, 1 рывок, 2 камни, 3 рёв, 4 двойной удар; первым — удар, дальше случайно без повтора.
+            int pick = Attacks == 0 ? 0 : Random.Range(0, 5);
+            if (pick == previous) pick = (pick + 1 + Random.Range(0, 4)) % 5;
+            previous = pick;
+            LastAttack = pick == 0 ? "Slam" : pick == 1 ? "Charge" : pick == 2 ? "Boulders" : pick == 3 ? "Roar" : "DoubleSlam";
+            if (pick == 0) yield return Slam();
+            else if (pick == 1) yield return Charge();
+            else if (pick == 2) yield return Boulders();
+            else if (pick == 3) yield return Roar();
+            else yield return DoubleSlam();
+            if (Anim != null) Anim.Release();
+            if (ai != null) ai.MovementLocked = false;
+            if (!Enraged && Health != null && Health.CurrentHealth < Health.maxHealth / 2) Enrage();
+            yield return Wait(Enraged ? 2.2f : 3.2f);
         }
+    }
+
+    // Пауза только по игровому времени.
+    private IEnumerator Wait(float seconds)
+    {
+        while (seconds > 0f)
+        {
+            if (Health == null || Health.isDead) yield break;
+            if (Running) seconds -= Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    private void Enrage()
+    {
+        Enraged = true;
+        Vector3 feet = Ground(transform.position);
+        EnemyFx.Ring(feet, 6f, Accent, 0.6f, 0.45f);
+        EnemyFx.LightFlash(feet + Vector3.up * 2f, Accent, 10f, 3f, 0.5f);
+        ScreenShake.AddAt(feet, 0.45f);
+        GameAudio.Play(Sfx.Explosion, 0.7f);
+        if (Anim != null) { Anim.Hold(ModelWalkAnimator.Pose.Swell, 0.8f); Anim.Flash(Accent * 1.6f, 0.4f); }
+        if (GameSession.Instance != null) GameSession.Instance.Announce(GameText.Source("boss.phase2.mini"), 2.5f);
+    }
+
+    private void FaceTo(Vector3 point)
+    {
+        Vector3 d = point - transform.position;
+        d.y = 0f;
+        if (d.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(d);
+    }
+
+    // Бросок камней: Громила вырывает камни и швыряет по дуге в круги вокруг героя (во второй фазе — больше).
+    private IEnumerator Boulders()
+    {
+        Transform target = CoopMode.NearestAlive(transform.position);
+        if (target == null) yield break;
+        if (ai != null) ai.MovementLocked = true;
+        int count = Enraged ? 5 : 3;
+        var spots = new Vector3[count];
+        for (int i = 0; i < count; i++)
+        {
+            Vector2 around = i == 0 ? Vector2.zero : Random.insideUnitCircle * 5f;
+            spots[i] = Ground(target.position + new Vector3(around.x, 0f, around.y));
+        }
+        FaceTo(target.position);
+        Telegraphing = true;
+        if (Anim != null) Anim.Hold(ModelWalkAnimator.Pose.Windup, 2f);
+        var marks = new GameObject[count];
+        for (int i = 0; i < count; i++) marks[i] = Mark(spots[i], 2.2f);
+        yield return Wait(0.6f);
+        if (Anim != null) { Anim.Release(); Anim.Fire(); }
+        Vector3 hand = transform.position + transform.forward * 1.5f + Vector3.up * 2.5f;
+        for (int i = 0; i < count; i++) MortarShell.Launch(hand, spots[i], 1f, 2.2f);
+        GameAudio.Play(Sfx.Throw, 0.9f);
+        yield return Wait(1f);
+        Telegraphing = false;
+        Attacks++;
+        for (int i = 0; i < count; i++)
+        {
+            if (marks[i] != null) Destroy(marks[i]);
+            CoopMode.DamageHeroesWithin(spots[i], 2.4f, RockDamage, HeroDamageCause.Meteor);
+        }
+        ScreenShake.AddAt(target.position, 0.3f);
+    }
+
+    // Рёв: Громила встаёт на дыбы, волна отбрасывает героя, рядом выбегают враги, а ближние ускоряются.
+    private IEnumerator Roar()
+    {
+        if (ai != null) ai.MovementLocked = true;
+        Vector3 centre = Ground(transform.position);
+        Telegraphing = true;
+        if (Anim != null) Anim.Hold(ModelWalkAnimator.Pose.Swell, 2f);
+        float left = 0.8f;
+        while (left > 0f)
+        {
+            if (Running) left -= Time.deltaTime;
+            Circle(centre, 3.5f, Mathf.Lerp(0.1f, 0.35f, 1f - left / 0.8f));
+            yield return null;
+            if (Health == null || Health.isDead) { warning.enabled = false; yield break; }
+        }
+        warning.enabled = false;
+        Telegraphing = false;
+        Attacks++;
+        if (Anim != null) Anim.Fire();
+        EnemyFx.Ring(centre, 7f, Accent, 0.5f, 0.4f);
+        EnemyFx.Ring(centre, 4f, Color.white, 0.35f, 0.2f);
+        ScreenShake.AddAt(centre, 0.55f);
+        GameAudio.Play(Sfx.Explosion, 0.8f);
+        CoopMode.DamageHeroesWithin(centre, 3.8f, Mathf.RoundToInt(SlamDamage * 0.6f), HeroDamageCause.BossSlam);
+        foreach (EnemyAI enemy in EnemyAI.All)
+            if (enemy != null && enemy != ai && WeaponTargets.Flat(enemy.transform.position, centre) < 14f) enemy.Boost(1.45f, 4f);
+        WaveManager waves = FindObjectOfType<WaveManager>();
+        int count = Enraged ? 8 : 5;
+        for (int i = 0; waves != null && i < count; i++)
+        {
+            float a = i * Mathf.PI * 2f / count;
+            Vector3 spot = centre + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 4.5f;
+            if (ArenaLayout.Instance != null && !ArenaLayout.Instance.IsWalkable(spot, 0.5f)) continue;
+            EnemyFx.Puff(spot + Vector3.up * 0.4f, new Color(0.7f, 0.62f, 0.48f), 0.7f, 0.5f, Vector3.up);
+            waves.SpawnMinionAt("Enemy_Fast", spot, 0.8f);
+        }
+        yield return Wait(0.4f);
+    }
+
+    // Двойной удар: сначала круг перед собой, сразу за ним — под героем.
+    private IEnumerator DoubleSlam()
+    {
+        Transform target = CoopMode.NearestAlive(transform.position);
+        if (target == null) yield break;
+        FaceTo(target.position);
+        Vector3 front = transform.position + transform.forward * 3.2f;
+        yield return SlamAt(Ground(front), 3.4f, 0.75f);
+        if (target != null) yield return SlamAt(Ground(target.position), 3.4f, 0.55f);
+    }
+
+    private IEnumerator SlamAt(Vector3 centre, float radius, float telegraph)
+    {
+        if (ai != null) ai.MovementLocked = true;
+        FaceTo(centre);
+        Telegraphing = true;
+        if (Anim != null) Anim.Hold(ModelWalkAnimator.Pose.Windup, 2f);
+        float left = telegraph;
+        while (left > 0f)
+        {
+            if (Running) left -= Time.deltaTime;
+            Circle(centre, radius, Mathf.Lerp(0.12f, 0.45f, 1f - left / telegraph));
+            yield return null;
+            if (Health == null || Health.isDead) { warning.enabled = false; yield break; }
+        }
+        warning.enabled = false;
+        Telegraphing = false;
+        Attacks++;
+        if (Anim != null) { Anim.Release(); Anim.Fire(); }
+        CoopMode.DamageHeroesWithin(centre, radius + 0.3f, SlamDamage, HeroDamageCause.BossSlam);
+        EnemyFx.Explosion(centre, radius * 0.8f, 0.6f, true);
+        EnemyFx.Ring(centre, radius, new Color(1f, 0.55f, 0.25f), 0.4f, 0.4f);
+        GameAudio.Play(Sfx.Explosion, 0.8f);
+        ScreenShake.AddAt(centre, 0.4f);
+        yield return Wait(0.2f);
+    }
+
+    // Отдельная метка-круг на земле (камни: их несколько одновременно).
+    private GameObject Mark(Vector3 centre, float radius)
+    {
+        var go = new GameObject("Mini boss mark", typeof(LineRenderer));
+        LineRenderer line = go.GetComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.loop = true;
+        line.positionCount = 40;
+        line.widthMultiplier = 0.14f;
+        line.sharedMaterial = warningMaterial;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        for (int i = 0; i < 40; i++)
+        {
+            float a = i * Mathf.PI * 2f / 40;
+            Vector3 p = centre + new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius);
+            p.y = GroundHeight.At(p) + 0.08f;
+            line.SetPosition(i, p);
+        }
+        Destroy(go, 4f);
+        return go;
     }
 
     private Vector3 Ground(Vector3 p) { return new Vector3(p.x, GroundHeight.At(p) + 0.08f, p.z); }
@@ -74,6 +253,7 @@ public class MiniBoss : MonoBehaviour
         if (ai != null) ai.MovementLocked = true;
         Vector3 centre = Ground(transform.position);
         Telegraphing = true;
+        if (Anim != null) Anim.Hold(ModelWalkAnimator.Pose.Windup, 2f);
         float left = 1.1f;
         while (left > 0f)
         {
@@ -86,12 +266,13 @@ public class MiniBoss : MonoBehaviour
         warning.enabled = false;
         Telegraphing = false;
         Attacks++;
+        if (Anim != null) { Anim.Release(); Anim.Fire(); }
         CoopMode.DamageHeroesWithin(centre, SlamRadius + 0.3f, SlamDamage, HeroDamageCause.BossSlam);
         EnemyFx.Explosion(centre, SlamRadius * 0.8f, 0.7f, true);
         EnemyFx.Ring(centre, SlamRadius, new Color(1f, 0.55f, 0.25f), 0.45f, 0.45f);
         GameAudio.Play(Sfx.Explosion, 0.9f);
         ScreenShake.AddAt(centre, 0.5f);
-        yield return new WaitForSeconds(0.35f);
+        yield return Wait(0.35f);
         if (ai != null) ai.MovementLocked = false;
     }
 
@@ -108,6 +289,7 @@ public class MiniBoss : MonoBehaviour
         dir.Normalize();
         float length = Mathf.Clamp(Vector3.Distance(from, Ground(target.position)) + 3f, 6f, 14f);
         Telegraphing = true;
+        if (Anim != null) Anim.Hold(ModelWalkAnimator.Pose.Windup, 2f);
         float left = 0.8f;
         while (left > 0f)
         {
@@ -120,6 +302,7 @@ public class MiniBoss : MonoBehaviour
         warning.enabled = false;
         Telegraphing = false;
         Attacks++;
+        if (Anim != null) Anim.Hold(ModelWalkAnimator.Pose.Dash, 1.5f);
         var hit = new System.Collections.Generic.HashSet<PlayerHealth>();
         float travelled = 0f;
         while (travelled < length && Health != null && !Health.isDead)
@@ -141,7 +324,7 @@ public class MiniBoss : MonoBehaviour
             yield return null;
         }
         ScreenShake.AddAt(transform.position, 0.25f);
-        yield return new WaitForSeconds(0.4f);
+        yield return Wait(0.4f);
         if (ai != null) ai.MovementLocked = false;
     }
 
@@ -180,7 +363,7 @@ public class MiniBoss : MonoBehaviour
         for (int i = 0; i < 12; i++)
         {
             float a = i * Mathf.PI / 6f;
-            ExperiencePickup.Spawn(at + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 2.4f, 15);
+            ExperiencePickup.Spawn(at + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 2.4f, 15, merge: false);
         }
         EnemyFx.Explosion(at, 4f, 0.8f, true);
         if (CombatFeel.Instance != null)

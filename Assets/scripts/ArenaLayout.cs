@@ -342,30 +342,89 @@ public partial class ArenaLayout : MonoBehaviour
         bool x = MoveClear(start, xOnly, radius), z = MoveClear(start, zOnly, radius);
         if (x && z) return (xOnly - start).sqrMagnitude > (zOnly - start).sqrMagnitude ? xOnly : zOnly;
         if (x) return xOnly;
-        return z ? zOnly : start;
+        return z ? zOnly : Escape(start, radius, Mathf.Max(0.02f, new Vector2(desired.x - start.x, desired.z - start.z).magnitude));
+    }
+
+    // Зажат в щели между пересекающимися (раздутыми) препятствиями: любой шаг углубляет одно из них, и MoveClear держит
+    // навсегда (19.11, враги «стоят у объектов»). Шагаем туда, где самое глубокое вхождение уменьшается.
+    private static readonly Vector3[] escapeDirections =
+    {
+        new Vector3(1, 0, 0), new Vector3(-1, 0, 0), new Vector3(0, 0, 1), new Vector3(0, 0, -1),
+        new Vector3(.7071f, 0, .7071f), new Vector3(-.7071f, 0, .7071f), new Vector3(.7071f, 0, -.7071f), new Vector3(-.7071f, 0, -.7071f)
+    };
+
+    private float DeepestPenetration(Vector3 point, float radius)
+    {
+        float deepest = 0f;
+        foreach (int i in Near(point.x - radius, point.z - radius, point.x + radius, point.z + radius))
+            deepest = Mathf.Max(deepest, Penetration(point, obstacles[i], radius));
+        return deepest;
+    }
+
+    private Vector3 Escape(Vector3 start, float radius, float step)
+    {
+        float current = DeepestPenetration(start, radius);
+        if (current <= 0f) return start;
+        Vector3 best = start;
+        float bestDepth = current - 0.0001f;
+        foreach (Vector3 direction in escapeDirections)
+        {
+            Vector3 candidate = start + direction * step;
+            float depth = DeepestPenetration(candidate, radius);
+            if (depth < bestDepth) { bestDepth = depth; best = candidate; }
+        }
+        return best;
+    }
+
+    // Буферы NextWaypoint: старт + цель + до четырёх углов у каждого из восьми ближайших препятствий.
+    private const int MaxBlocking = 8;
+    private const int MaxWaypointNodes = 2 + MaxBlocking * 4;
+    private static readonly float[] CornerMargins = { 0.2f, 1.2f };
+    private readonly List<Vector3> waypointNodes = new List<Vector3>(MaxWaypointNodes);
+    private readonly List<Bounds> waypointBlocking = new List<Bounds>();
+    private readonly float[] waypointDistances = new float[MaxWaypointNodes];
+    private readonly int[] waypointPrevious = new int[MaxWaypointNodes];
+    private readonly bool[] waypointUsed = new bool[MaxWaypointNodes];
+    private Vector3 blockingOrigin;
+    private System.Comparison<Bounds> byBlockingDistance;
+
+    private int CompareBlockingDistance(Bounds a, Bounds b)
+    {
+        return (a.center - blockingOrigin).sqrMagnitude.CompareTo((b.center - blockingOrigin).sqrMagnitude);
     }
 
     public Vector3 NextWaypoint(Vector3 start, Vector3 goal, float radius)
     {
         if (PathClear(start, goal, radius)) return goal;
-        var nodes = new List<Vector3> { start, goal };
+        // Рабочие коллекции переиспользуются между вызовами (20.11.2026: раньше каждый вызов выделял списки и массивы).
+        List<Vector3> nodes = waypointNodes;
+        nodes.Clear();
+        nodes.Add(start);
+        nodes.Add(goal);
         // Углы берём только у препятствий, которые стоят на прямой к цели (ближайшие восемь), а не у всех на арене.
-        var blocking = new List<Bounds>();
+        List<Bounds> blocking = waypointBlocking;
+        blocking.Clear();
         foreach (int i in Near(Mathf.Min(start.x, goal.x) - radius, Mathf.Min(start.z, goal.z) - radius, Mathf.Max(start.x, goal.x) + radius, Mathf.Max(start.z, goal.z) + radius))
             if (Crosses(start, goal, obstacles[i], radius)) blocking.Add(obstacles[i]);
-        blocking.Sort((a, b) => (a.center - start).sqrMagnitude.CompareTo((b.center - start).sqrMagnitude));
-        if (blocking.Count > 8) blocking.RemoveRange(8, blocking.Count - 8);
+        blockingOrigin = start;
+        blocking.Sort(byBlockingDistance ??= CompareBlockingDistance);
+        if (blocking.Count > MaxBlocking) blocking.RemoveRange(MaxBlocking, blocking.Count - MaxBlocking);
         foreach (Bounds bounds in blocking)
         for (int x = -1; x <= 1; x += 2)
         for (int z = -1; z <= 1; z += 2)
         {
-            Vector3 corner = new Vector3(bounds.center.x + x * (bounds.extents.x + radius + 0.2f), start.y,
-                bounds.center.z + z * (bounds.extents.z + radius + 0.2f));
-            if (IsWalkable(corner, radius)) nodes.Add(corner);
+            // Угол вплотную к соседнему камню/дереву непроходим — пробуем точку дальше от угла (кучи препятствий).
+            foreach (float margin in CornerMargins)
+            {
+                Vector3 corner = new Vector3(bounds.center.x + x * (bounds.extents.x + radius + margin), start.y,
+                    bounds.center.z + z * (bounds.extents.z + radius + margin));
+                if (IsWalkable(corner, radius)) { nodes.Add(corner); break; }
+            }
         }
-        float[] distances = new float[nodes.Count];
-        int[] previous = new int[nodes.Count];
-        bool[] used = new bool[nodes.Count];
+        float[] distances = waypointDistances;
+        int[] previous = waypointPrevious;
+        bool[] used = waypointUsed;
+        System.Array.Clear(used, 0, nodes.Count);
         for (int i = 0; i < nodes.Count; i++) { distances[i] = float.PositiveInfinity; previous[i] = -1; }
         distances[0] = 0f;
         for (int step = 0; step < nodes.Count; step++)
@@ -378,7 +437,8 @@ public partial class ArenaLayout : MonoBehaviour
             used[current] = true;
             for (int i = 1; i < nodes.Count; i++)
             {
-                if (used[i] || !PathClear(nodes[current], nodes[i], radius)) continue;
+                // Из стартовой точки — MoveClear: враг, втолкнутый в раздутую коробку, может из неё выйти (иначе путей нет вовсе).
+                if (used[i] || !(current == 0 ? MoveClear(nodes[0], nodes[i], radius) : PathClear(nodes[current], nodes[i], radius))) continue;
                 float cost = distances[current] + Vector3.Distance(nodes[current], nodes[i]);
                 if (cost >= distances[i]) continue;
                 distances[i] = cost;
@@ -392,7 +452,9 @@ public partial class ArenaLayout : MonoBehaviour
             int best = -1;
             for (int i = 2; i < nodes.Count; i++)
                 if (previous[i] >= 0 && (best < 0 || (nodes[i] - goal).sqrMagnitude < (nodes[best] - goal).sqrMagnitude)) best = i;
-            if (best < 0) return start;
+            // Обхода нет: раньше враг стоял на месте навсегда. Теперь идёт к цели, ResolveMovement ведёт его вдоль стенки,
+            // а EnemyAI при долгой остановке делает шаг в сторону (19.11, жалоба владельца на застревание у объектов).
+            if (best < 0) return goal;
             next = best;
         }
         while (previous[next] > 0) next = previous[next];

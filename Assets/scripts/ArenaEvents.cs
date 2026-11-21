@@ -121,7 +121,7 @@ public class ArenaEvents : MonoBehaviour
                 holdProgress = 0f;
                 holdWon = false;
                 props.Add(Flat("Hold point", holdCentre, HoldRadius * 2f, new Color(0.55f, 0.45f, 0.1f), 0.04f));
-                holdFill = Flat("Hold fill", holdCentre, 0.1f, new Color(1f, 0.8f, 0.2f), 0.06f);
+                holdFill = Flat("Hold fill", holdCentre, 0.1f, new Color(1f, 0.8f, 0.2f), 0.06f, true);
                 props.Add(holdFill);
                 title = GameText.Source("arenaevents.005") + Mathf.RoundToInt(holdSeconds) + GameText.Source("arenaevents.006");
                 endsAt = clock + 32f;
@@ -489,7 +489,7 @@ public class ArenaEvents : MonoBehaviour
         {
             // Кристаллы кольцом вокруг ящика (не внутри него).
             Vector2 around = Random.insideUnitCircle.normalized * Random.Range(1.2f, 2.8f);
-            ExperiencePickup.Spawn(centre + new Vector3(around.x, 0f, around.y), reward);
+            ExperiencePickup.Spawn(centre + new Vector3(around.x, 0f, around.y), reward, merge: false);
         }
     }
 
@@ -509,7 +509,7 @@ public class ArenaEvents : MonoBehaviour
         for (int i = 0; i < 12; i++)
         {
             Vector2 around = Random.insideUnitCircle * 3f;
-            ExperiencePickup.Spawn(holdCentre + new Vector3(around.x, 0f, around.y), reward);
+            ExperiencePickup.Spawn(holdCentre + new Vector3(around.x, 0f, around.y), reward, merge: false);
         }
         DropPickup.Spawn(holdCentre, PickupKind.Health);
         EnemyFx.Ring(holdCentre, HoldRadius * 1.6f, new Color(1f, 0.85f, 0.3f), 0.9f, 0.5f);
@@ -676,7 +676,7 @@ public class ArenaEvents : MonoBehaviour
         chestOpened = chestLost = rewardOffered = false;
         // Зона защиты и заливка-таймер (растёт к моменту открытия).
         props.Add(Flat("Chest zone", chestCentre, ChestZoneRadius * 2f, new Color(0.3f, 0.12f, 0.45f), 0.04f));
-        chestFill = Flat("Chest fill", chestCentre, 0.1f, new Color(0.75f, 0.4f, 1f), 0.06f);
+        chestFill = Flat("Chest fill", chestCentre, 0.1f, new Color(0.75f, 0.4f, 1f), 0.06f, true);
         props.Add(chestFill);
         BuildChest();
     }
@@ -903,7 +903,7 @@ public class ArenaEvents : MonoBehaviour
         for (int i = 0; i < 14; i++)
         {
             Vector2 around = Random.insideUnitCircle * 2.6f;
-            ExperiencePickup.Spawn(chestCentre + new Vector3(around.x, 0f, around.y), 10);
+            ExperiencePickup.Spawn(chestCentre + new Vector3(around.x, 0f, around.y), 10, merge: false);
         }
         endsAt = clock + 2f;
     }
@@ -1073,18 +1073,114 @@ public class ArenaEvents : MonoBehaviour
         GameAudio.Play(Sfx.Explosion, 0.7f);
     }
 
-    internal static GameObject Flat(string name, Vector3 centre, float diameter, Color colour, float height)
+    // Круг-маркер события: плоский квад с процедурной текстурой (кольцо + разметка), прозрачный Unlit без теней.
+    // fill = растущая заливка (полупрозрачный диск с яркой кромкой). Масштаб как у прежнего цилиндра: (d, 0.01, d).
+    internal static GameObject Flat(string name, Vector3 centre, float diameter, Color colour, float height, bool fill = false)
     {
-        GameObject disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        disc.name = name;
-        Destroy(disc.GetComponent<Collider>());
+        GameObject disc = new GameObject(name);
+        disc.AddComponent<MeshFilter>().sharedMesh = TelegraphQuad();
+        MeshRenderer renderer = disc.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = TelegraphMaterial(colour, fill);
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+        renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+        renderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
         // На аренах с рельефом земля выше нуля: без этого круги событий оказывались под землёй.
         disc.transform.position = new Vector3(centre.x, GroundHeight.At(centre) + height + GroundHeight.Lift(centre, diameter * 0.5f), centre.z);
         disc.transform.rotation = GroundHeight.Tilt(centre);   // по склону зелёной арены
         disc.transform.localScale = new Vector3(diameter, 0.01f, diameter);
-        Paint(disc, colour);
         return disc;
     }
+
+    private static Mesh telegraphQuad;
+    private static Texture2D zoneTexture, fillTexture;
+    private static readonly Dictionary<int, Material> telegraphMaterials = new Dictionary<int, Material>();
+
+    private static Mesh TelegraphQuad()
+    {
+        if (telegraphQuad != null) return telegraphQuad;
+        telegraphQuad = new Mesh { name = "Telegraph quad" };
+        telegraphQuad.vertices = new[] { new Vector3(-0.5f, 0f, -0.5f), new Vector3(-0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, -0.5f) };
+        telegraphQuad.uv = new[] { new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f) };
+        telegraphQuad.normals = new[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
+        telegraphQuad.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+        telegraphQuad.RecalculateBounds();
+        return telegraphQuad;
+    }
+
+    private static Material TelegraphMaterial(Color colour, bool fill)
+    {
+        // Старые цвета подбирались под непрозрачный Lit и тёмные; для Unlit поднимаем яркость, оттенок сохраняем.
+        Color.RGBToHSV(colour, out float h, out float s, out float v);
+        Color tint = Color.HSVToRGB(h, Mathf.Clamp01(s * 0.9f + 0.05f), Mathf.Max(v, 0.95f));
+        tint.a = 1f;
+        Color32 c = tint;
+        int key = c.r | c.g << 8 | c.b << 16 | (fill ? 1 << 24 : 0);
+        if (telegraphMaterials.TryGetValue(key, out Material m) && m != null) return m;
+        m = EnemyFx.SeeThrough(tint, 1f);   // альфу задаёт текстура
+        m.name = fill ? "Telegraph fill" : "Telegraph zone";
+        m.SetTexture("_BaseMap", fill ? FillTexture() : ZoneTexture());
+        m.SetFloat("_Cull", 0f);   // видно и с обратной стороны на крутом склоне
+        m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + (fill ? 1 : 0);   // заливка поверх зоны
+        telegraphMaterials[key] = m;
+        return m;
+    }
+
+    private const int TelegraphSize = 256;
+
+    // Зона: мягкая заливка 0.18→0.25 к краю, яркое кольцо 0.92 и пунктирная разметка внутри кольца.
+    private static Texture2D ZoneTexture()
+    {
+        if (zoneTexture != null) return zoneTexture;
+        zoneTexture = BakeTelegraph("Telegraph zone", (r, angle, px) =>
+        {
+            float alpha = Mathf.Lerp(0.18f, 0.25f, r * r) * Inside(r, 0.93f, px);
+            alpha = Mathf.Max(alpha, 0.92f * Band(r, 0.935f, 0.985f, px));
+            float dash = Mathf.Repeat(angle / (Mathf.PI * 2f) * 32f, 1f) < 0.55f ? 1f : 0f;
+            alpha = Mathf.Max(alpha, 0.7f * dash * Band(r, 0.86f, 0.895f, px));
+            float tick = Mathf.Repeat(angle / (Mathf.PI * 2f) * 8f + 0.5f, 1f);
+            alpha = Mathf.Max(alpha, 0.85f * (Mathf.Abs(tick - 0.5f) < 0.012f ? 1f : 0f) * Band(r, 0.76f, 0.86f, px));
+            return alpha;
+        });
+        return zoneTexture;
+    }
+
+    // Заливка: полупрозрачный диск 0.35 с яркой кромкой 0.95 — момент удара/заполнения читается сразу.
+    private static Texture2D FillTexture()
+    {
+        if (fillTexture != null) return fillTexture;
+        fillTexture = BakeTelegraph("Telegraph fill", (r, angle, px) =>
+            Mathf.Max(0.35f * Inside(r, 0.93f, px), 0.95f * Band(r, 0.925f, 0.99f, px)));
+        return fillTexture;
+    }
+
+    // r — расстояние от центра (1 = край квада), px — ширина пикселя в тех же единицах для сглаживания.
+    private static Texture2D BakeTelegraph(string name, System.Func<float, float, float, float> alphaAt)
+    {
+        var texture = new Texture2D(TelegraphSize, TelegraphSize, TextureFormat.RGBA32, true)
+        {
+            name = name,
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Trilinear,
+            anisoLevel = 4
+        };
+        var pixels = new Color32[TelegraphSize * TelegraphSize];
+        float half = TelegraphSize * 0.5f, px = 1f / half;
+        for (int y = 0; y < TelegraphSize; y++)
+            for (int x = 0; x < TelegraphSize; x++)
+            {
+                float dx = (x + 0.5f - half) / half, dy = (y + 0.5f - half) / half;
+                float r = Mathf.Sqrt(dx * dx + dy * dy);
+                float a = r > 1f ? 0f : Mathf.Clamp01(alphaAt(r, Mathf.Atan2(dy, dx), px));
+                pixels[y * TelegraphSize + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(a * 255f));
+            }
+        texture.SetPixels32(pixels);
+        texture.Apply(true, true);
+        return texture;
+    }
+
+    private static float Inside(float r, float edge, float px) => Mathf.Clamp01((edge - r) / px + 0.5f);
+    private static float Band(float r, float from, float to, float px) => Mathf.Clamp01((r - from) / px + 0.5f) * Mathf.Clamp01((to - r) / px + 0.5f);
 
     internal static void Paint(GameObject item, Color colour)
     {
@@ -1112,7 +1208,7 @@ public class Meteor : MonoBehaviour
         GameObject ring = ArenaEvents.Flat("Meteor warning", point, Radius * 2f, new Color(0.5f, 0.08f, 0.08f), 0.04f);
         Meteor meteor = ring.AddComponent<Meteor>();
         meteor.owner = owner;
-        GameObject inner = ArenaEvents.Flat("Meteor fill", point, Radius * 2f, new Color(1f, 0.25f, 0.12f), 0.06f);
+        GameObject inner = ArenaEvents.Flat("Meteor fill", point, Radius * 2f, new Color(1f, 0.25f, 0.12f), 0.06f, true);
         inner.transform.SetParent(ring.transform, true);
         meteor.fill = inner.transform;
     }

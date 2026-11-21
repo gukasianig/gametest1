@@ -21,7 +21,7 @@ public class PlayerProgression : MonoBehaviour
     private readonly Dictionary<string, int> ranks = new Dictionary<string, int>();
     private readonly List<UpgradeDefinition> offered = new List<UpgradeDefinition>();
     private readonly Button[] buttons = new Button[3];
-    private Button rerollButton;
+    private Button rerollButton, banishButton;
     private Text choicesTitle;
     private readonly Text[] cardText = new Text[3];
     private readonly Image[] icons = new Image[3];
@@ -35,7 +35,8 @@ public class PlayerProgression : MonoBehaviour
     private Text toastText, toastDetail;
     private Image toastStripe, toastIcon;
     private UpgradeIcon toastVector;
-    private const float ToastLife = 2.6f;
+    private const float ToastLife = 2.6f, ToastDelay = 0.28f;
+    private RectTransform toastBadge, toastShine;
     private float toastTime;
     private AutoShoter shooter;
     private PlayMovement movement;
@@ -57,7 +58,7 @@ public class PlayerProgression : MonoBehaviour
 
     private void Awake()
     {
-        if (!Secondary) Instance = this;
+        if (!Secondary) { Instance = this; CombatStats.RunTrophyParts = 0; }
         Stats.Reset();
         CombatStats.Register(Stats);
         shooter = GetComponent<AutoShoter>();
@@ -67,7 +68,12 @@ public class PlayerProgression : MonoBehaviour
         if (settings == null) { settings = ScriptableObject.CreateInstance<ProgressionSettings>(); ownsSettings = true; }
     }
 
-    private void Start() { BuildUI(); RefreshUI(); }
+    private void Start()
+    {
+        if (GetComponent<HeroCardEffects>() == null) gameObject.AddComponent<HeroCardEffects>();
+        BuildUI();
+        RefreshUI();
+    }
 
     private void Update()
     {
@@ -81,9 +87,11 @@ public class PlayerProgression : MonoBehaviour
             toast.anchoredPosition = new Vector2(0f, Mathf.LerpUnclamped(-40f, 0f, back));
             toast.localScale = Vector3.one * Mathf.LerpUnclamped(0.85f, 1f, back);
             toastGroup.alpha = Mathf.Min(Mathf.Clamp01(age / 0.15f), toastTime / 0.4f);
+            AnimateToast(age);
             if (toastTime == 0f) toast.gameObject.SetActive(false);
         }
         if (Choosing && coopWindow && !chestMode && Time.timeScale > 0f) ReadChoiceKeys();
+        else if (Choosing && !coopWindow) ReadPausedChoiceKeys();
         if (Time.timeScale <= 0f || Choosing) return;
         // Поверженный в кооперативе герой кристаллы не собирает (их забирает напарник).
         if (!(CoopMode.Active && ownHealth != null && ownHealth.IsDead)) ExperiencePickup.CollectNearby(this, settings);
@@ -173,7 +181,7 @@ public class PlayerProgression : MonoBehaviour
 
     public bool Available(UpgradeDefinition definition, bool ignoreLevel = false)
     {
-        if (definition == null || string.IsNullOrWhiteSpace(definition.id) || definition.amount <= 0f ||
+        if (definition == null || string.IsNullOrWhiteSpace(definition.id) || banished.Contains(definition.id) || definition.amount <= 0f ||
             (!ignoreLevel && Level < definition.minimumLevel) || Rank(definition.id) >= definition.maxRanks) return false;
         if ((definition.effect == UpgradeEffect.GrenadeDamage || definition.effect == UpgradeEffect.GrenadeRadius) && shooter.grenadePrefab == null) return false;
         if ((definition.effect == UpgradeEffect.OrbitDamage || definition.effect == UpgradeEffect.OrbitCount) &&
@@ -186,9 +194,14 @@ public class PlayerProgression : MonoBehaviour
         if ((definition.effect == UpgradeEffect.Pierce || definition.effect == UpgradeEffect.Ricochet) && kind != WeaponKind.Standard) return false;
         // Дрон, турель и мины — улучшения боя для любого оружия; карточки урона нужны только после первого юнита.
         if (definition.effect == UpgradeEffect.DroneDamage && Bonus(UpgradeEffect.DroneCount) <= 0f) return false;
+        // «Радиус взрыва» усиливает гранаты — только после карточки «Гранаты» (19.11.2026: раньше выпадал без них и сам их включал).
+        if (definition.effect == UpgradeEffect.GrenadeRadius && Bonus(UpgradeEffect.GrenadeDamage) <= 0f) return false;
         if (definition.effect == UpgradeEffect.TurretDamage && Bonus(UpgradeEffect.TurretCount) <= 0f) return false;
         if ((definition.effect == UpgradeEffect.ExtraPellets || definition.effect == UpgradeEffect.ExplosiveBullets ||
-            definition.effect == UpgradeEffect.WeaponRange) && kind != WeaponKind.Standard) return false;
+            definition.effect == UpgradeEffect.WeaponRange || definition.effect == UpgradeEffect.SplitShot ||
+            definition.effect == UpgradeEffect.ChargedShot || definition.effect == UpgradeEffect.CritPierce) && kind != WeaponKind.Standard) return false;
+        // «Азарт» бессмыслен в испытании «Без аптечек».
+        if (definition.effect == UpgradeEffect.Gamble && RunModifiers.NoHealthKits) return false;
         bool hasOrbits = orbits != null && orbits.orbitPrefab != null && orbits.orbitCount > 0;
         if (definition.effect == UpgradeEffect.OrbitSpeed && !hasOrbits) return false;
         if (definition.effect == UpgradeEffect.OrbitCrit && (!hasOrbits || Bonus(UpgradeEffect.CritChance) <= 0f)) return false;
@@ -206,13 +219,7 @@ public class PlayerProgression : MonoBehaviour
     {
         offered.Clear();
         if (catalog == null) return;
-        var candidates = new List<UpgradeDefinition>();
-        var ids = new HashSet<string>();
-        foreach (UpgradeDefinition definition in catalog.entries)
-            if (Available(definition) && ids.Add(definition.id)) candidates.Add(definition);
-        // Синергии попадают в выбор, только когда у героя уже есть обе части связки.
-        foreach (UpgradeDefinition definition in SynergyUpgrades)
-            if (SynergyReady(definition) && Available(definition) && ids.Add(definition.id)) candidates.Add(definition);
+        List<UpgradeDefinition> candidates = Candidates();
         // Кооператив: карточки из открытого окна напарника — только если иначе не набрать три.
         HashSet<string> partner = PartnerOffers();
         var reserve = new List<UpgradeDefinition>();
@@ -221,24 +228,60 @@ public class PlayerProgression : MonoBehaviour
                 if (partner.Contains(candidates[i].id)) { reserve.Add(candidates[i]); candidates.RemoveAt(i); }
         PickWeighted(candidates);
         PickWeighted(reserve);
+        // Запоминаем показанное: следующие два окна реже повторяют те же карточки.
+        foreach (UpgradeDefinition definition in offered) recentOffers.Add(definition.id);
+        while (recentOffers.Count > 6) recentOffers.RemoveAt(0);
+    }
+
+    // Все доступные сейчас карточки (каталог + готовые синергии), без повторов id.
+    private List<UpgradeDefinition> Candidates()
+    {
+        var candidates = new List<UpgradeDefinition>();
+        var ids = new HashSet<string>();
+        if (catalog == null) return candidates;
+        foreach (UpgradeDefinition definition in catalog.entries)
+            if (Available(definition) && ids.Add(definition.id)) candidates.Add(definition);
+        // Синергии попадают в выбор, только когда у героя уже есть обе части связки.
+        foreach (UpgradeDefinition definition in SynergyUpgrades)
+            if (SynergyReady(definition) && Available(definition) && ids.Add(definition.id)) candidates.Add(definition);
+        return candidates;
+    }
+
+    private readonly List<string> recentOffers = new List<string>();
+
+    // Баланс 19.11.2026: удача повышает шанс редких/особых карточек; уже взятые и недавно показанные выпадают реже.
+    private float OfferWeight(UpgradeDefinition definition)
+    {
+        float weight = catalog.Weight(definition);
+        float luck = Mathf.Max(0f, Stats.DropLuck);
+        if (definition.rarity == UpgradeRarity.Rare) weight *= 1f + luck;
+        else if (definition.rarity == UpgradeRarity.Special) weight *= 1f + 1.5f * luck;
+        weight /= 1f + 0.12f * Rank(definition.id);
+        if (recentOffers.Contains(definition.id)) weight *= 0.3f;
+        return Mathf.Max(0.01f, weight);
     }
 
     private void PickWeighted(List<UpgradeDefinition> candidates)
     {
         while (offered.Count < 3 && candidates.Count > 0)
         {
-            int sum = 0;
-            foreach (UpgradeDefinition definition in candidates) sum += catalog.Weight(definition);
-            int roll = Random.Range(0, sum);
-            for (int i = 0; i < candidates.Count; i++)
-            {
-                roll -= catalog.Weight(candidates[i]);
-                if (roll >= 0) continue;
-                offered.Add(candidates[i]);
-                candidates.RemoveAt(i);
-                break;
-            }
+            int pick = WeightedIndex(candidates);
+            offered.Add(candidates[pick]);
+            candidates.RemoveAt(pick);
         }
+    }
+
+    private int WeightedIndex(List<UpgradeDefinition> candidates)
+    {
+        float sum = 0f;
+        foreach (UpgradeDefinition definition in candidates) sum += OfferWeight(definition);
+        float roll = Random.value * sum;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            roll -= OfferWeight(candidates[i]);
+            if (roll < 0f) return i;
+        }
+        return candidates.Count - 1;
     }
 
     private void ShowChoices()
@@ -288,16 +331,17 @@ public class PlayerProgression : MonoBehaviour
         choices.offsetMin = choices.offsetMax = Vector2.zero;
         Color back = GameUi.Background;
         choices.GetComponent<Image>().color = coop ? new Color(back.r, back.g, back.b, 0.72f) : back;
-        float left = coop ? 0.04f : 0.12f, right2 = coop ? 0.96f : 0.88f;
+        float left = coop ? 0.04f : 0.24f, right2 = coop ? 0.96f : 0.76f;
         foreach (Button button in buttons)
         {
             RectTransform rect = (RectTransform)button.transform;
             rect.anchorMin = new Vector2(left, rect.anchorMin.y);
             rect.anchorMax = new Vector2(right2, rect.anchorMax.y);
         }
+        // Одиночное окно: «Перебросить» слева, «Запретить» справа; в кооперативе запрета нет (первый этап D06).
         RectTransform reroll = (RectTransform)rerollButton.transform;
-        reroll.anchorMin = new Vector2(coop ? 0.12f : 0.3f, reroll.anchorMin.y);
-        reroll.anchorMax = new Vector2(coop ? 0.88f : 0.7f, reroll.anchorMax.y);
+        reroll.anchorMin = new Vector2(coop ? 0.12f : 0.24f, reroll.anchorMin.y);
+        reroll.anchorMax = new Vector2(coop ? 0.88f : 0.495f, reroll.anchorMax.y);
         // Метка редкости с клавишей: в низкой карточке кооператива строке нужно больше высоты (иначе шрифт 12 не влезает).
         foreach (Text label in rarityLabels)
         {
@@ -317,6 +361,22 @@ public class PlayerProgression : MonoBehaviour
         else if (CoopMode.RerollPressed(player)) Reroll();
     }
 
+    // Окно с паузой (одиночная игра, сундук): 1/2/3 (и цифры на Num) выбирают карточку, R — переброс (не в сундуке).
+    // Первые 0,25 с после появления или обновления карточек клавиши не действуют: нажатие из боя не выберет карточку вслепую.
+    private const float ChoiceKeyGuard = 0.25f;
+    private float choiceKeysReadyAt;
+
+    private void ReadPausedChoiceKeys()
+    {
+        if (Time.unscaledTime < choiceKeysReadyAt || !ChoiceStateOk) return;
+        int card = Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1) ? 0
+            : Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2) ? 1
+            : Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3) ? 2 : -1;
+        if (card >= 0) SelectOfferedUpgrade(card);
+        else if (!chestMode && Input.GetKeyDown(KeyCode.R)) Reroll();
+        else if (!chestMode && Input.GetKeyDown(KeyCode.B)) ToggleBanishMode();
+    }
+
     // Карточки в открытом окне напарника (кооператив): одновременно у игроков разные карточки.
     private HashSet<string> PartnerOffers()
     {
@@ -334,6 +394,7 @@ public class PlayerProgression : MonoBehaviour
     public bool SelectOfferedUpgrade(int index)
     {
         if (!Choosing || index < 0 || index >= offered.Count || !ChoiceStateOk) return false;
+        if (BanishMode) return BanishOffered(index);
         UpgradeDefinition definition = offered[index];
         if (!Available(definition)) return false;
         string gained = Preview(definition);   // «было → станет» до применения — для уведомления
@@ -358,9 +419,13 @@ public class PlayerProgression : MonoBehaviour
         toastVector.ShowGlyph = toastIcon.sprite == null;
         toastVector.Effect = definition.effect;
         toastVector.color = rarity;
-        toastTime = ToastLife;
-        toastGroup.alpha = 1f;
+        // Уведомление выезжает чуть позже: выбранная карточка успевает долететь до него (UpgradeCardFx.Leave).
+        toastTime = ToastLife + ToastDelay;
+        toastGroup.alpha = 0f;
         toast.gameObject.SetActive(true);
+        for (int i = 0; i < buttons.Length; i++)
+            if (buttons[i] != null && buttons[i].gameObject.activeInHierarchy && cardFx[i] != null)
+                cardFx[i].Leave(i == index, (RectTransform)canvas.transform, toastBadge);
         if (chestMode)
         {
             // Награда сундука не тратит обычные выборы уровня: закрываем окно и возвращаемся в бой.
@@ -404,6 +469,13 @@ public class PlayerProgression : MonoBehaviour
     {
         new UpgradeDefinition { id = "syn_steel_will", title = GameText.Source("playerprogression.197"), effect = UpgradeEffect.SteelWill, amount = 1f,
             rarity = UpgradeRarity.Special, maxRanks = 1, weight = 20 },
+        // 19.11.2026: связки новых карточек.
+        new UpgradeDefinition { id = "syn_crit_pierce", title = GameText.Source("cards.critpierce.title"), effect = UpgradeEffect.CritPierce, amount = 1f,
+            rarity = UpgradeRarity.Special, maxRanks = 1, weight = 20 },
+        new UpgradeDefinition { id = "syn_burning_shot", title = GameText.Source("cards.burningshot.title"), effect = UpgradeEffect.BurningShot, amount = 1f,
+            rarity = UpgradeRarity.Special, maxRanks = 1, weight = 20 },
+        new UpgradeDefinition { id = "syn_blast_dash", title = GameText.Source("cards.blastdash.title"), effect = UpgradeEffect.BlastDash, amount = 1f,
+            rarity = UpgradeRarity.Special, maxRanks = 1, weight = 20 },
     };
 
     public bool SynergyReady(UpgradeDefinition definition)
@@ -411,6 +483,11 @@ public class PlayerProgression : MonoBehaviour
         switch (definition.effect)
         {
             case UpgradeEffect.SteelWill: return Bonus(UpgradeEffect.Armor) > 0f && Bonus(UpgradeEffect.Regeneration) > 0f;
+            case UpgradeEffect.CritPierce: return Bonus(UpgradeEffect.CritChance) > 0f && Bonus(UpgradeEffect.Pierce) > 0f;
+            case UpgradeEffect.BurningShot: return Bonus(UpgradeEffect.ExtraPellets) > 0f && Bonus(UpgradeEffect.BurnRounds) > 0f;
+            case UpgradeEffect.BlastDash:
+                return (Bonus(UpgradeEffect.DashCooldown) > 0f || Bonus(UpgradeEffect.DashDistance) > 0f || Bonus(UpgradeEffect.DashShield) > 0f) &&
+                    (Bonus(UpgradeEffect.ExplosiveBullets) > 0f || Bonus(UpgradeEffect.GrenadeRadius) > 0f);
             default: return false;
         }
     }
@@ -459,6 +536,24 @@ public class PlayerProgression : MonoBehaviour
             foreach (UpgradeDefinition definition in catalog.entries)
                 if (definition != null && definition.effect == effect) sum += Rank(definition.id);
         return sum;
+    }
+
+    // Название карточки каталога с этим эффектом (подсказки рецепта эволюции).
+    public string EffectTitle(UpgradeEffect effect)
+    {
+        if (catalog != null)
+            foreach (UpgradeDefinition definition in catalog.entries)
+                if (definition != null && definition.effect == effect) return definition.title;
+        return effect.ToString();
+    }
+
+    // Карточка входит в рецепт эволюции текущего оружия и её ранг ещё не добран (21.11.2026).
+    public bool FeedsEvolution(UpgradeDefinition definition)
+    {
+        if (definition == null || shooter == null || !shooter.CanEvolve) return false;
+        AutoShoter.EvolutionData evo = AutoShoter.Evolutions[shooter.EvolutionSlot];
+        return definition.effect == UpgradeEffect.Damage && EffectRanks(UpgradeEffect.Damage) < EvolutionDamageRanks
+            || definition.effect == evo.partner && EffectRanks(evo.partner) < evo.partnerRanks;
     }
 
     // Эволюция сохраняет модель оружия; остальные карточки используют отдельный арт с векторным fallback.
@@ -541,7 +636,12 @@ public class PlayerProgression : MonoBehaviour
     private void ApplyCombatBonuses()
     {
         float glass = Bonus(UpgradeEffect.CursedGlass), haste = Bonus(UpgradeEffect.CursedHaste), greed = Bonus(UpgradeEffect.CursedGreed);
-        Stats.Set(Bonus(UpgradeEffect.CritChance) + (WorkshopProjects.HasRelic(4) ? .08f * WorkshopProjects.RelicPower : 0f), Bonus(UpgradeEffect.CritPower), Mathf.RoundToInt(Bonus(UpgradeEffect.Pierce)),
+        float timeGreed = Bonus(UpgradeEffect.TimeGreed);
+        Stats.Gamble = Bonus(UpgradeEffect.Gamble) > 0f;
+        // «Азарт»: +100% удачи, но аптечки становятся магнитами (DropPickup).
+        float luck = Bonus(UpgradeEffect.Luck) + (Stats.Gamble ? 1f : 0f);
+        // Удача добавляет и шанс крита: +10% удачи → +1% крита.
+        Stats.Set(Bonus(UpgradeEffect.CritChance) + 0.1f * luck + (WorkshopProjects.HasRelic(4) ? .08f * WorkshopProjects.RelicPower : 0f), Bonus(UpgradeEffect.CritPower), Mathf.RoundToInt(Bonus(UpgradeEffect.Pierce)),
             Mathf.RoundToInt(Bonus(UpgradeEffect.Ricochet)));
         bool drone = Bonus(UpgradeEffect.DroneCount) > 0f;
         Stats.Armor = Mathf.Min(0.6f, Bonus(UpgradeEffect.Armor) + (WorkshopProjects.HasRelic(1) ? .06f * WorkshopProjects.RelicPower : 0f) + (drone && WorkshopProjects.DroneMode == 1 ? .03f * WorkshopProjects.Rank("drones") : 0f));
@@ -557,10 +657,26 @@ public class PlayerProgression : MonoBehaviour
         Stats.OrbitSpeedBonus = Bonus(UpgradeEffect.OrbitSpeed);
         Stats.OrbitCritShare = Bonus(UpgradeEffect.OrbitCrit);
         Stats.PickupSpeedBonus = Bonus(UpgradeEffect.PickupSpeed);
-        Stats.DropLuck = Bonus(UpgradeEffect.Luck);
+        Stats.DropLuck = luck;
+        Stats.Dodge = Mathf.Min(0.25f, Bonus(UpgradeEffect.Dodge));
+        Stats.ProjectileGuard = Mathf.Min(0.4f, Bonus(UpgradeEffect.ProjectileGuard));
+        Stats.DashInvulnerabilityBonus = Bonus(UpgradeEffect.DashShield);
+        Stats.TrophyParts = Mathf.RoundToInt(Bonus(UpgradeEffect.Trophy));
+        Stats.BurnRank = Mathf.RoundToInt(Bonus(UpgradeEffect.BurnRounds));
+        Stats.PoisonRank = Mathf.RoundToInt(Bonus(UpgradeEffect.PoisonRounds));
+        Stats.FrostRank = Mathf.RoundToInt(Bonus(UpgradeEffect.FrostRounds));
+        Stats.ShockRank = Mathf.RoundToInt(Bonus(UpgradeEffect.ShockRounds));
+        Stats.SplitShot = HeroCardEffects.SplitFragments(Mathf.RoundToInt(Bonus(UpgradeEffect.SplitShot)));
+        Stats.Retaliate = Mathf.RoundToInt(Bonus(UpgradeEffect.Retaliate));
+        Stats.PulseAura = Mathf.RoundToInt(Bonus(UpgradeEffect.PulseAura));
+        Stats.ChargedShot = Mathf.RoundToInt(Bonus(UpgradeEffect.ChargedShot));
+        Stats.LastChance = Bonus(UpgradeEffect.LastChance) > 0f;
+        Stats.CritPierce = Bonus(UpgradeEffect.CritPierce) > 0f;
+        Stats.BurningShot = Bonus(UpgradeEffect.BurningShot) > 0f;
+        Stats.BlastDash = Bonus(UpgradeEffect.BlastDash) > 0f;
         // Cursed upgrades: a large bonus with a price (see CursedText).
-        Stats.ExperienceGain = Bonus(UpgradeEffect.ExperienceGain) + 0.5f * greed - (WorkshopProjects.HasRelic(2) ? .05f : 0f);
-        Stats.EnemySpeedCurse = 1f + 0.15f * haste;
+        Stats.ExperienceGain = Bonus(UpgradeEffect.ExperienceGain) + 0.5f * greed + 0.3f * timeGreed - (WorkshopProjects.HasRelic(2) ? .05f : 0f);
+        Stats.EnemySpeedCurse = 1f + 0.15f * haste + 0.15f * timeGreed;
         Stats.EnemyHealthCurse = 1f + 0.25f * greed;
         cursedDamage = 1.0f * glass;
         cursedAttackSpeed = 0.4f * haste;
@@ -590,6 +706,8 @@ public class PlayerProgression : MonoBehaviour
 
     public void CloseChoices()
     {
+        BanishMode = false;
+        foreach (UpgradeCardFx fx in cardFx) if (fx != null) fx.banishHighlight = false;
         chestMode = false;
         coopWindow = false;
         if (choicesTitle != null) choicesTitle.text = GameText.Source("playerprogression.195");
@@ -696,6 +814,24 @@ public class PlayerProgression : MonoBehaviour
             case UpgradeEffect.CursedGlass: return GameText.Source("playerprogression.249");
             case UpgradeEffect.CursedHaste: return GameText.Source("playerprogression.250");
             case UpgradeEffect.CursedGreed: return GameText.Source("playerprogression.251");
+            case UpgradeEffect.Dodge: return Pair(GameText.Source("cards.dodge.label"), now * 100f, Mathf.Min(0.25f, next) * 100f, "%", "0");
+            case UpgradeEffect.ProjectileGuard: return Pair(GameText.Source("cards.projectileguard.label"), now * 100f, Mathf.Min(0.4f, next) * 100f, "%", "0");
+            case UpgradeEffect.DashShield: return Pair(GameText.Source("cards.dashshield.label"), movement.dashInvulnerability + now, movement.dashInvulnerability + next, GameText.Source("arenaevents.006"));
+            case UpgradeEffect.Trophy: return Pair(GameText.Source("cards.trophy.label"), now, next, "", "0");
+            case UpgradeEffect.BurnRounds: return Pair(GameText.Source("cards.burn.label"), HeroCardEffects.BurnShare(Mathf.RoundToInt(now)) * 100f, HeroCardEffects.BurnShare(Mathf.RoundToInt(next)) * 100f, "%", "0");
+            case UpgradeEffect.PoisonRounds: return Pair(GameText.Source("cards.poison.label"), HeroCardEffects.PoisonShare(Mathf.RoundToInt(now)) * 100f, HeroCardEffects.PoisonShare(Mathf.RoundToInt(next)) * 100f, "%", "0.#");
+            case UpgradeEffect.FrostRounds: return Pair(GameText.Source("cards.frost.label"), HeroCardEffects.FrostSlow(Mathf.RoundToInt(now)) * 100f, HeroCardEffects.FrostSlow(Mathf.RoundToInt(next)) * 100f, "%", "0");
+            case UpgradeEffect.ShockRounds: return Pair(GameText.Source("cards.shock.label"), now, next, "", "0");
+            case UpgradeEffect.SplitShot: return Pair(GameText.Source("cards.split.label"), HeroCardEffects.SplitFragments(Mathf.RoundToInt(now)), HeroCardEffects.SplitFragments(Mathf.RoundToInt(next)), "", "0");
+            case UpgradeEffect.Retaliate: return Pair(GameText.Source("cards.retaliate.label"), HeroCardEffects.RetaliateShare(Mathf.RoundToInt(now)) * 100f, HeroCardEffects.RetaliateShare(Mathf.RoundToInt(next)) * 100f, "%", "0");
+            case UpgradeEffect.PulseAura: return Pair(GameText.Source("cards.aura.label"), HeroCardEffects.AuraShare(Mathf.RoundToInt(now)) * 100f, HeroCardEffects.AuraShare(Mathf.RoundToInt(next)) * 100f, "%", "0");
+            case UpgradeEffect.ChargedShot: return Pair(GameText.Source("cards.charged.label"), HeroCardEffects.ChargedEvery(Mathf.RoundToInt(now)), HeroCardEffects.ChargedEvery(Mathf.RoundToInt(next)), "", "0");
+            case UpgradeEffect.LastChance: return GameText.Source("cards.lastchance.text");
+            case UpgradeEffect.Gamble: return GameText.Source("cards.gamble.text");
+            case UpgradeEffect.TimeGreed: return GameText.Source("cards.timegreed.text");
+            case UpgradeEffect.CritPierce: return GameText.Source("cards.critpierce.text");
+            case UpgradeEffect.BurningShot: return GameText.Source("cards.burningshot.text");
+            case UpgradeEffect.BlastDash: return GameText.Source("cards.blastdash.text");
             default: return null;
         }
     }
@@ -709,12 +845,81 @@ public class PlayerProgression : MonoBehaviour
         RollOffers();
         if (offered.Count == 0) return false;
         RerollsLeft--;
+        SetBanishMode(false);
         RefreshCards();
         return true;
     }
 
+    // --- Запрет карточки (D06, 21.11.2026): 2 заряда на забег у каждого героя (объект героя создаётся заново в каждом забеге).
+    // Запрещённый id больше не выпадает до конца забега. Только обычное окно уровня: не сундук и не кооператив.
+    private readonly HashSet<string> banished = new HashSet<string>();
+    public int BanishesLeft { get; private set; } = 2;
+    public bool BanishMode { get; private set; }
+    public bool IsBanished(string id) { return id != null && banished.Contains(id); }
+    private bool BanishAllowed => Choosing && !chestMode && !coopWindow;
+    private static readonly Color BanishColor = new Color(1f, 0.55f, 0.2f);
+
+    public bool ToggleBanishMode()
+    {
+        if (!BanishAllowed || !ChoiceStateOk || (!BanishMode && BanishesLeft <= 0)) return false;
+        SetBanishMode(!BanishMode);
+        choiceKeysReadyAt = Time.unscaledTime + ChoiceKeyGuard;
+        return true;
+    }
+
+    private void SetBanishMode(bool on)
+    {
+        BanishMode = on && BanishAllowed;
+        if (choicesTitle != null && Choosing && !chestMode)
+        {
+            choicesTitle.text = BanishMode ? GameText.Source("playerprogression.banish.hint") : LevelTitle;
+            choicesTitle.color = BanishMode ? BanishColor
+                : coopWindow ? CoopMode.Colors[Mathf.Clamp(CoopMode.IndexOf(this), 0, 1)] : Color.white;
+        }
+        foreach (UpgradeCardFx fx in cardFx) if (fx != null) fx.banishHighlight = BanishMode;
+        RefreshBanishButton();
+    }
+
+    private bool BanishOffered(int index)
+    {
+        if (!BanishAllowed || BanishesLeft <= 0 || index < 0 || index >= offered.Count) { SetBanishMode(false); return false; }
+        banished.Add(offered[index].id);
+        BanishesLeft--;
+        offered.RemoveAt(index);
+        // Замена из пула без карточек, уже лежащих на столе; если замен нет — слот просто пропадает.
+        List<UpgradeDefinition> pool = Candidates();
+        pool.RemoveAll(definition => offered.Exists(other => other.id == definition.id));
+        if (pool.Count > 0) offered.Insert(index, pool[WeightedIndex(pool)]);
+        SetBanishMode(false);
+        if (offered.Count == 0)
+        {
+            // Карточек не осталось вовсе: закрываем окно, чтобы забег не завис на пустом выборе.
+            PendingChoices = 0;
+            CloseChoices();
+            if (GameSession.Instance != null) GameSession.Instance.LeaveUpgrade();
+            else Time.timeScale = 1f;
+            return true;
+        }
+        RefreshCards();
+        return true;
+    }
+
+    private void RefreshBanishButton()
+    {
+        if (banishButton == null) return;
+        bool show = Choosing && !chestMode && !coopWindow;
+        banishButton.gameObject.SetActive(show);
+        if (!show) return;
+        banishButton.interactable = BanishesLeft > 0 || BanishMode;
+        banishButton.GetComponent<Image>().color = BanishMode ? new Color(0.62f, 0.2f, 0.06f) : new Color(0.3f, 0.12f, 0.08f);
+        banishButton.GetComponentInChildren<Text>().text = BanishMode
+            ? GameText.Source("playerprogression.banish.cancel")
+            : GameText.Source("playerprogression.banish.button") + BanishesLeft + ")";
+    }
+
     private void RefreshCards()
     {
+        choiceKeysReadyAt = Time.unscaledTime + ChoiceKeyGuard;
         if (rerollButton != null)
         {
             rerollButton.gameObject.SetActive(!chestMode);
@@ -723,6 +928,8 @@ public class PlayerProgression : MonoBehaviour
                 ? GameText.Source("playerprogression.252") + CoopMode.RerollKey(CoopMode.IndexOf(this)) + "]  (" + RerollsLeft + ")"
                 : GameText.Source("playerprogression.253") + RerollsLeft + ")";
         }
+        foreach (UpgradeCardFx fx in cardFx) if (fx != null) fx.banishHighlight = BanishMode;
+        RefreshBanishButton();
         for (int i = 0; i < buttons.Length; i++)
         {
             buttons[i].gameObject.SetActive(i < offered.Count);
@@ -732,13 +939,18 @@ public class PlayerProgression : MonoBehaviour
             buttons[i].GetComponent<Image>().color = new Color(0.035f + color.r * 0.06f, 0.045f + color.g * 0.06f, 0.065f + color.b * 0.06f);
             string hex = ColorUtility.ToHtmlStringRGB(Color.Lerp(color, Color.white, 0.35f));
             // Компактное окно кооператива — мельче шрифт, чтобы строки не переносились за край карточки.
-            int titleSize = coopWindow ? 19 : 27, previewSize = coopWindow ? 15 : 23, rankSize = coopWindow ? 12 : 17;
-            cardText[i].text = "<size=" + titleSize + "><b>" + definition.title + "</b></size>\n<size=" + previewSize + "><color=#" + hex + ">" +
+            int titleSize = coopWindow ? 19 : 22, previewSize = coopWindow ? 15 : 17, rankSize = coopWindow ? 12 : 13;
+            // Карточка из рецепта эволюции текущего оружия — золотая пометка над названием.
+            string evoTag = FeedsEvolution(definition)
+                ? "<size=" + rankSize + "><color=#FFC740><b>★ " + GameText.Source("playerprogression.207") +
+                  AutoShoter.Evolutions[shooter.EvolutionSlot].title + "</b></color></size>\n"
+                : "";
+            cardText[i].text = evoTag + "<size=" + titleSize + "><b>" + definition.title + "</b></size>\n<size=" + previewSize + "><color=#" + hex + ">" +
                 Preview(definition) + "</color></size>\n<size=" + rankSize + "><color=#8796A8>" + RankLine(definition) + "</color></size>";
-            rarityLabels[i].text = (coopWindow ? "[" + CoopMode.CardKey(CoopMode.IndexOf(this), i) + "]   " : "") +
-                UpgradeCatalog.RarityName(definition.rarity).ToUpperInvariant();
+            string key = "[" + (coopWindow ? CoopMode.CardKey(CoopMode.IndexOf(this), i) : (i + 1).ToString()) + "]   ";
+            rarityLabels[i].text = key + UpgradeCatalog.RarityName(definition.rarity).ToUpperInvariant();
             rarityLabels[i].color = color;
-            if (definition.effect == UpgradeEffect.Evolution) { rarityLabels[i].text = GameText.Source("playerprogression.254"); rarityLabels[i].color = new Color(1f, 0.78f, 0.25f); }
+            if (definition.effect == UpgradeEffect.Evolution) { rarityLabels[i].text = key + GameText.Source("playerprogression.254"); rarityLabels[i].color = new Color(1f, 0.78f, 0.25f); }
             icons[i].sprite = CardSprite(definition);
             icons[i].enabled = icons[i].sprite != null;
             vectorIcons[i].enabled = true;
@@ -749,7 +961,7 @@ public class PlayerProgression : MonoBehaviour
             accentLines[i].color = new Color(color.r, color.g, color.b, 0.7f);
             Outline ring = iconBadges[i].GetComponent<Outline>();
             if (ring != null) ring.effectColor = new Color(color.r, color.g, color.b, 0.85f);
-            cardFx[i].Present(color, i);
+            cardFx[i].Present(color, i, definition.rarity, definition.effect == UpgradeEffect.Evolution);
         }
     }
 
@@ -767,6 +979,22 @@ public class PlayerProgression : MonoBehaviour
             DrawExperience();
         }
         if (levelText != null) levelText.text = Level.ToString();
+    }
+
+    // Уведомление о карточке: значок «впрыгивает» с покачиванием, по плашке проходит блик, полоса редкости тает со временем.
+    private void AnimateToast(float age)
+    {
+        if (toastBadge == null) return;
+        float t = Mathf.Max(0f, age);
+        float scale = t < 0.12f ? Mathf.Lerp(0.3f, 1.25f, t / 0.12f) : 1f + 0.25f * Mathf.Exp(-(t - 0.12f) * 9f) * Mathf.Cos((t - 0.12f) * 22f);
+        toastBadge.localScale = Vector3.one * scale;
+        toastBadge.localRotation = Quaternion.Euler(0f, 0f, 12f * Mathf.Exp(-t * 6f) * Mathf.Sin(t * 26f));
+        float sweep = Mathf.Clamp01((t - 0.15f) / 0.55f);
+        toastShine.anchorMin = new Vector2(Mathf.Lerp(-0.1f, 1.1f, sweep), -0.3f);
+        toastShine.anchorMax = new Vector2(toastShine.anchorMin.x, 1.3f);
+        toastShine.gameObject.SetActive(sweep > 0f && sweep < 1f);
+        RectTransform stripe = toastStripe.rectTransform;
+        stripe.anchorMax = new Vector2(Mathf.Lerp(0.02f, 0.98f, Mathf.Clamp01(toastTime / ToastLife)), stripe.anchorMax.y);
     }
 
     private void LateUpdate()
@@ -819,10 +1047,10 @@ public class PlayerProgression : MonoBehaviour
         for (int i = 0; i < 3; i++)
         {
             int index = i;
-            float top = 0.73f - i * 0.22f;
-            buttons[i] = GameUi.Button(choices, "", new Vector2(0.12f, top - 0.19f), new Vector2(0.88f, top), () => SelectOfferedUpgrade(index));
+            float top = 0.7f - i * 0.18f;
+            buttons[i] = GameUi.Button(choices, "", new Vector2(0.24f, top - 0.155f), new Vector2(0.76f, top), () => SelectOfferedUpgrade(index));
             cardText[i] = buttons[i].GetComponentInChildren<Text>();
-            cardText[i].rectTransform.anchorMin = new Vector2(0.25f, 0.08f);
+            cardText[i].rectTransform.anchorMin = new Vector2(0.215f, 0.08f);
             cardText[i].rectTransform.anchorMax = new Vector2(0.96f, 0.92f);
             cardText[i].alignment = TextAnchor.MiddleLeft;
             cardText[i].fontSize = 23;
@@ -832,7 +1060,7 @@ public class PlayerProgression : MonoBehaviour
             cardText[i].horizontalOverflow = HorizontalWrapMode.Wrap;
             cardText[i].verticalOverflow = VerticalWrapMode.Overflow;
             cardText[i].lineSpacing = 1.05f;
-            RectTransform badge = GameUi.Box(buttons[i].transform, "Icon Badge", new Vector2(0.025f, 0.09f), new Vector2(0.225f, 0.91f), GameUi.Background);
+            RectTransform badge = GameUi.Box(buttons[i].transform, "Icon Badge", new Vector2(0.025f, 0.1f), new Vector2(0.19f, 0.9f), GameUi.Background);
             iconBadges[i] = badge.GetComponent<Image>();
             UiArtwork.Round(iconBadges[i]);
             Outline badgeRing = badge.gameObject.AddComponent<Outline>();
@@ -856,16 +1084,23 @@ public class PlayerProgression : MonoBehaviour
             cardFx[i] = buttons[i].gameObject.AddComponent<UpgradeCardFx>();
             cardFx[i].icon = icons[i].transform;
         }
-        rerollButton = GameUi.Button(choices, GameText.Source("playerprogression.257"), new Vector2(0.3f, 0.02f), new Vector2(0.7f, 0.085f), () => Reroll());
+        rerollButton = GameUi.Button(choices, GameText.Source("playerprogression.257"), new Vector2(0.24f, 0.02f), new Vector2(0.495f, 0.085f), () => Reroll());
+        banishButton = GameUi.Button(choices, GameText.Source("playerprogression.banish.title"), new Vector2(0.505f, 0.02f), new Vector2(0.76f, 0.085f), () => ToggleBanishMode());
+        banishButton.gameObject.SetActive(false);
         choices.gameObject.SetActive(false);
         // Уведомление о полученном улучшении: значок, название с рангом и что изменилось.
-        toast = GameUi.Box(canvas.transform, "Upgrade Feedback", new Vector2(0.37f, 0.19f), new Vector2(0.8f, 0.335f),
+        toast = GameUi.Box(canvas.transform, "Upgrade Feedback", new Vector2(0.285f, 0.19f), new Vector2(0.715f, 0.335f),
             new Color(0.02f, 0.035f, 0.05f, 0.92f));
         UiArtwork.Round(toast.GetComponent<Image>());
         toastGroup = toast.gameObject.AddComponent<CanvasGroup>();
         toastGroup.blocksRaycasts = false;
         toastStripe = GameUi.Box(toast, "Stripe", new Vector2(0.02f, 0.06f), new Vector2(0.98f, 0.12f), GameUi.Accent).GetComponent<Image>();
-        RectTransform toastBadge = GameUi.Box(toast, "Badge", new Vector2(0.02f, 0.18f), new Vector2(0.15f, 0.92f), GameUi.Background);
+        toast.gameObject.AddComponent<RectMask2D>();
+        toastShine = GameUi.Box(toast, "Shine", new Vector2(0f, -0.3f), new Vector2(0f, 1.3f), new Color(1f, 1f, 1f, 0.1f));
+        toastShine.sizeDelta = new Vector2(60f, 0f);
+        toastShine.localRotation = Quaternion.Euler(0f, 0f, -20f);
+        toastShine.GetComponent<Image>().raycastTarget = false;
+        toastBadge = GameUi.Box(toast, "Badge", new Vector2(0.02f, 0.18f), new Vector2(0.15f, 0.92f), GameUi.Background);
         UiArtwork.Round(toastBadge.GetComponent<Image>());
         toastIcon = GameUi.Box(toastBadge, "Icon", new Vector2(0.1f, 0.1f), new Vector2(0.9f, 0.9f), Color.white).GetComponent<Image>();
         toastIcon.preserveAspect = true;
@@ -892,8 +1127,8 @@ public class PlayerProgression : MonoBehaviour
             // Игрок 2: уровень и опыт — на его панели (CoopHero); уведомление о карточке — выше уведомления игрока 1.
             bar.gameObject.SetActive(false);
             levelBadge.gameObject.SetActive(false);
-            toast.anchorMin = new Vector2(0.37f, 0.35f);
-            toast.anchorMax = new Vector2(0.8f, 0.495f);
+            toast.anchorMin = new Vector2(0.285f, 0.35f);
+            toast.anchorMax = new Vector2(0.715f, 0.495f);
             toastCaption.text = GameText.Source("playerprogression.259");
         }
     }

@@ -41,7 +41,7 @@ public class EnemyHealthDisplay : MonoBehaviour
 
     void Awake()
     {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = GameUi.DefaultFont;
         Canvas canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 20;

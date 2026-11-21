@@ -4,7 +4,7 @@
 Результат: docs/art/Items/<Имя>/ (BLEND, FBX, палитра, три ракурса, VERIFICATION.json); установка — Tools > Install Blender Item Models.
 Ключи ModelSkinSet: Crystal, Repair kit, Magnet, Mine, Turret, Drone, Saw, Chest.
 Части не называть Body/Carapace/Leg*/Wing* — по ним ModelWalkAnimator включает анимацию врага.
-Подвижные части (их ищет код игры по имени): Turret → Head (+ маркер TurretMuzzle), Drone → RotorL/RotorR, Mine → Light, Chest → Lid."""
+Подвижные части (их ищет код игры по имени): Turret → Head, Barrels (+ маркер TurretMuzzle), Drone → RotorL/RotorR, Mine → Light, Chest → Lid."""
 
 import json
 import math
@@ -146,33 +146,61 @@ def mine(add, glow_add):
     glow_add("Light", light)
 
 
-# ---------------- Турель: зелёная, поворотная голова со спаренным стволом ----------------
-HEAD_PIVOT = Vector((0, 0, .32))
+# ---------------- Турель-миниган (19.11.2026, просьба владельца: крупнее, «покруче», как миниган) ----------------
+# Треножник с бронированной ступицей, поворотная голова (Head) с ящиком патронов, лентой, щитом и прицелом;
+# блок из шести стволов (Barrels, ребёнок Head) вращается вокруг своей оси при стрельбе. Маркер TurretMuzzle — у среза стволов.
+HEAD_PIVOT = Vector((0, 0, .36))
+BARREL_PIVOT = Vector((0, .27, .46))
 
 
 def turret(add, glow_add, head_add):
     base = Part()
-    column(base, [(0, .36), (.05, .4), (.11, .38), (.16, .3)], MAIN_DARK, 8, top=DARK)
+    column(base, [(0, .2), (.05, .235), (.12, .225), (.17, .16)], MAIN_DARK, 8, top=DARK)
     add("Base", base)
-    feet = Part()
+    stripe = Part()
+    column(stripe, [(.118, .229), (.142, .229)], ACCENT, 8)
+    add("BaseStripe", stripe)
+    tripod = Part()
     for k in range(3):
-        vblock(feet, 0, .07, .14, .24, .03, GRAPHITE, DARK, DARK, cy=.36, angle=k * math.tau / 3)
-    add("Feet", feet)
+        a = k * math.tau / 3 + math.pi / 2
+        c, d = math.cos(a), math.sin(a)
+        tripod.tube([((.13 * c, .13 * d, .13), .04, .03), ((.3 * c, .3 * d, .09), .035, .028), ((.43 * c, .43 * d, .03), .03, .024)], GRAPHITE, 6)
+        vblock(tripod, 0, .04, .13, .1, .02, DARK, GRAPHITE, DARK, cy=.45, angle=a - math.pi / 2)
+    add("Tripod", tripod)   # не Leg*: по таким именам ModelWalkAnimator включает шаг врага
     neck = Part()
-    column(neck, [(.15, .11), (.33, .09)], STEEL, 10, top=GRAPHITE)
+    column(neck, [(.15, .1), (.29, .085)], STEEL, 10, top=GRAPHITE)
+    column(neck, [(.27, .135), (.33, .13)], GRAPHITE, 12, top=DARK)
     add("Neck", neck)
+
     head = Part()
-    block(head, -.17, .15, .43, .3, .2, .05, shell_color(MAIN, MAIN, MAIN_DARK, DARK))
-    block(head, -.12, .05, .43, .36, .08, .02, ACCENT)          # жёлтые щитки по бокам
-    for x in (-.06, .06):
-        rod(head, .14, .44, .44, .032, STEEL, 10, x=x, front=VOID)
-        rod(head, .4, .47, .44, .042, GRAPHITE, 10, x=x, front=VOID)
-    block(head, -.22, -.17, .41, .2, .12, .02, GRAPHITE)        # противовес сзади
+    block(head, -.16, .17, .46, .27, .2, .05, shell_color(MAIN, MAIN, MAIN_DARK, DARK))      # корпус
+    block(head, -.1, .1, .575, .16, .04, .015, MAIN_DARK)                                     # гребень
+    block(head, -.25, -.16, .44, .2, .14, .03, GRAPHITE)                                      # противовес
+    block(head, -.13, .09, .42, .12, .17, .02, shell_color(MAIN_DARK, MAIN, DARK, DARK), x=.205)  # ящик патронов
+    block(head, -.135, .095, .48, .125, .03, .006, ACCENT, x=.205)                            # жёлтая полоса ящика
+    for i, y in enumerate((-.05, -.01, .03, .07)):                                            # лента подачи
+        block(head, y, y + .03, .4 - i * .006, .07, .045, .008, BRASS, x=.135)
+    block(head, .17, .21, .46, .36, .27, .05, shell_color(MAIN, MAIN, MAIN_DARK, DARK))      # щит спереди
+    block(head, .205, .215, .58, .34, .028, .005, ACCENT)
+    block(head, .205, .215, .34, .34, .028, .005, ACCENT)
+    rod(head, .2, .27, .46, .09, GRAPHITE, 12)                                                # мотор стволов
+    block(head, -.04, .1, .61, .05, .055, .012, GRAPHITE, x=-.085)                            # прицел
     head_obj = head_add("Head", head)
-    eye = Part()
-    block(eye, .145, .16, .5, .14, .035, .008, GLOW)
-    head_add("HeadGlow", eye, glow=True)
-    kit.make_marker("TurretMuzzle", Vector((0, .47, .44)) - HEAD_PIVOT, head_obj)
+    eyes = Part()
+    block(eyes, .1, .112, .61, .036, .036, .006, GLOW, x=-.085)
+    block(eyes, .09, .1, .45, .05, .03, .006, GLOW, x=.268)
+    head_add("HeadGlow", eyes, glow=True)
+
+    barrels = Part()
+    for k in range(6):
+        a = k * math.tau / 6
+        rod(barrels, .27, .68, BARREL_PIVOT.z + .052 * math.sin(a), .021, STEEL, 8, x=.052 * math.cos(a), front=VOID)
+    rod(barrels, .27, .64, BARREL_PIVOT.z, .024, DARK, 8)
+    rod(barrels, .4, .435, BARREL_PIVOT.z, .088, GRAPHITE, 12)
+    rod(barrels, .435, .45, BARREL_PIVOT.z, .09, ACCENT, 12)
+    rod(barrels, .6, .635, BARREL_PIVOT.z, .085, DARK, 12, front=GRAPHITE)
+    head_add("Barrels", barrels, pivot=BARREL_PIVOT)
+    kit.make_marker("TurretMuzzle", Vector((0, .7, BARREL_PIVOT.z)) - HEAD_PIVOT, head_obj)
 
 
 # ---------------- Дрон: бирюзовый корпус, глаз, два винта ----------------
@@ -542,12 +570,14 @@ def build(name, maker, colors):
 
     head_holder = {}
 
-    def head_add(part_name, part, glow=False):
+    def head_add(part_name, part, glow=False, pivot=None):
         # Голова турели вращается вокруг своей оси: её детали — дети «Head» с вершинами относительно оси.
+        # pivot — своя ось детали внутри головы (блок стволов минигана вращается вокруг неё).
         head = head_holder.get("Head")
-        obj = part.build(part_name, tuple(HEAD_PIVOT), head or root, glow_material if glow else material)
+        own = tuple(pivot) if pivot is not None else tuple(HEAD_PIVOT)
+        obj = part.build(part_name, own, head or root, glow_material if glow else material)
         if head is not None:
-            obj.location = Vector((0, 0, 0))
+            obj.location = Vector(own) - HEAD_PIVOT
         else:
             head_holder["Head"] = obj
         parts.append(obj)

@@ -20,6 +20,7 @@ public partial class WorkshopTree : MonoBehaviour
         public Text state;
         public Text badge;
         public RectTransform rect;
+        public RectTransform frame; // карточка узла: рядом с ней всплывает окно подробностей
         public WorkshopPlatform platform;
         public string title;
         public bool owned, affordable;
@@ -46,6 +47,11 @@ public partial class WorkshopTree : MonoBehaviour
     private CanvasGroup detailGroup, entrance;
     private RectTransform detailPanel;
     private Node detailNode;
+    // Всплывающее окно: наведение показывает узел, клик закрепляет (pinned) до клика в пустоту или Esc.
+    private Node shown;
+    private bool pinned;
+    private float lastHoverTime = -10f;
+    private const float HoverGrace = .35f;
     private float detailAge = 1f, entranceAge, navigationAge;
     private bool motionReady, navigationMoving;
     private Vector2 navigationFrom, navigationTo;
@@ -78,14 +84,15 @@ public partial class WorkshopTree : MonoBehaviour
         Image backdrop = GameUi.Box(transform, "Constellations", Vector2.zero, Vector2.one, Color.white, true).GetComponent<Image>();
         backdrop.sprite = Art("tree_background");
         if (backdrop.sprite == null) backdrop.color = new Color(.025f, .045f, .075f);
-        GameUi.Box(transform, "Header shade", new Vector2(0, .88f), Vector2.one, new Color(.02f, .04f, .07f, .85f));
-        GameUi.Label(transform, GameText.Source("workshoptree.458"), new Vector2(.22f, .91f), new Vector2(.7f, .99f), 34, new Color(.78f, .94f, 1f));
-        GameUi.Label(transform, GameText.Source("workshoptree.459"), new Vector2(.22f, .875f), new Vector2(.7f, .92f), 14, Dim * 1.7f);
-        currency = GameUi.Label(transform, "", new Vector2(.73f, .92f), new Vector2(.99f, .99f), 22, GameUi.Accent);
-        Button exit = GameUi.Button(transform, GameText.Source("workshoptree.460"), new Vector2(.02f, .92f), new Vector2(.17f, .985f), () => back());
+        // Шапка — одна тонкая строка; дерево занимает остальной экран (18.11 владелец: много места под текст, мало под дерево).
+        GameUi.Box(transform, "Header shade", new Vector2(0, .935f), Vector2.one, new Color(.02f, .04f, .07f, .85f));
+        GameUi.Label(transform, GameText.Source("workshoptree.458"), new Vector2(.3f, .94f), new Vector2(.7f, .995f), 24, new Color(.78f, .94f, 1f));
+        currency = GameUi.Label(transform, "", new Vector2(.78f, .938f), new Vector2(.99f, .99f), 20, GameUi.Accent);
+        Button exit = GameUi.Button(transform, GameText.Source("workshoptree.460"), new Vector2(.008f, .942f), new Vector2(.12f, .992f), () => back());
+        exit.GetComponentInChildren<Text>().resizeTextMaxSize = 18;
         UiArtwork.Round(exit.GetComponent<Image>());
 
-        RectTransform viewport = GameUi.Box(transform, "Tree viewport", new Vector2(.015f, .16f), new Vector2(.69f, .82f), Color.clear, true);
+        RectTransform viewport = GameUi.Box(transform, "Tree viewport", new Vector2(.005f, .014f), new Vector2(.99f, .932f), Color.clear, true);
         viewport.gameObject.AddComponent<RectMask2D>();
         var navigation = viewport.gameObject.AddComponent<WorkshopScrollRect>();
         navigation.Tree = this;
@@ -109,34 +116,10 @@ public partial class WorkshopTree : MonoBehaviour
         content.pivot = new Vector2(0, 1);
         BuildEquipmentMap();
 
-        string[] sectionIds = { "hero", "weapons", "projects" };
-        for (int i = 0; i < 3; i++)
-        {
-            string section = sectionIds[i];
-            var shortcut = GameUi.Button(transform, GameText.Source(section == "hero" ? "challengescreen.076" : section == "weapons" ? "weaponselectscreen.439" : "projects.nav.projects"), new Vector2(.015f + i * .225f, .835f), new Vector2(.23f + i * .225f, .88f), () => FocusSection(section));
-            shortcut.name = "Workshop section " + section;
-            shortcut.GetComponentInChildren<Text>().resizeTextMaxSize = 16;
-            UiArtwork.Round(shortcut.GetComponent<Image>());
-        }
-        var centre = GameUi.Button(transform, GameText.Source("workshop.layout.center"), new Vector2(.015f, .095f), new Vector2(.15f, .14f), CenterRoot);
-        centre.name = "Workshop centre";
-        centre.GetComponentInChildren<Text>().resizeTextMaxSize = 14;
-        GameUi.Button(transform, "−", new Vector2(.42f, .095f), new Vector2(.465f, .14f), () => ZoomAt(-1f, ViewCentre()));
-        zoomLabel = GameUi.Label(transform, "", new Vector2(.465f, .095f), new Vector2(.545f, .14f), 15);
-        GameUi.Button(transform, "+", new Vector2(.545f, .095f), new Vector2(.59f, .14f), () => ZoomAt(1f, ViewCentre()));
-        var fit = GameUi.Button(transform, GameText.Source("projects.fit"), new Vector2(.60f, .095f), new Vector2(.69f, .14f), FitTree);
-        fit.name = "Workshop fit";
-        fit.GetComponentInChildren<Text>().resizeTextMaxSize = 14;
-        var goal = GameUi.Button(transform, "", new Vector2(.015f, .04f), new Vector2(.69f, .09f), () =>
-        {
-            if (WorkshopProjects.Target >= 0) FocusProject(WorkshopProjects.Ids[WorkshopProjects.Target]);
-        });
-        goal.name = "Workshop tracked goal";
-        goalLabel = goal.GetComponentInChildren<Text>();
-        goalLabel.resizeTextMaxSize = 14;
-        UiArtwork.Round(goal.GetComponent<Image>());
+        // Вкладки разделов, кнопки центра/масштаба/«вписать», полоса цели и подсказка убраны (18.11):
+        // разделы подписаны на самом дереве, масштаб и перемещение — колесом и ПКМ/средней кнопкой.
 
-        RectTransform track = GameUi.Box(transform, "Tree scroll track", new Vector2(.697f, .16f), new Vector2(.705f, .82f), new Color(.15f, .25f, .3f, .55f), true);
+        RectTransform track = GameUi.Box(transform, "Tree scroll track", new Vector2(.992f, .014f), new Vector2(.997f, .932f), new Color(.15f, .25f, .3f, .55f), true);
         Scrollbar scrollbar = track.gameObject.AddComponent<Scrollbar>();
         RectTransform handle = GameUi.Box(track, "Scroll thumb", Vector2.zero, Vector2.one, GameUi.Accent, true);
         scrollbar.handleRect = handle;
@@ -144,7 +127,7 @@ public partial class WorkshopTree : MonoBehaviour
         scrollbar.direction = Scrollbar.Direction.BottomToTop;
         Scroll.verticalScrollbar = scrollbar;
         Scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
-        RectTransform horizontalTrack = GameUi.Box(transform, "Tree horizontal track", new Vector2(.015f, .145f), new Vector2(.69f, .155f), new Color(.15f, .25f, .3f, .55f), true);
+        RectTransform horizontalTrack = GameUi.Box(transform, "Tree horizontal track", new Vector2(.005f, .004f), new Vector2(.99f, .01f), new Color(.15f, .25f, .3f, .55f), true);
         var horizontalBar = horizontalTrack.gameObject.AddComponent<Scrollbar>();
         var horizontalHandle = GameUi.Box(horizontalTrack, "Horizontal thumb", Vector2.zero, Vector2.one, GameUi.Accent, true);
         horizontalBar.handleRect = horizontalHandle;
@@ -153,13 +136,17 @@ public partial class WorkshopTree : MonoBehaviour
         Scroll.horizontalScrollbar = horizontalBar;
         Scroll.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
 
-        RectTransform panel = GameUi.Box(transform, "Upgrade details", new Vector2(.725f, .09f), new Vector2(.985f, .86f), new Color(.025f, .065f, .1f, .94f), true);
+        RectTransform panel = GameUi.Box(transform, "Upgrade details", new Vector2(.5f, .5f), new Vector2(.5f, .5f), new Color(.025f, .065f, .1f, .97f), true);
+        panel.pivot = new Vector2(0f, 1f);
+        panel.sizeDelta = new Vector2(PopupWidth, 320f);
         detailPanel = panel;
         detailGroup = panel.gameObject.AddComponent<CanvasGroup>();
+        detailGroup.alpha = 0f;
+        detailGroup.blocksRaycasts = detailGroup.interactable = false;
         UiArtwork.Round(panel.GetComponent<Image>());
         var panelBorder = panel.gameObject.AddComponent<Outline>();
         panelBorder.effectDistance = new Vector2(1f, -1f);
-        panelBorder.effectColor = new Color(.24f, .64f, .73f, .3f);
+        panelBorder.effectColor = new Color(.3f, .85f, .9f, .75f);
         GameUi.Box(panel, "Detail accent", new Vector2(.04f, .965f), new Vector2(.14f, .97f), new Color(.3f, .85f, .9f, .65f));
         category = GameUi.Label(panel, "", new Vector2(.025f, .925f), new Vector2(.975f, .995f), 13, GameUi.Accent);
         preview = UiArtwork.Picture(panel, null, new Vector2(.12f, .70f), new Vector2(.88f, .92f));
@@ -186,8 +173,8 @@ public partial class WorkshopTree : MonoBehaviour
         projectOptionText.resizeTextMaxSize = 14;
         UiArtwork.Round(projectOption.GetComponent<Image>());
         projectOption.gameObject.SetActive(false);
-        GameUi.Label(transform, GameText.Source("workshoptree.461"), new Vector2(.015f, .002f), new Vector2(.705f, .037f), 12, new Color(.53f, .66f, .75f));
         BuildEquipmentPanel(panel);
+        panel.SetAsLastSibling();
         selected = nodes.Count > 0 ? nodes[0] : null;
         Refresh();
         Canvas.ForceUpdateCanvases();
@@ -245,7 +232,7 @@ public partial class WorkshopTree : MonoBehaviour
         ApplyBoardScale(scale);
         content.anchoredPosition = mouse - point * scale - board.anchoredPosition;
         ClampContent();
-        zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
+        if (zoomLabel != null) zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
         RememberScrollPosition();
     }
 
@@ -261,7 +248,7 @@ public partial class WorkshopTree : MonoBehaviour
         ApplyBoardScale(scale);
         content.anchoredPosition = Vector2.zero;
         ClampContent();
-        zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
+        if (zoomLabel != null) zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
         RememberScrollPosition();
         BeginNavigation(from, fromZoom);
     }
@@ -286,37 +273,42 @@ public partial class WorkshopTree : MonoBehaviour
         ApplyBoardScale(scale);
         content.anchoredPosition = new Vector2(Scroll.viewport.rect.width * .5f - RootX * scale, rootY * scale - Scroll.viewport.rect.height * .5f) - board.anchoredPosition;
         ClampContent();
-        zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
+        if (zoomLabel != null) zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
         RememberScrollPosition();
     }
 
     public void FocusSection(string section)
     {
-        Node node = nodes.Find(n => section == "projects" ? n.project != null : section == "hero" ? n.body != null : n.project == null && n.body == null && n.element == WeaponElement.None);
-        if (node == null) return;
+        // Закрытый раздел проектов: камера едет к плашке-замку, узел не выбирается.
+        bool lockedProjects = section == "projects" && !WorkshopProjects.SectionUnlocked;
+        Node node = lockedProjects ? null : nodes.Find(n => section == "projects" ? n.project != null : section == "hero" ? n.body != null : n.project == null && n.body == null && n.element == WeaponElement.None);
+        if (node == null && !lockedProjects) return;
         Vector2 from = content.anchoredPosition;
         float fromZoom = zoom;
         CancelNavigation();
         centerMode = fitMode = false;
-        selected = node;
-        Refresh();
+        // Закреплённое окно (WorkshopPopup) переключаем на новый узел, иначе оно продолжало показывать прежний.
+        if (node != null && pinned) Pin(node, false);
+        else if (node != null) { selected = node; Refresh(); }
         zoom = Mathf.Max(zoom, 2.4f);
         RefreshLayout();
         CenterMapPoint(section == "hero" ? 410f : section == "weapons" ? WeaponX + WeaponPitch : 510f,
-            section == "hero" ? 330f : section == "weapons" ? 370f : 920f);
+            section == "hero" ? 330f : section == "weapons" ? 370f : lockedProjects ? 905f : 920f);
         BeginNavigation(from, fromZoom);
     }
 
     public void FocusProject(string id)
     {
+        if (!WorkshopProjects.SectionUnlocked) return;
         Node node = nodes.Find(n => n.project == id);
         if (node == null) return;
         Vector2 from = content.anchoredPosition;
         float fromZoom = zoom;
         CancelNavigation();
         centerMode = fitMode = false;
-        selected = node;
-        Refresh();
+        // Закреплённое окно (WorkshopPopup) переключаем на новый узел, иначе оно продолжало показывать прежний.
+        if (pinned) Pin(node, false);
+        else { selected = node; Refresh(); }
         zoom = Mathf.Max(zoom, 2.4f);
         RefreshLayout();
         BeginNavigation(from, fromZoom);
@@ -350,8 +342,8 @@ public partial class WorkshopTree : MonoBehaviour
         }
         entranceAge = detailAge = 1f;
         if (entrance != null) entrance.alpha = 1f;
-        if (detailGroup != null) detailGroup.alpha = 1f;
-        if (detailPanel != null) detailPanel.anchoredPosition = Vector2.zero;
+        if (detailGroup != null) detailGroup.alpha = shown != null ? 1f : 0f;
+        PlacePopup();
         if (zoomLabel != null) zoomLabel.text = Mathf.RoundToInt(zoom * 100f) + "%";
         RememberScrollPosition();
     }
@@ -414,6 +406,7 @@ public partial class WorkshopTree : MonoBehaviour
     {
         if (Scroll == null || board == null) return;
         PanWithMouse();
+        UpdatePopup();
         if (projectRevision != WorkshopProjects.Revision) Refresh();
         TickPresentation();
     }
@@ -425,8 +418,7 @@ public partial class WorkshopTree : MonoBehaviour
         if (entrance != null) entrance.alpha = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(entranceAge / .35f));
         detailAge += dt;
         float detail = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(detailAge / .24f));
-        if (detailGroup != null) detailGroup.alpha = Mathf.Lerp(.3f, 1f, detail);
-        if (detailPanel != null) detailPanel.anchoredPosition = new Vector2(0f, -7f * (1f - detail));
+        if (detailGroup != null) detailGroup.alpha = shown != null ? Mathf.Lerp(.3f, 1f, detail) : 0f;
         if (preview != null) preview.rectTransform.localScale = Vector3.one * Mathf.Lerp(.92f, 1f, detail);
         if (rootPicture != null)
         {
@@ -435,7 +427,8 @@ public partial class WorkshopTree : MonoBehaviour
         }
         foreach (Image group in weaponGroups)
         {
-            bool chosen = selected != null && selected.rect.parent == group.transform;
+            Node focus = shown ?? (pinned ? selected : null);
+            bool chosen = focus != null && focus.rect.parent == group.transform;
             Color target = chosen ? new Color(.04f, .14f, .18f, .78f) : new Color(.02f, .06f, .09f, .32f);
             group.color = Color.Lerp(group.color, target, 1f - Mathf.Exp(-9f * dt));
             var outline = group.GetComponentInChildren<WorkshopCardBorder>();
@@ -458,13 +451,15 @@ public partial class WorkshopTree : MonoBehaviour
     private void OnDisable()
     {
         CancelNavigation();
-        if (detailPanel != null) detailPanel.anchoredPosition = Vector2.zero;
+        pinned = false;
+        ShowPopup(null);
     }
 
     private void LateUpdate()
     {
         if (Scroll != null && !Mathf.Approximately(previousWidth, Scroll.viewport.rect.width)) RefreshLayout();
         else RememberScrollPosition();
+        PlacePopup();
     }
 
     public void RememberScrollPosition()
@@ -512,7 +507,7 @@ public partial class WorkshopTree : MonoBehaviour
         node.button = rect.gameObject.AddComponent<Button>();
         node.button.targetGraphic = node.diamond;
         node.button.transition = Selectable.Transition.None;
-        node.button.onClick.AddListener(() => { centerMode = false; selected = node; Refresh(); Reveal(node, true); });
+        node.button.onClick.AddListener(() => { centerMode = false; Pin(node); });
         node.picture = UiArtwork.Picture(rect, sprite, new Vector2(.04f, .04f), new Vector2(.96f, .96f));
         node.diamond.Picture = node.picture.rectTransform;
         node.diamond.HoverChanged = RefreshBranchActivity;
@@ -656,12 +651,15 @@ public partial class WorkshopTree : MonoBehaviour
         projectRevision = WorkshopProjects.Revision;
         currency.text = GameText.Source("workshoptree.462") + MetaProgress.Currency;
         if (goalLabel != null) goalLabel.text = GameText.Source("projects.goal.prefix") + WorkshopProjects.Goal;
+        RefreshProjectsLock();
+        bool projectsOpen = WorkshopProjects.SectionUnlocked;
         foreach (Node node in nodes)
         {
             bool owned = false, affordable = false;
             node.badge.text = "";
             if (node.project != null)
             {
+                node.rect.gameObject.SetActive(projectsOpen);
                 int rank = WorkshopProjects.Rank(node.project);
                 owned = rank > 0;
                 affordable = WorkshopProjects.CanBuy(node.project);
@@ -688,19 +686,21 @@ public partial class WorkshopTree : MonoBehaviour
                 int rank = WeaponElements.Rank(node.weapon, node.element);
                 owned = rank > 0;
                 affordable = WeaponElements.CanBuy(node.weapon, node.element);
-                node.state.text = WeaponElements.IsLocked(node.weapon) || !MetaProgress.IsWeaponUnlocked(node.weapon) ? GameText.Source("workshoptree.465") :
+                // Под закрытым ключом подпись не нужна: замок и так виден на иконке (18.11, лишний мелкий текст).
+                node.state.text = WeaponElements.IsLocked(node.weapon) ? "" : !MetaProgress.IsWeaponUnlocked(node.weapon) ? GameText.Source("workshoptree.465") :
                     rank + "/3";
                 if (rank > 0 && WeaponElements.Equipped(node.weapon) == node.element) node.badge.text = GameText.Source("workshoptree.466");
             }
             Color accent = node.element == WeaponElement.None ? node.body != null || node.project != null ? GameUi.Accent : Gold : WeaponElements.Colors[(int)node.element];
             node.state.color = owned ? GameUi.Accent : affordable ? Gold : new Color(.55f, .62f, .68f);
-            node.diamond.Edge = node == selected ? Gold : owned ? accent : affordable ? accent * .7f : Dim;
-            node.diamond.Selected = node == selected;
+            bool picked = IsPicked(node);
+            node.diamond.Edge = picked ? Gold : owned ? accent : affordable ? accent * .7f : Dim;
+            node.diamond.Selected = picked;
             node.diamond.Glow = affordable;
             node.diamond.SetVerticesDirty();
-            node.picture.color = owned || affordable || node == selected ? Color.white : new Color(.4f, .45f, .5f, .7f);
+            node.picture.color = owned || affordable || picked ? Color.white : new Color(.4f, .45f, .5f, .7f);
             if (node.keyIcon != null) { bool keyed = WeaponElements.IsLocked(node.weapon); node.keyIcon.enabled = keyed; if (keyed) node.picture.color = new Color(.35f, .4f, .45f, .55f); }
-            if (node.platform != null) { node.platform.Tint = node.element == WeaponElement.None ? GameUi.Accent : accent; node.platform.Active = node == selected || owned; }
+            if (node.platform != null) { node.platform.Tint = node.element == WeaponElement.None ? GameUi.Accent : accent; node.platform.Active = picked || owned; }
             node.owned = owned;
             node.affordable = affordable;
         }
@@ -711,19 +711,19 @@ public partial class WorkshopTree : MonoBehaviour
     private void RefreshBranchActivity()
     {
         foreach (Node node in nodes)
-            if (node.platform != null) node.platform.Active = node == selected || node.owned || node.diamond.Hovered;
+            if (node.platform != null) node.platform.Active = IsPicked(node) || node.owned || node.diamond.Hovered;
     }
 
     private void RefreshDetails()
     {
-        if (selected == null) return;
-        if (detailNode != selected) { detailNode = selected; detailAge = 0f; }
-        bool equipment = selected.weapon >= 0;
+        if (shown == null) return;
+        if (detailNode != shown) { detailNode = shown; detailAge = 0f; }
+        bool equipment = shown.weapon >= 0;
         SetEquipmentPage(equipment);
         if (equipment) { RefreshEquipmentDetails(); return; }
-        title.text = selected.title;
+        title.text = shown.title;
         state.color = GameUi.Accent;
-        bool project = selected.project != null;
+        bool project = shown.project != null;
         projectOption.gameObject.SetActive(false);
         description.rectTransform.anchorMin = new Vector2(.04f, project ? .36f : .305f);
         description.rectTransform.anchorMax = new Vector2(.96f, project ? .66f : .585f);
@@ -733,18 +733,18 @@ public partial class WorkshopTree : MonoBehaviour
         state.rectTransform.anchorMin = new Vector2(.03f, project ? .31f : .225f);
         state.rectTransform.anchorMax = new Vector2(.97f, project ? .36f : .30f);
         description.resizeTextMaxSize = project ? 14 : 17;
-        bool module = selected.element != WeaponElement.None;
-        preview.sprite = module ? WeaponIcon(selected.weapon) : selected.picture.sprite;
-        elementPreview.sprite = module ? selected.picture.sprite : null;
+        bool module = shown.element != WeaponElement.None;
+        preview.sprite = module ? WeaponIcon(shown.weapon) : shown.picture.sprite;
+        elementPreview.sprite = module ? shown.picture.sprite : null;
         elementPreview.gameObject.SetActive(module);
-        category.text = project ? GameText.Source("projects.category") : selected.body != null ? GameText.Source("workshoptree.467") : module
-            ? GameText.Source(WeaponElements.IsBranch(selected.element) ? "workshop.branch.caption" : "workshoptree.468")
+        category.text = project ? GameText.Source("projects.category") : shown.body != null ? GameText.Source("workshoptree.467") : module
+            ? GameText.Source(WeaponElements.IsBranch(shown.element) ? "workshop.branch.caption" : "workshoptree.468")
             : GameText.Source("workshoptree.469");
-        equip.gameObject.SetActive(selected.element != WeaponElement.None);
+        equip.gameObject.SetActive(shown.element != WeaponElement.None);
         buy.interactable = false;
         if (project)
         {
-            string id = selected.project;
+            string id = shown.project;
             int rank = WorkshopProjects.Rank(id);
             string details = "";
             for (int stage = 0; stage < 3; stage++) details += (stage > 0 ? "\n" : "") + (stage < rank ? "✓ " : "○ ") + WorkshopProjects.Reward(id, stage);
@@ -758,9 +758,9 @@ public partial class WorkshopTree : MonoBehaviour
             projectOption.gameObject.SetActive(rank > 0 && (id == "relics" || id == "drones" || id == "scanner"));
             projectOptionText.text = WorkshopProjects.Option(id) + "  →";
         }
-        else if (selected.body != null)
+        else if (shown.body != null)
         {
-            MetaUpgrade upgrade = selected.body;
+            MetaUpgrade upgrade = shown.body;
             int rank = MetaProgress.Rank(upgrade.id);
             description.text = upgrade.description + GameText.Source("workshoptree.470") + MetaProgress.EffectText(upgrade, rank) +
                 (rank < upgrade.maxRank ? GameText.Source("workshoptree.471") + MetaProgress.EffectText(upgrade, rank + 1) : "");
@@ -769,11 +769,11 @@ public partial class WorkshopTree : MonoBehaviour
             buy.interactable = MetaProgress.CanBuy(upgrade);
             if (!buy.interactable && rank < upgrade.maxRank) state.text = GameText.Source("workshoptree.475") + (upgrade.Cost(rank) - MetaProgress.Currency) + GameText.Source("workshoptree.476");
         }
-        else if (selected.element == WeaponElement.None)
+        else if (shown.element == WeaponElement.None)
         {
-            bool owned = MetaProgress.IsWeaponUnlocked(selected.weapon);
-            MetaUnlock unlock = MetaProgress.FindUnlock(MetaProgress.WeaponKey(selected.weapon));
-            description.text = GameText.Source(WeaponElements.HasBranches(selected.weapon) ? "workshop.branch.description" : "workshoptree.477");
+            bool owned = MetaProgress.IsWeaponUnlocked(shown.weapon);
+            MetaUnlock unlock = MetaProgress.FindUnlock(MetaProgress.WeaponKey(shown.weapon));
+            description.text = GameText.Source(WeaponElements.HasBranches(shown.weapon) ? "workshop.branch.description" : "workshoptree.477");
             state.text = owned ? GameText.Source("workshoptree.478") : GameText.Source("workshoptree.479");
             buyText.text = owned ? GameText.Source("workshoptree.480") : GameText.Source("workshoptree.481") + (unlock != null ? unlock.cost : 0);
             buy.interactable = !owned && unlock != null && MetaProgress.Currency >= unlock.cost;
@@ -781,21 +781,21 @@ public partial class WorkshopTree : MonoBehaviour
         }
         else
         {
-            int rank = WeaponElements.Rank(selected.weapon, selected.element);
-            bool unlocked = MetaProgress.IsWeaponUnlocked(selected.weapon);
-            bool active = WeaponElements.Equipped(selected.weapon) == selected.element;
-            description.text = (rank == 0 ? GameText.Source("workshoptree.482") : GameText.Source("workshoptree.483")) + Summary(selected.element, Mathf.Max(1, rank)) +
-                (rank > 0 && rank < 3 ? GameText.Source("workshoptree.484") + (rank + 1) + ":\n" + Summary(selected.element, rank + 1) : "") +
+            int rank = WeaponElements.Rank(shown.weapon, shown.element);
+            bool unlocked = MetaProgress.IsWeaponUnlocked(shown.weapon);
+            bool active = WeaponElements.Equipped(shown.weapon) == shown.element;
+            description.text = (rank == 0 ? GameText.Source("workshoptree.482") : GameText.Source("workshoptree.483")) + Summary(shown.element, Mathf.Max(1, rank)) +
+                (rank > 0 && rank < 3 ? GameText.Source("workshoptree.484") + (rank + 1) + ":\n" + Summary(shown.element, rank + 1) : "") +
                 GameText.Source("workshoptree.485");
             state.text = !unlocked ? GameText.Source("workshoptree.486") : rank == 0 ? GameText.Source("workshoptree.487") : GameText.Source("workshoptree.472") + rank + "/3" + (active ? GameText.Source("workshoptree.488") : GameText.Source("workshoptree.489"));
-            bool keyedWeapon = WeaponElements.IsLocked(selected.weapon);
+            bool keyedWeapon = WeaponElements.IsLocked(shown.weapon);
             if (keyedWeapon && unlocked) state.text = GameText.Source("workshoptree.490");
             buyText.text = rank == 3 ? GameText.Source("workshoptree.473") : (rank == 0 ? GameText.Source("workshoptree.481") : GameText.Source("workshoptree.474")) + WeaponElements.Cost(rank);
             if (!unlocked) buyText.text = GameText.Source("workshoptree.491");
-            buy.interactable = WeaponElements.CanBuy(selected.weapon, selected.element);
+            buy.interactable = WeaponElements.CanBuy(shown.weapon, shown.element);
             equip.gameObject.SetActive(rank > 0 && unlocked);
             equip.interactable = unlocked && rank > 0;
-            equipText.text = active ? GameText.Source(WeaponElements.IsBranch(selected.element) ? "workshop.branch.unequip" : "workshoptree.492") : GameText.Source("workshoptree.493");
+            equipText.text = active ? GameText.Source(WeaponElements.IsBranch(shown.element) ? "workshop.branch.unequip" : "workshoptree.492") : GameText.Source("workshoptree.493");
             if (keyedWeapon) { if (unlocked) buyText.text = GameText.Source("workshoptree.494"); equip.gameObject.SetActive(false); }
             else             if (unlocked && rank < 3 && !buy.interactable) state.text = GameText.Source("workshoptree.475") + (WeaponElements.Cost(rank) - MetaProgress.Currency) + GameText.Source("workshoptree.476");
         }

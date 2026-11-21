@@ -1217,8 +1217,8 @@
     },
     {
       "id": "playerprogression.244",
-      "ru": "Шанс аптечек и магнита",
-      "en": "Medkit and magnet drop chance"
+      "ru": "Удача (карточки, находки, крит)",
+      "en": "Luck (cards, drops, crit)"
     },
     {
       "id": "playerprogression.245",
@@ -1262,8 +1262,8 @@
     },
     {
       "id": "playerprogression.253",
-      "ru": "Перебросить карточки (",
-      "en": "Reroll cards ("
+      "ru": "Перебросить карточки [R]  (",
+      "en": "Reroll cards [R]  ("
     },
     {
       "id": "playerprogression.254",
@@ -1294,6 +1294,26 @@
       "id": "playerprogression.259",
       "ru": "ИГРОК 2: УЛУЧШЕНИЕ ПОЛУЧЕНО",
       "en": "PLAYER 2: UPGRADE RECEIVED"
+    },
+    {
+      "id": "playerprogression.banish.title",
+      "ru": "Запретить",
+      "en": "Banish"
+    },
+    {
+      "id": "playerprogression.banish.button",
+      "ru": "Запретить [B]  (",
+      "en": "Banish [B]  ("
+    },
+    {
+      "id": "playerprogression.banish.cancel",
+      "ru": "Отмена запрета [B]",
+      "en": "Cancel banish [B]"
+    },
+    {
+      "id": "playerprogression.banish.hint",
+      "ru": "ЗАПРЕТ КАРТОЧКИ\nВыбери карточку, чтобы убрать её из этого забега",
+      "en": "BANISH A CARD\nPick a card to remove it from this run"
     },
     {
       "id": "runmodifiers.260",
@@ -3376,6 +3396,16 @@
       "en": "Goal: "
     },
     {
+      "id": "projects.locked.title",
+      "ru": "ПРОЕКТЫ МАСТЕРСКОЙ — откроются после 2 забегов (",
+      "en": "WORKSHOP PROJECTS — unlock after 2 runs ("
+    },
+    {
+      "id": "projects.locked.hint",
+      "ru": "Сначала освой оружие и улучшения героя — потом здесь появятся 5 проектов.",
+      "en": "Get to know your weapons and hero upgrades first — then 5 projects will appear here."
+    },
+    {
       "id": "projects.goal.none",
       "ru": "Выбери проект и следующую цель в Мастерской",
       "en": "Choose a project and your next goal in the Workshop"
@@ -3589,6 +3619,251 @@
       "id": "tuning.branch.equip",
       "ru": "ПРИМЕНИТЬ ВЕТКУ",
       "en": "EQUIP BRANCH"
+    },
+    {
+      "id": "cards.serialized.dodge",
+      "ru": "Уклонение",
+      "en": "Dodge"
+    },
+    {
+      "id": "cards.serialized.projectile_guard",
+      "ru": "Защита от снарядов",
+      "en": "Projectile Guard"
+    },
+    {
+      "id": "cards.serialized.dash_shield",
+      "ru": "Щит рывка",
+      "en": "Dash Shield"
+    },
+    {
+      "id": "cards.serialized.trophy",
+      "ru": "Трофей",
+      "en": "Trophy"
+    },
+    {
+      "id": "cards.serialized.burn_rounds",
+      "ru": "Зажигательные пули",
+      "en": "Incendiary Rounds"
+    },
+    {
+      "id": "cards.serialized.poison_rounds",
+      "ru": "Ядовитые пули",
+      "en": "Toxic Rounds"
+    },
+    {
+      "id": "cards.serialized.frost_rounds",
+      "ru": "Ледяные пули",
+      "en": "Frost Rounds"
+    },
+    {
+      "id": "cards.serialized.shock_rounds",
+      "ru": "Шоковые пули",
+      "en": "Shock Rounds"
+    },
+    {
+      "id": "cards.serialized.split_shot",
+      "ru": "Разделение пули",
+      "en": "Split Shot"
+    },
+    {
+      "id": "cards.serialized.retaliate",
+      "ru": "Ответный импульс",
+      "en": "Retaliation Pulse"
+    },
+    {
+      "id": "cards.serialized.pulse_aura",
+      "ru": "Импульсная аура",
+      "en": "Pulse Aura"
+    },
+    {
+      "id": "cards.serialized.charged_shot",
+      "ru": "Заряженный выстрел",
+      "en": "Charged Shot"
+    },
+    {
+      "id": "cards.serialized.last_chance",
+      "ru": "Последний шанс",
+      "en": "Last Chance"
+    },
+    {
+      "id": "cards.serialized.gamble",
+      "ru": "Азарт",
+      "en": "Gamble"
+    },
+    {
+      "id": "cards.serialized.time_greed",
+      "ru": "Жадность времени",
+      "en": "Greed for Time"
+    },
+    {
+      "id": "cards.critpierce.title",
+      "ru": "Критический пробой",
+      "en": "Critical Breach"
+    },
+    {
+      "id": "cards.burningshot.title",
+      "ru": "Горящая дробь",
+      "en": "Burning Buckshot"
+    },
+    {
+      "id": "cards.blastdash.title",
+      "ru": "Взрывной рывок",
+      "en": "Blast Dash"
+    },
+    {
+      "id": "cards.dodge.label",
+      "ru": "Шанс уклонения",
+      "en": "Dodge chance"
+    },
+    {
+      "id": "cards.projectileguard.label",
+      "ru": "Меньше урона от снарядов",
+      "en": "Less projectile damage"
+    },
+    {
+      "id": "cards.dashshield.label",
+      "ru": "Неуязвимость рывка",
+      "en": "Dash invulnerability"
+    },
+    {
+      "id": "cards.trophy.label",
+      "ru": "Деталей за элиту",
+      "en": "Parts per elite"
+    },
+    {
+      "id": "cards.burn.label",
+      "ru": "Поджог (урон попадания в секунду)",
+      "en": "Burn (hit damage per second)"
+    },
+    {
+      "id": "cards.poison.label",
+      "ru": "Яд (урон попадания в секунду, до 3 стаков)",
+      "en": "Poison (hit damage per second, up to 3 stacks)"
+    },
+    {
+      "id": "cards.frost.label",
+      "ru": "Замедление холодом",
+      "en": "Frost slow"
+    },
+    {
+      "id": "cards.shock.label",
+      "ru": "Молния: прыжков к соседям",
+      "en": "Lightning: jumps to neighbours"
+    },
+    {
+      "id": "cards.split.label",
+      "ru": "Осколков после попадания",
+      "en": "Fragments after a hit"
+    },
+    {
+      "id": "cards.retaliate.label",
+      "ru": "Импульс при ударе по герою (урон выстрела)",
+      "en": "Pulse when you are hit (shot damage)"
+    },
+    {
+      "id": "cards.aura.label",
+      "ru": "Аура раз в 2 с (урон выстрела)",
+      "en": "Aura every 2 s (shot damage)"
+    },
+    {
+      "id": "cards.charged.label",
+      "ru": "Заряжен каждый N-й выстрел",
+      "en": "Every Nth shot is charged"
+    },
+    {
+      "id": "cards.lastchance.text",
+      "ru": "Смертельный удар один раз за забег оставляет 30% HP и отбрасывает врагов",
+      "en": "Once per run a lethal hit leaves you at 30% HP and knocks enemies back"
+    },
+    {
+      "id": "cards.lastchance.announce",
+      "ru": "ПОСЛЕДНИЙ ШАНС!",
+      "en": "LAST CHANCE!"
+    },
+    {
+      "id": "cards.gamble.text",
+      "ru": "Удача +100%, но аптечки больше не выпадают — вместо них магниты",
+      "en": "Luck +100%, but medkits no longer drop — magnets instead"
+    },
+    {
+      "id": "cards.timegreed.text",
+      "ru": "+30% опыта, но враги на 15% быстрее",
+      "en": "+30% experience, but enemies are 15% faster"
+    },
+    {
+      "id": "cards.critpierce.text",
+      "ru": "Критическая пуля пробивает ещё одну цель (до 2 раз)",
+      "en": "A critical bullet pierces one more target (up to 2 times)"
+    },
+    {
+      "id": "cards.burningshot.text",
+      "ru": "Горение от «Зажигательных пуль» сильнее на 75%",
+      "en": "Burning from Incendiary Rounds is 75% stronger"
+    },
+    {
+      "id": "cards.blastdash.text",
+      "ru": "В конце рывка — взрыв: 200% урона выстрела и отбрасывание",
+      "en": "A dash ends with a blast: 200% shot damage and knockback"
+    },
+    {
+      "id": "cards.trophy.result",
+      "ru": "  (трофеи: +",
+      "en": "  (trophies: +"
+    },
+    {
+      "id": "boss.phase2.guardian",
+      "ru": "Страж арены в ярости!",
+      "en": "The Arena Guardian is enraged!"
+    },
+    {
+      "id": "boss.phase2.sniper",
+      "ru": "Грозовой снайпер перегружен!",
+      "en": "The Storm Sniper overcharges!"
+    },
+    {
+      "id": "boss.phase2.mini",
+      "ru": "Громила рассвирепел!",
+      "en": "The Brute is furious!"
+    },
+    {
+      "id": "hud.boss.enraged",
+      "ru": "ЯРОСТЬ",
+      "en": "ENRAGED"
+    },
+    {
+      "id": "runstatistics.evo.done",
+      "ru": "\n<color=#FFC740>Эволюция: ",
+      "en": "\n<color=#FFC740>Evolution: "
+    },
+    {
+      "id": "runstatistics.evo.next",
+      "ru": "\n<color=#FFC740>Эволюция → ",
+      "en": "\n<color=#FFC740>Evolution → "
+    },
+    {
+      "id": "runstatistics.evo.chest",
+      "ru": "  <color=#8796A8>(из сундука)</color>",
+      "en": "  <color=#8796A8>(from a chest)</color>"
+    },
+    {
+      "id": "runstatistics.evo.ready",
+      "ru": "\n<color=#FFC740><b>★ Эволюция готова — откройте сундук!</b></color>",
+      "en": "\n<color=#FFC740><b>★ Evolution ready — open a chest!</b></color>"
+    },
+    {
+      "id": "hints.move",
+      "ru": "Движение: WASD · Оружие стреляет само",
+      "en": "Move: WASD · Your weapon fires on its own"
+    },
+    {
+      "id": "hints.dash",
+      "ru": "Пробел / Shift — рывок с неуязвимостью",
+      "en": "Space / Shift — dash with invulnerability"
+    },
+    {
+      "id": "hints.goals",
+      "ru": "Собирай кристаллы, выбирай карточки (1/2/3), следи за таймером босса",
+      "en": "Collect crystals, pick cards (1/2/3), watch the boss timer"
     }
   ]
 }

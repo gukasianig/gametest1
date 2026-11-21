@@ -7,6 +7,10 @@ public partial class WorkshopTree
 {
     private RectTransform equipmentPage;
     private readonly List<GameObject> originalDetails = new List<GameObject>();
+    private Text branchCaption;
+    // Оружие без веток: окно укорочено до верхней части (открытие и усиление, страница от 0,415 до 1).
+    // Страница растягивается вниз за край окна, поэтому размеры текста и кнопок не меняются.
+    private const float EquipmentShortShare = .585f;
     private Text equipmentTitle, tuningLevel, tuningDamage, tuningNote, tuningBuyText, branchDetails, branchBuyText, branchEquipText;
     private Image equipmentPreview;
     private Button tuningBuy, branchBuy, branchEquip;
@@ -54,7 +58,7 @@ public partial class WorkshopTree
         tuningBuy.name = "Weapon enhancement purchase";
         tuningBuyText = tuningBuy.GetComponentInChildren<Text>(); tuningBuyText.resizeTextMaxSize = 17;
         UiArtwork.Round(tuningBuy.GetComponent<Image>());
-        EquipmentLabel(equipmentPage, GameText.Source("workshop.branch.caption"), .389f, .439f, 17, Gold);
+        branchCaption = EquipmentLabel(equipmentPage, GameText.Source("workshop.branch.caption"), .389f, .439f, 17, Gold);
         for (int i = 0; i < branchTabs.Length; i++)
         {
             int tab = i;
@@ -99,13 +103,12 @@ public partial class WorkshopTree
         detailElement = TabElement(tab);
         Node node = nodes.Find(n => n.weapon == detailWeapon && n.element == detailElement);
         if (node == null) return;
-        selected = node;
-        Refresh();
+        Pin(node, false);
     }
 
     private void RefreshEquipmentDetails()
     {
-        int weapon = selected.weapon;
+        int weapon = shown.weapon;
         bool unlocked = MetaProgress.IsWeaponUnlocked(weapon);
         if (detailWeapon != weapon)
         {
@@ -113,7 +116,7 @@ public partial class WorkshopTree
             detailElement = WeaponElements.Equipped(weapon);
             if (!WeaponElements.Valid(weapon, detailElement)) detailElement = TabElement(0);
         }
-        if (selected.element != WeaponElement.None) detailElement = selected.element;
+        if (shown.element != WeaponElement.None) detailElement = shown.element;
         equipmentTitle.text = WeaponTitle(weapon);
         equipmentPreview.sprite = WeaponIcon(weapon);
         int rank = WeaponTuning.Rank(weapon);
@@ -128,11 +131,19 @@ public partial class WorkshopTree
         tuningBuyText.text = !unlocked ? GameText.Source("workshoptree.481") + (unlock != null ? unlock.cost : 0) : rank == WeaponTuning.MaxRank ? GameText.Source("workshoptree.473") : GameText.Source("workshoptree.474") + WeaponTuning.Cost(rank);
         tuningBuy.interactable = unlocked ? WeaponTuning.CanBuy(weapon) : unlock != null && MetaProgress.Currency >= unlock.cost;
         for (int i = 0; i < tuningSegments.Length; i++) tuningSegments[i].color = i < rank ? GameUi.Accent : i == rank && unlocked ? new Color(.2f, .48f, .5f) : new Color(.1f, .19f, .23f);
-        int count = WeaponElements.HasBranches(weapon) ? 3 : 4;
-        for (int i = 0; i < branchTabs.Length; i++)
+        // Оружие без своих веток: нижний блок «ВЕТКА ОРУЖИЯ» скрыт целиком, остаются открытие и усиление урона.
+        bool locked = WeaponElements.IsLocked(weapon);
+        equipmentPage.anchorMin = new Vector2(0f, locked ? 1f - 1f / EquipmentShortShare : 0f);
+        equipmentPage.offsetMin = new Vector2(equipmentPage.offsetMin.x, 0f);
+        branchCaption.gameObject.SetActive(!locked);
+        branchDetails.gameObject.SetActive(!locked);
+        branchBuy.gameObject.SetActive(!locked);
+        branchEquip.gameObject.SetActive(!locked);
+        int count = locked ? 0 : WeaponElements.HasBranches(weapon) ? 3 : 4;
+        for (int i = 0; i < branchTabs.Length; i++) branchTabs[i].gameObject.SetActive(i < count);
+        if (locked) return;
+        for (int i = 0; i < count; i++)
         {
-            branchTabs[i].gameObject.SetActive(i < count);
-            if (i >= count) continue;
             var rect = (RectTransform)branchTabs[i].transform;
             rect.anchorMin = new Vector2(.04f + i * .92f / count, .29f);
             rect.anchorMax = new Vector2(.04f + (i + 1) * .92f / count - .012f, .385f);
@@ -143,10 +154,9 @@ public partial class WorkshopTree
             branchTabs[i].GetComponent<Image>().color = element == detailElement ? new Color(.42f, .31f, .12f) : new Color(.06f, .16f, .21f);
         }
         int branchRank = WeaponElements.Rank(weapon, detailElement);
-        bool locked = WeaponElements.IsLocked(weapon);
-        branchDetails.text = locked ? GameText.Source("tuning.branch.locked") : GameText.Source("workshoptree.472") + branchRank + " / 3\n" +
+        branchDetails.text = GameText.Source("workshoptree.472") + branchRank + " / 3\n" +
             GameText.Source(branchRank < WeaponElements.MaxRank ? "tuning.branch.next" : "tuning.branch.current") + Summary(detailElement, Mathf.Min(3, branchRank + 1));
-        branchBuyText.text = locked ? GameText.Source("workshoptree.465") : branchRank == WeaponElements.MaxRank ? GameText.Source("workshoptree.473") :
+        branchBuyText.text = branchRank == WeaponElements.MaxRank ? GameText.Source("workshoptree.473") :
             GameText.Source(branchRank == 0 ? "workshoptree.481" : "workshoptree.474") + WeaponElements.Cost(branchRank);
         branchBuy.interactable = WeaponElements.CanBuy(weapon, detailElement);
         bool active = WeaponElements.Equipped(weapon) == detailElement;

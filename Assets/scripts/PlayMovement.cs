@@ -151,7 +151,7 @@ public class PlayMovement : MonoBehaviour
                 dashTimeLeft = Mathf.Max(0.05f, dashDuration);
                 nextDash = Time.time + Mathf.Max(1f, dashCooldown - Stats.DashCooldownReduction);
                 PlayerHealth health = GetComponent<PlayerHealth>();
-                if (health != null) health.GrantInvulnerability(dashInvulnerability);
+                if (health != null) health.GrantInvulnerability(dashInvulnerability + Stats.DashInvulnerabilityBonus);
             }
         }
         Vector3 velocity = move * EffectiveSpeed;

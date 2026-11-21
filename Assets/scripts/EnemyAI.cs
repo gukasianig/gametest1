@@ -215,6 +215,7 @@ public class EnemyAI : MonoBehaviour
             }
             else direction = toPlayer.normalized;
         }
+        if (direction != Vector3.zero) direction = Unstick(position, direction, deltaTime);
 
         CrowdMarker.Begin();
         // 12.11.2026: враги по-прежнему проходят друг сквозь друга (не блокируют), но мягко расходятся в стороны,
@@ -254,6 +255,46 @@ public class EnemyAI : MonoBehaviour
         if (velocity.sqrMagnitude > 0.01f)
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(velocity), 10f * deltaTime);
         if (UsesMelee && distance <= attackRange) Attack();
+    }
+
+    // Выход из застревания (19.11, владелец: враги стоят у объектов). Если за 1,5 с враг сместился меньше чем на треть
+    // положенного пути, он 0,7 с идёт в сторону (по очереди влево/вправо), потом снова ищет путь к цели.
+    private Vector3 stuckFrom;
+    private float stuckClock, detourUntil;
+    private Vector3 detour;
+    private float detourSide = 1f;
+    private static readonly float[] detourAngles = { 90f, 60f, 120f, 145f };
+
+    private Vector3 Unstick(Vector3 position, Vector3 direction, float deltaTime)
+    {
+        if (Time.time < detourUntil) return detour;
+        stuckClock += deltaTime;
+        if (stuckClock < 1.5f) return direction;
+        Vector3 moved = position - stuckFrom;
+        moved.y = 0f;
+        float expected = speed * SlowEffect.MovementFactor(this) * ArenaEvents.EnemySpeedFactor * stuckClock;
+        stuckFrom = position;
+        stuckClock = 0f;
+        // Сравниваем чистое смещение за окно: враг может «дёргаться» туда-обратно у стенки, а не стоять ровно.
+        if (ArenaLayout.Instance == null || expected < 0.5f || moved.magnitude > expected * 0.35f) return direction;
+        detourSide = -detourSide;
+        foreach (float angle in detourAngles)
+            for (int s = 0; s < 2; s++)
+            {
+                float side = s == 0 ? detourSide : -detourSide;
+                Vector3 candidate = Quaternion.AngleAxis(angle * side, Vector3.up) * direction;
+                if (!ArenaLayout.Instance.PathClear(position, position + candidate * 2.5f, bodyRadius)) continue;
+                return BeginDetour(candidate, 0.7f);
+            }
+        return BeginDetour(-direction, 0.5f);
+    }
+
+    private Vector3 BeginDetour(Vector3 heading, float seconds)
+    {
+        detour = heading.normalized;
+        detourUntil = Time.time + seconds;
+        nextPathTime = detourUntil;   // после обхода путь к цели пересчитывается с новой точки
+        return detour;
     }
 
     private Vector3 AvoidCrowd(Vector3 position, Vector3 desired, float deltaTime)

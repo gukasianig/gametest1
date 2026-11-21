@@ -31,7 +31,11 @@ public class AutoShoter : MonoBehaviour
     public Transform RightAimTarget => rightAimTarget;
     public Transform LeftAimTarget => leftAimTarget;
     public bool DualAiming => branch == WeaponElement.Dual && hero != null && hero.CanAimWeapons;
-    private bool PoseAiming => hero != null && hero.CanAimWeapons && baseWeapon != null && baseWeapon.kind == WeaponKind.Standard;
+    // 19.11 (владелец): ракетница тоже целится — герой держит её двумя руками и наводит на цель, ракета выходит из жерла.
+    private bool PoseAiming => hero != null && hero.CanAimWeapons && baseWeapon != null && (baseWeapon.kind == WeaponKind.Standard || baseWeapon.kind == WeaponKind.Rocket);
+    // Ракета летит горизонтально: ствол не опускается к ногам ближнего врага, наклон ограничен (HeroLocomotion.VisualAim).
+    public bool LevelAim => baseWeapon != null && baseWeapon.kind == WeaponKind.Rocket;
+    public bool TwoHandedHold => baseWeapon != null && (baseWeapon.kind == WeaponKind.Standard ? startWeaponIndex > 0 : baseWeapon.kind == WeaponKind.Rocket);
 
     private bool ValidAimTarget(Transform target)
     {
@@ -69,7 +73,13 @@ public class AutoShoter : MonoBehaviour
         Transform target = pendingAimedShot;
         pendingAimedShot = null;
         if (!isActiveAndEnabled || !PoseAiming || !ValidAimTarget(target) || Time.timeScale <= 0 || (ownHealth != null && ownHealth.IsDead)) return;
-        Shoot(target);
+        if (baseWeapon.kind == WeaponKind.Standard) Shoot(target);
+        else
+        {
+            // Спецоружие с позой (ракетница): сначала навести жерло точно на цель, потом выпустить залп.
+            hero.AlignWeapons(target, null, true);
+            special.Fire(RollDamage(), target);
+        }
         timer = 0f;
     }
     public int CurrentDamage => currentDamage;
@@ -257,7 +267,9 @@ private float currentSpread;
 
         if (timer >= CurrentFireInterval && Time.time >= reloadUntil)
         {
-            if (PoseAiming) { pendingAimedShot = target; }
+            // Ракетница ждёт, пока герой развернётся к цели (≤30°): залп за спину выглядел как стрельба «не туда».
+            if (PoseAiming && LevelAim && Vector3.Angle(Vector3.ProjectOnPlane(transform.forward, Vector3.up), dir) > 30f) { }
+            else if (PoseAiming) { pendingAimedShot = target; }
             else
             {
             if (movement != null) movement.FaceNow(dir);
@@ -427,10 +439,12 @@ private float currentSpread;
     }
 
     // Золотые пули эволюции; big — усиленный выстрел Дуэлянта.
-    private static void TintBullet(GameObject bullet, bool big)
+    private static void TintBullet(Bullet bullet, bool big)
     {
-        foreach (Renderer r in bullet.GetComponentsInChildren<Renderer>())
+        // Только исходные рендереры пули (не модель ProjectileModels): как до пула, когда модель появлялась позже окраски.
+        foreach (Renderer r in bullet.BaseRenderers)
         {
+            if (r == null) continue;
             if (r is TrailRenderer trail)
             {
                 trail.startColor = Gold;
@@ -482,22 +496,18 @@ private float currentSpread;
 
     private Transform OtherTarget(Transform first)
     {
-        Transform best = null;
-        float bestDistance = range;
-        foreach (GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy"))
-        {
-            if (enemy.transform == first || enemy.transform.IsChildOf(first) || !ValidAimTarget(enemy.transform)) continue;
-            float distance = Vector3.Distance(transform.position, enemy.transform.position);
-            if (distance < bestDistance) { bestDistance = distance; best = enemy.transform; }
-        }
-        return best;
+        return NearestTarget(first);
     }
+
+    private int chargedShots;
+    private bool chargedVolley;
 
     private void SpawnBullet(Vector3 origin, Quaternion rotation, float damageScale, bool lastRound, bool doubleShot)
     {
-        GameObject bullet = Instantiate(baseWeapon.bulletPrefab, origin, rotation);
-        Bullet b = bullet.GetComponent<Bullet>();
+        // Пул пуль (20.11.2026): Spawn сбрасывает всё состояние к префабу, Launch в конце запускает полёт.
+        Bullet b = Bullet.Spawn(baseWeapon.bulletPrefab, origin, rotation);
         if (b == null) return;
+        GameObject bullet = b.gameObject;
         bool finisher = lastRound && branchRank >= 3;
         b.SetOwner(transform);
         b.elementAttack = ElementAttack;
@@ -507,10 +517,20 @@ private float currentSpread;
             (branch == WeaponElement.Heavy ? branchRank : 0);
         b.forceCrit = finisher;
         b.ricochet = Stats.Ricochet;
+        b.split = Stats.SplitShot;
+        b.splitPrefab = baseWeapon.bulletPrefab;
+        // Карточка «Заряженный выстрел»: крупная пуля ×2,5 урона и +2 пробивания.
+        if (chargedVolley)
+        {
+            damageScale *= HeroCardEffects.ChargedDamage;
+            b.pierce += 2;
+            bullet.transform.localScale *= 1.8f;
+        }
         b.damage = Mathf.Max(1, Mathf.RoundToInt(RollDamage() * (doubleShot ? 2 : 1) * damageScale));
-        if (Evolved) TintBullet(bullet, doubleShot);
+        if (Evolved) TintBullet(b, doubleShot);
         b.speed = baseWeapon.bulletSpeed * (branch == WeaponElement.Heavy ? 1.25f : 1f);
         b.lifeTime = baseWeapon.bulletLifeTime * Stats.RangeMultiplier * rangeScale;
+        b.Launch();
     }
 
     public int RollDamage(bool includeTuning = true)
@@ -565,26 +585,32 @@ private float currentSpread;
         }
     }
 
-   Transform FindClosestEnemy()
-{
-    GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-
-    float minDist = Mathf.Infinity;
-    Transform closest = null;
-
-    foreach (GameObject enemy in enemies)
+    // Ближайшая цель в радиусе: обход EnemyAI.All и босса вместо FindGameObjectsWithTag каждый кадр (20.11.2026, аллокации).
+    Transform FindClosestEnemy()
     {
-        if (!ValidAimTarget(enemy.transform)) continue;
-        float dist = Vector3.Distance(transform.position, enemy.transform.position);
-
-        if (dist < minDist && dist <= range)
-        {
-            minDist = dist;
-            closest = enemy.transform;
-        }
+        return NearestTarget(null);
     }
 
-    return closest;
+    // exclude — уже выбранная цель (второй ствол Dual), её и её дочерние объекты пропускаем.
+    private Transform NearestTarget(Transform exclude)
+    {
+        Transform best = null;
+        float bestDistance = Mathf.Infinity;
+        foreach (EnemyAI enemy in EnemyAI.All)
+            ConsiderTarget(enemy.transform, exclude, ref best, ref bestDistance);
+        GameSession session = GameSession.Instance;
+        if (session != null && session.Boss != null)
+            ConsiderTarget(session.Boss.transform, exclude, ref best, ref bestDistance);
+        return best;
+    }
+
+    private void ConsiderTarget(Transform candidate, Transform exclude, ref Transform best, ref float bestDistance)
+    {
+        if (candidate == best || !candidate.CompareTag("Enemy")) return;
+        if (exclude != null && (candidate == exclude || candidate.IsChildOf(exclude))) return;
+        if (!ValidAimTarget(candidate)) return;
+        float distance = Vector3.Distance(transform.position, candidate.position);
+        if (distance < bestDistance) { bestDistance = distance; best = candidate; }
 }
 
 
@@ -631,6 +657,13 @@ private float currentSpread;
         GameAudio.Play(Sfx.Deploy, 0.4f);
     }
 
+    int chargedEvery = HeroCardEffects.ChargedEvery(Stats.ChargedShot);
+    chargedVolley = chargedEvery > 0 && ++chargedShots >= chargedEvery;
+    if (chargedVolley)
+    {
+        chargedShots = 0;
+        EnemyFx.Puff(origin, new Color(0.45f, 0.85f, 1f), 0.22f, 0.3f, Vector3.up * 0.6f);
+    }
     float volleyDamage = 1f;
     if (branch == WeaponElement.Assault && ++assaultShots >= 3)
     {

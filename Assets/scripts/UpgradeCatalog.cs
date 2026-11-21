@@ -5,7 +5,10 @@ using UnityEngine;
 public enum UpgradeEffect { Damage, AttackSpeed, Movement, Pickup, GrenadeDamage, OrbitDamage, GrenadeRadius, MaxHealth, OrbitCount, CritChance, CritPower, Pierce, Ricochet, DroneCount, DroneDamage, TurretCount, TurretDamage,
     Armor, Regeneration, Vampirism, DashCooldown, DashDistance, ExtraPellets, ExplosiveBullets, EliteDamage, WeaponRange,
     OrbitSpeed, OrbitCrit, PickupSpeed, Luck, ExperienceGain, CursedGlass, CursedHaste, CursedGreed, MineCount,
-    ChestXp, SteelWill, Evolution }
+    ChestXp, SteelWill, Evolution,
+    // 19.11.2026: новые карточки (добавлять только в конец — номера сохранены в UpgradeCatalog.asset).
+    Dodge, ProjectileGuard, DashShield, Trophy, BurnRounds, PoisonRounds, FrostRounds, ShockRounds, SplitShot, Retaliate,
+    PulseAura, ChargedShot, LastChance, Gamble, TimeGreed, CritPierce, BurningShot, BlastDash }
 public enum UpgradeRarity { Common, Rare, Special }
 
 [Serializable]

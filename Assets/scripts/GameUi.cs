@@ -6,6 +6,21 @@ public static class GameUi
     public static readonly Color Background = new Color(0.025f, 0.045f, 0.065f, 0.98f);
     public static readonly Color Accent = new Color(0.25f, 0.85f, 0.72f);
 
+    public const string GameFontPath = "Fonts/GameFont";   // Assets/Resources/Fonts/GameFont.ttf|otf — нужна кириллица и латиница
+    private static Font defaultFont;
+
+    // Единый шрифт интерфейса: свой из Resources, иначе встроенный LegacyRuntime.ttf.
+    public static Font DefaultFont
+    {
+        get
+        {
+            if (defaultFont != null) return defaultFont;
+            defaultFont = Resources.Load<Font>(GameFontPath);
+            if (defaultFont == null) defaultFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            return defaultFont;
+        }
+    }
+
     public static Canvas Canvas(string name, int order)
     {
         Canvas canvas = new GameObject(name, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler),
@@ -41,7 +56,7 @@ public static class GameUi
         label.rectTransform.anchorMax = max;
         label.rectTransform.offsetMin = new Vector2(10, 4);
         label.rectTransform.offsetMax = new Vector2(-10, -4);
-        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        label.font = DefaultFont;
         label.text = value;
         label.fontSize = size;
         label.color = color ?? Color.white;

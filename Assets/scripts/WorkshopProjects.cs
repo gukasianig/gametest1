@@ -17,6 +17,19 @@ public static class WorkshopProjects
     public static int ScannerMode => Count("scanner-mode") % 3;
     public static int DroneMode => Count("drone-mode") % 3;
     public static int Relic => Count("relic");
+
+    // 21.11.2026: раздел проектов в Мастерской открывается после 2 завершённых забегов (не перегружать первый заход)
+    // или сразу, если у игрока уже есть прогресс в проектах (куплен этап или получен компонент).
+    public const int SectionRuns = 2;
+    public static bool SectionUnlocked
+    {
+        get
+        {
+            if (MetaProgress.Data != null && MetaProgress.Data.runs >= SectionRuns) return true;
+            foreach (string id in Ids) if (Rank(id) > 0) return true;
+            return Count("core") > 0 || Count("boss") > 0 || Count("research") > 0;
+        }
+    }
     public static int Cost(string id)
     {
         int index = System.Array.IndexOf(Ids, id);

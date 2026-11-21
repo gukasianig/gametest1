@@ -20,9 +20,8 @@ public class GameSession : MonoBehaviour
     private Canvas overlay;
     private RectTransform pause, settings, result;
     private Text clock, announcement, resultTitle, resultBody;
-    private Image bossFill;
-    private RectTransform bossBar;
-    private Text bossLabel;
+    // Полоса HP босса и мини-босса (19.11.2026: BossHealthBar вместо простой красной полосы).
+    private BossHealthBar bossHud;
     // Мини-босс «Громила» на середине забега (MiniBoss): появился ли и когда повторить попытку появления.
     private bool miniSpawned;
     private float miniRetry;
@@ -70,6 +69,7 @@ public class GameSession : MonoBehaviour
         overlay.enabled = true;
         if (GetComponent<WorkshopExpedition>() == null) gameObject.AddComponent<WorkshopExpedition>();
         GetComponent<WorkshopExpedition>().BeginRun();
+        FirstRunHints.TryShow(this);   // подсказки первого забега (B07)
     }
 
     private void Update()
@@ -104,15 +104,13 @@ public class GameSession : MonoBehaviour
         // The level-up screen has its own title in the same place: hide the timer while cards are open.
         clockPlate.gameObject.SetActive(!IsFinished && State != GameRunState.Upgrade && !TestMode);
         RefreshClock();
-        if (Boss != null && Boss.Health != null)
-            bossFill.rectTransform.anchorMax = new Vector2((float)Boss.Health.CurrentHealth / Boss.Health.maxHealth, 1f);
-        // Полоса мини-босса — та же, пока Стража нет.
+        if (Boss != null && Boss.Health != null && !IsFinished)
+            bossHud.Set(Boss.Title, Boss.Accent, Boss.Health.CurrentHealth, Boss.Health.maxHealth, Boss.Enraged);
+        // Полоса мини-босса — та же, пока финального босса нет.
         MiniBoss mini = MiniBoss.Active;
         bool miniAlive = Boss == null && !IsFinished && mini != null && mini.Health != null && !mini.Health.isDead;
-        if (Boss == null && bossBar != null) bossBar.gameObject.SetActive(miniAlive);
-        if (bossLabel != null) bossLabel.text = Boss != null ? Boss.Title : MiniBoss.Title;
-        if (miniAlive)
-            bossFill.rectTransform.anchorMax = new Vector2((float)mini.Health.CurrentHealth / Mathf.Max(1, mini.Health.maxHealth), 1f);
+        if (miniAlive) bossHud.Set(MiniBoss.Title, MiniBoss.Accent, mini.Health.CurrentHealth, Mathf.Max(1, mini.Health.maxHealth), mini.Enraged);
+        else if (Boss == null || IsFinished) bossHud.Hide();
     }
 
     private float announceUntil;
@@ -235,7 +233,7 @@ public class GameSession : MonoBehaviour
         for (int i = 0; i < 16; i++)
         {
             float a = i * Mathf.PI / 8f;
-            ExperiencePickup.Spawn(at + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 3f, 20 + 10 * EndlessRound);
+            ExperiencePickup.Spawn(at + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 3f, 20 + 10 * EndlessRound, merge: false);
         }
         EnemyFx.Explosion(at, 5f, 1f, true);
         if (CombatFeel.Instance != null) { CombatFeel.Instance.Flash(new Color(1f, 0.8f, 0.45f), 0.5f); CombatFeel.Instance.HitStop(0.15f, 0.05f); }
@@ -245,7 +243,7 @@ public class GameSession : MonoBehaviour
         endlessWarned = false;
         miniSpawned = false;
         Boss = null;
-        if (bossBar != null) bossBar.gameObject.SetActive(false);
+        if (bossHud != null) bossHud.Hide();
         Announce(GameText.Source("gamesession.118") + EndlessRound + GameText.Source("gamesession.123") + EndlessFactor.ToString("0.0") + ")", 4f);
     }
 
@@ -270,7 +268,6 @@ public class GameSession : MonoBehaviour
         GetComponent<RunStatistics>()?.BeginBoss(NextBoss);
         Boss.Health.Died += BossDied;
         announcement.text = "";
-        bossBar.gameObject.SetActive(true);
     }
 
     // Тест-арена: вызвать Стража по кнопке.
@@ -291,7 +288,7 @@ public class GameSession : MonoBehaviour
         {
             // В тест-арене победа над Стражем не заканчивает забег.
             Boss = null;
-            if (bossBar != null) bossBar.gameObject.SetActive(false);
+            if (bossHud != null) bossHud.Hide();
             Announce(GameText.Source("gamesession.126"), 2f);
             return;
         }
@@ -331,7 +328,7 @@ public class GameSession : MonoBehaviour
         }
         pause.gameObject.SetActive(false);
         settings.gameObject.SetActive(false);
-        bossBar.gameObject.SetActive(false);
+        bossHud.Hide();
         announcement.text = "";
         clockPlate.gameObject.SetActive(false);
         foreach (Canvas canvas in FindObjectsOfType<Canvas>())
@@ -364,6 +361,7 @@ public class GameSession : MonoBehaviour
             GameText.Source("gamesession.135") + MetaProgress.Currency + ")" +
             (reward.threat > 0 ? GameText.Source("gamesession.139") + reward.threat + (reward.newBestThreat ? GameText.Source("gamesession.140") : "") : "") +
             (reward.firstVictoryBonus > 0 ? GameText.Source("gamesession.141") + reward.firstVictoryBonus + GameText.Source("gamesession.142") : "") +
+            (reward.trophy > 0 ? GameText.Source("cards.trophy.result") + reward.trophy + ")" : "") +
             (reward.newBestTime || reward.newBestKills ? GameText.Source("gamesession.131") : "");
         AppendDeathSummary(victory);
         RunResultsView.Show(result, this, stats, GetComponent<PlayerProgression>(), waves);
@@ -407,10 +405,8 @@ public class GameSession : MonoBehaviour
         announcement = GameUi.Readable(GameUi.Label(overlay.transform, "", new Vector2(0.1f, 0.66f), new Vector2(0.9f, 0.8f), 34,
             new Color(1f, 0.65f, 0.25f)), 2f);
         announcement.fontStyle = FontStyle.Bold;
-        bossBar = GameUi.Box(overlay.transform, "Boss HP", new Vector2(0.2f, 0.77f), new Vector2(0.8f, 0.83f), GameUi.Background);
-        bossFill = GameUi.Box(bossBar, "Fill", Vector2.zero, Vector2.one, new Color(0.65f, 0.17f, 0.1f)).GetComponent<Image>();
-        bossLabel = GameUi.Label(bossBar, GameText.Source("bosscontroller.069"), Vector2.zero, Vector2.one, 20);
-        bossBar.gameObject.SetActive(false);
+        bossHud = BossHealthBar.Create(overlay.transform);
+        bossHud.Hide();
         pause = GameUi.Box(overlay.transform, "Pause", Vector2.zero, Vector2.one, GameUi.Background, true);
         GameUi.Label(pause, GameText.Source("gamesession.146"), new Vector2(0.2f, 0.72f), new Vector2(0.8f, 0.88f), 44);
         GameUi.Button(pause, GameText.Source("gamesession.147"), new Vector2(0.33f, 0.58f), new Vector2(0.67f, 0.67f), TogglePause);

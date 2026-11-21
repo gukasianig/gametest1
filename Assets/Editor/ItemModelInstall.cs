@@ -20,7 +20,7 @@ public static class ItemModelInstall
     {
         ("XP Crystal", "Crystal", 1.15f, 0f), ("Repair kit", "RepairKit", 1f, 0f), ("Magnet", "Magnet", 1f, 0f),
         // Дрон вписывается в сферу 0,5 м (винты-примитивы создаются позже), поэтому ×2,4 — как прежний размах с винтами.
-        ("Mine", "Mine", 1f, 0f), ("Turret", "Turret", 1.3f, 0f), ("Drone", "Drone", 2.4f, 0f), ("Saw", "SawBlade", 1f, 0f),
+        ("Mine", "Mine", 1f, 0f), ("Turret", "Turret", 1.75f, 0f), ("Drone", "Drone", 2.4f, 0f), ("Saw", "SawBlade", 1f, 0f),
         ("Small chest", "SmallChest", 1f, 0f),
         // Вторая партия (11.11.2026): сундук события, ящик сброса, короны элит, снаряды врагов.
         ("Guard chest", "GuardChest", 1f, 0f), ("Supply crate", "SupplyCrate", 1f, 0f),

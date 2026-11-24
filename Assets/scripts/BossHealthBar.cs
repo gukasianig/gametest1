@@ -17,6 +17,11 @@ public class BossHealthBar : MonoBehaviour
     private Color accent = Color.white;
     private string current = "";
 
+    private const float RestY = -105f;
+    // Нужна анонсу событий: он стоит под таймером и сдвигается ниже полосы босса.
+    public static bool AnyVisible;
+    public const float Height = 50f;
+
     public bool Visible => visible;
     public float Shown => shown;
 
@@ -24,8 +29,8 @@ public class BossHealthBar : MonoBehaviour
     {
         RectTransform plate = GameUi.Box(parent, "Boss HP", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Color(.02f, .035f, .05f, .94f));
         plate.pivot = new Vector2(.5f, 1f);
-        plate.sizeDelta = new Vector2(640f, 58f);
-        plate.anchoredPosition = new Vector2(0f, -110f);
+        plate.sizeDelta = new Vector2(640f, Height);   // 50: имя (≈27 px) + полоса (15 px); ниже таймера (он кончается на 102)
+        plate.anchoredPosition = new Vector2(0f, RestY);
         BossHealthBar bar = plate.gameObject.AddComponent<BossHealthBar>();
         bar.Build(plate);
         plate.gameObject.SetActive(false);
@@ -41,13 +46,21 @@ public class BossHealthBar : MonoBehaviour
         border.effectDistance = new Vector2(2f, -2f);
         group = plate.gameObject.AddComponent<CanvasGroup>();
         group.blocksRaycasts = false;
-        title = GameUi.Readable(GameUi.Label(plate, "", new Vector2(.02f, .52f), new Vector2(.7f, 1f), 17), 1f);
+        title = GameUi.Readable(GameUi.Label(plate, "", new Vector2(.02f, .44f), new Vector2(.7f, 1f), 22), 1f);
+        title.resizeTextMinSize = 16;
         title.alignment = TextAnchor.MiddleLeft;
         title.fontStyle = FontStyle.Bold;
-        enraged = GameUi.Readable(GameUi.Label(plate, GameText.Source("hud.boss.enraged"), new Vector2(.7f, .52f), new Vector2(.98f, 1f), 15), 1f);
+        enraged = GameUi.Readable(GameUi.Label(plate, GameText.Source("hud.boss.enraged"), new Vector2(.7f, .44f), new Vector2(.98f, 1f), 16), 1f);
         enraged.alignment = TextAnchor.MiddleRight;
         enraged.fontStyle = FontStyle.Bold;
-        RectTransform track = GameUi.Box(plate, "Track", new Vector2(.02f, .12f), new Vector2(.98f, .5f), new Color(.09f, .11f, .13f));
+        // Нижняя полоса сжата: стандартные отступы Label (4+4 px) обрезали бы имя и «ЯРОСТЬ» целиком.
+        foreach (Text line in new[] { title, enraged })
+        {
+            line.rectTransform.offsetMin = new Vector2(4f, 0f);
+            line.rectTransform.offsetMax = new Vector2(-4f, 0f);
+            line.verticalOverflow = VerticalWrapMode.Overflow;
+        }
+        RectTransform track = GameUi.Box(plate, "Track", new Vector2(.02f, .1f), new Vector2(.98f, .4f), new Color(.09f, .11f, .13f));
         track.gameObject.AddComponent<RectMask2D>();
         trail = GameUi.Box(track, "Trail", Vector2.zero, Vector2.one, new Color(1f, .92f, .8f, .85f));
         trailImage = trail.GetComponent<Image>();
@@ -70,6 +83,7 @@ public class BossHealthBar : MonoBehaviour
         if (!visible || name != current)
         {
             visible = true;
+            AnyVisible = true;
             current = name;
             root.gameObject.SetActive(true);
             appear = 0f;
@@ -90,6 +104,11 @@ public class BossHealthBar : MonoBehaviour
         isEnraged = phaseTwo;
     }
 
+    private void OnDestroy()
+    {
+        AnyVisible = false;
+    }
+
     public void Hide()
     {
         if (!visible) return;
@@ -97,6 +116,7 @@ public class BossHealthBar : MonoBehaviour
         current = "";
         isEnraged = false;
         root.gameObject.SetActive(false);
+        AnyVisible = false;
     }
 
     private static string Group(int value)
@@ -113,7 +133,7 @@ public class BossHealthBar : MonoBehaviour
         float open = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(appear / 0.3f));
         float jitter = shake > 0f ? Mathf.Sin(appear * 90f) * 4f * shake : 0f;
         root.localScale = new Vector3(Mathf.Lerp(.6f, 1f, open), 1f, 1f);
-        root.anchoredPosition = new Vector2(jitter, -110f);
+        root.anchoredPosition = new Vector2(jitter, RestY);
         group.alpha = open;
         shake = Mathf.MoveTowards(shake, 0f, dt * 4f);
         float fillSpeed = appear < 0.9f ? 1.6f : 6f;

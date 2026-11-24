@@ -153,7 +153,8 @@ public class ArenaEvents : MonoBehaviour
 
     // --- Баннер события: въезжает слева по центру экрана, цвет по типу (опасно/полезно), ~3 с,
     // затем уезжает вверх, а событие остаётся в компактной плашке справа сверху.
-    private const float BannerIn = 0.3f, BannerHold = 2.6f, BannerOut = 0.45f;
+    // Компактный анонс под таймером (~2 с): появляется сверху, держится и гаснет; плашка справа сверху остаётся.
+    private const float BannerIn = 0.2f, BannerHold = 1.55f, BannerOut = 0.3f;
     private float bannerAt = -100f;
     private string bannerTitle = "";
     private RectTransform banner;
@@ -179,16 +180,24 @@ public class ArenaEvents : MonoBehaviour
 
     private void BuildBanner()
     {
-        banner = GameUi.Box(hudCanvas.transform, "Event Banner", new Vector2(0f, 0.6f), new Vector2(1f, 0.76f), new Color(0.02f, 0.03f, 0.045f, 0.88f));
+        banner = GameUi.Box(hudCanvas.transform, "Event Banner", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Color(0.02f, 0.03f, 0.045f, 0.88f));
+        banner.pivot = new Vector2(0.5f, 1f);
+        banner.sizeDelta = new Vector2(440f, 52f);
+        UiArtwork.Round(banner.GetComponent<Image>());
         bannerBack = banner.GetComponent<Image>();
         bannerGroup = banner.gameObject.AddComponent<CanvasGroup>();
         bannerGroup.blocksRaycasts = false;
-        bannerStripe = GameUi.Box(banner, "Stripe", new Vector2(0f, 0f), new Vector2(1f, 0.05f), Color.white).GetComponent<Image>();
-        GameUi.Box(banner, "Stripe Top", new Vector2(0f, 0.95f), new Vector2(1f, 1f), new Color(1f, 1f, 1f, 0.15f));
-        GameUi.Label(banner, GameText.Source("arenaevents.011"), new Vector2(0.2f, 0.74f), new Vector2(0.8f, 0.94f), 14, new Color(0.65f, 0.72f, 0.8f));
-        bannerName = GameUi.Readable(GameUi.Label(banner, "", new Vector2(0.1f, 0.34f), new Vector2(0.9f, 0.78f), 40), 2f);
+        bannerStripe = GameUi.Box(banner, "Stripe", new Vector2(0.03f, 0f), new Vector2(0.97f, 0.06f), Color.white).GetComponent<Image>();
+        bannerName = GameUi.Readable(GameUi.Label(banner, "", new Vector2(0.03f, 0.5f), new Vector2(0.97f, 0.98f), 21), 1f);
         bannerName.fontStyle = FontStyle.Bold;
-        bannerHint = GameUi.Readable(GameUi.Label(banner, "", new Vector2(0.1f, 0.07f), new Vector2(0.9f, 0.36f), 21, new Color(0.93f, 0.95f, 0.97f)), 1f);
+        bannerHint = GameUi.Readable(GameUi.Label(banner, "", new Vector2(0.03f, 0.08f), new Vector2(0.97f, 0.52f), 14, new Color(0.93f, 0.95f, 0.97f)), 1f);
+        // Стандартные отступы Label (4+4 px) не оставляли высоты для подсказки: обрезалась целиком.
+        foreach (Text line in new[] { bannerName, bannerHint })
+        {
+            line.rectTransform.offsetMin = new Vector2(4f, 0f);
+            line.rectTransform.offsetMax = new Vector2(-4f, 0f);
+            line.verticalOverflow = VerticalWrapMode.Overflow;
+        }
         banner.gameObject.SetActive(false);
     }
 
@@ -203,20 +212,18 @@ public class ArenaEvents : MonoBehaviour
         bannerName.color = tone;
         bannerName.text = Title(Current);
         bannerHint.text = Hint(Current);
-        float width = ((RectTransform)hudCanvas.transform).rect.width;
-        float x = 0f, y = 0f, alpha = 1f;
+        // Под таймером (он кончается на 102); при видимой полосе босса — ниже неё.
+        float rest = BossHealthBar.AnyVisible ? -105f - BossHealthBar.Height - 6f : -108f;
+        float y = rest, alpha = 1f;
         if (age < BannerIn)
         {
             float k = 1f - Mathf.Pow(1f - age / BannerIn, 3f);
-            x = Mathf.Lerp(-width, 0f, k);
+            y = rest + (1f - k) * 14f;
+            alpha = k;
         }
         else if (age > BannerIn + BannerHold)
-        {
-            float k = (age - BannerIn - BannerHold) / BannerOut;
-            y = k * k * 140f;
-            alpha = 1f - k;
-        }
-        banner.anchoredPosition = new Vector2(x, y);
+            alpha = 1f - Mathf.Clamp01((age - BannerIn - BannerHold) / BannerOut);
+        banner.anchoredPosition = new Vector2(0f, y);
         bannerGroup.alpha = alpha;
         // Короткая вспышка фона при появлении.
         float flash = Mathf.Clamp01(1f - age / 0.5f);
@@ -1068,7 +1075,7 @@ public class ArenaEvents : MonoBehaviour
         Vector3 impact = new Vector3(centre.x, GroundHeight.At(centre), centre.z);
         EnemyFx.Explosion(impact, radius * 0.85f, 0.8f);
         // Метеорит оставляет воронку-ожог и ударную волну.
-        EnemyFx.GroundSplat(impact, radius * 0.8f, new Color(0.08f, 0.06f, 0.05f), 7f);
+        EnemyFx.GroundSplat(impact, radius * 0.8f, EnemyFx.ScorchColor, 7f);
         EnemyFx.Ring(impact, radius * 1.3f, new Color(1f, 0.55f, 0.2f), 0.5f, 0.4f);
         GameAudio.Play(Sfx.Explosion, 0.7f);
     }

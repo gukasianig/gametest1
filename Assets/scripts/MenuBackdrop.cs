@@ -351,7 +351,7 @@ public class MenuBackdrop : MonoBehaviour
 // Кнопка главного меню: тёмная плашка с цветной полосой слева. При наведении подпись сдвигается и светлеет,
 // плашка подсвечивается цветом полосы, по ней пробегает блик; при нажатии кнопка «проседает».
 // pulse — мягкое дыхание свечения и периодический блик (кнопка «Старт»).
-public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler, ISelectHandler, IDeselectHandler
 {
     public Image stripe;
     public Text label;
@@ -359,7 +359,7 @@ public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
     public bool pulse;
     private Image plate, glow, shine;
     private Color plateColor;
-    private bool over, down, ready;
+    private bool over, down, ready, focused;
     private float k, press, shineTime = -1f, nextShine = 2.5f;
     private Vector2 basePosition;
     private const float ShineDuration = 0.5f;
@@ -385,10 +385,13 @@ public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
     public void OnPointerExit(PointerEventData eventData) { over = false; down = false; }
     public void OnPointerDown(PointerEventData eventData) { down = true; }
     public void OnPointerUp(PointerEventData eventData) { down = false; }
+    // Фокус клавиатуры/геймпада (21.11.2026) подсвечивает как наведение; выбор кликом мыши — нет.
+    public void OnSelect(BaseEventData eventData) { focused = !(eventData is PointerEventData); if (focused) shineTime = 0f; }
+    public void OnDeselect(BaseEventData eventData) { focused = false; }
 
     private void OnDisable()
     {
-        over = down = false;
+        over = down = focused = false;
         k = press = 0f;
         shineTime = -1f;
         Apply();
@@ -397,7 +400,7 @@ public class MenuButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
     private void Update()
     {
         float dt = Time.unscaledDeltaTime;
-        k = Mathf.MoveTowards(k, over ? 1f : 0f, dt * 8f);
+        k = Mathf.MoveTowards(k, over || focused ? 1f : 0f, dt * 8f);
         press = Mathf.MoveTowards(press, down ? 1f : 0f, dt * 14f);
         if (pulse && !over)
         {

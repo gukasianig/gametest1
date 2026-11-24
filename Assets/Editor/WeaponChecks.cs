@@ -269,6 +269,9 @@ public static class WeaponChecks
         // Facing (09.11 bug: the hero spun and shot from the side): at the shot the hero faces the target,
         // collision spin does not accumulate.
         ClearArena(); yield return null;
+        // PlayMovement (disabled above so input cannot move the hero) now does the turn and clears the spin; batch input is zero.
+        PlayMovement heroMove = hero.GetComponent<PlayMovement>();
+        heroMove.enabled = true;
         Rigidbody heroBody = hero.GetComponent<Rigidbody>();
         hero.rotation = Quaternion.LookRotation(Vector3.back);
         heroBody.rotation = hero.rotation;
@@ -276,12 +279,23 @@ public static class WeaponChecks
         Health aside = Dummy(new Vector3(7f, 0f, 3f));
         yield return WaitUntilLost(() => Lost(aside) > 0, 4f);
         Require(Lost(aside) > 0, "Standard weapon did not hit the side target.");
+        // Since the v3 operator (17.11) the shot is released by the aiming pose (PoseAiming): the arms and muzzle aim,
+        // the body follows by PlayMovement's turn. So the body must face the target shortly after the hit, not at the shot.
         Vector3 toTarget = aside.transform.position - hero.position;
         toTarget.y = 0f;
         float facingError = Vector3.Angle(hero.forward, toTarget);
-        Require(facingError < 12f, "Hero does not face the target when shooting: " + facingError.ToString("F1") + " deg");
+        float turnUntil = Time.time + 0.8f;
+        while (facingError >= 12f && Time.time < turnUntil)
+        {
+            yield return null;
+            toTarget = aside.transform.position - hero.position;
+            toTarget.y = 0f;
+            facingError = Vector3.Angle(hero.forward, toTarget);
+        }
+        Require(facingError < 12f, "Hero does not turn to the target after shooting: " + facingError.ToString("F1") + " deg");
         Require(Mathf.Abs(heroBody.angularVelocity.y) < 0.01f, "Hero keeps spinning: " + heroBody.angularVelocity.y);
-        Pass("Facing: hero turns to the target at the shot (error " + facingError.ToString("F1") + " deg), collision spin cleared.");
+        heroMove.enabled = false;
+        Pass("Facing: hero turns to the target within 0.8 s of the hit (error " + facingError.ToString("F1") + " deg), collision spin cleared.");
         ClearArena(); yield return null;
     }
 

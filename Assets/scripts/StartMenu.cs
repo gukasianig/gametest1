@@ -65,6 +65,7 @@ public class StartMenu : MonoBehaviour
         Color warm = new Color(1f, 0.6f, 0.22f);
         Button start = MenuButton(GameText.Source("startmenu.305"), 0.555f, 0.085f, () => { CoopMode.Players = 1; GameSession.EndlessMode = false; ShowWeapons(); }, warm, 32, new Color(0.13f, 0.07f, 0.03f, 0.88f));
         start.GetComponent<MenuButtonFx>().pulse = true;
+        startButton = start;
         // Кооператив на одном ПК: тот же выбор оружия, но в бой выходят два героя (CoopMode).
         // Закрыт ключом: открывается/закрывается клавишей F9 в меню (флаг хранится в PlayerPrefs).
         Button coopButton = MenuButton(GameText.Source("startmenu.306"), 0.462f, 0.054f, () =>
@@ -91,10 +92,13 @@ public class StartMenu : MonoBehaviour
             settingsScreen.gameObject.SetActive(true);
         }, GameUi.Accent, 24);
         Button testButton = MenuButton(GameText.Source("startmenu.312"), 0.102f, 0.054f, () => { CoopMode.Players = 1; GameSession.EndlessMode = false; BeginTestArena(); }, new Color(0.55f, 0.62f, 0.7f), 22);
+        // Тест-арена (21.11.2026): в редакторе видна сразу, в собранной игре скрыта; F10 в главном меню показывает/прячет.
+        testArenaButton = testButton;
+        testButton.gameObject.SetActive(TestArenaShown);
         settingsScreen = SettingsPanel.Build(background, () =>
         {
             settingsScreen.gameObject.SetActive(false);
-            home.gameObject.SetActive(true);
+            ShowHome();
         });
         // Выбор арены: меняет тему сразу (арена пересобирается за меню).
         Button arenaButton = MenuButton("", 0.101f, 0.05f,() => { }, new Color(0.55f, 0.62f, 0.7f), 18);
@@ -134,11 +138,12 @@ public class StartMenu : MonoBehaviour
             // Кооператив: «Назад» у игрока 2 возвращает к выбору игрока 1.
             if (weaponScreen.Picker == 1) { weaponScreen.SetPicker(0, -1); return; }
             selection.gameObject.SetActive(false);
-            home.gameObject.SetActive(true);
+            ShowHome();
         }, null, shooter.range);
         selection.gameObject.SetActive(false);
         waiting = true;
         Time.timeScale = 0f;
+        UiFocus.Set(startButton);   // начальный фокус для клавиатуры/геймпада (21.11.2026)
         int restart = GameSession.ConsumeRestart();
         if (restart >= 0) BeginGame(restart);
     }
@@ -176,6 +181,44 @@ public class StartMenu : MonoBehaviour
         RefreshWeaponLocks();
         home.gameObject.SetActive(false);
         selection.gameObject.SetActive(true);
+        if (weaponScreen != null) weaponScreen.FocusSelected();
+    }
+
+    private Button startButton, testArenaButton;
+#if UNITY_EDITOR
+    private static bool TestArenaShown = true;
+#else
+    private static bool TestArenaShown = false;
+#endif
+
+    private void ShowHome()
+    {
+        home.gameObject.SetActive(true);
+        UiFocus.Set(startButton);
+    }
+
+    // Esc / «Отмена» геймпада: назад из открытого подэкрана; на главном экране ничего не делает.
+    private void HandleBack()
+    {
+        if (home.gameObject.activeSelf) return;
+        GameAudio.Play(Sfx.UiBack, 0.8f, 0f);
+        if (selection.gameObject.activeSelf)
+        {
+            if (weaponScreen != null && weaponScreen.Picker == 1) { weaponScreen.SetPicker(0, -1); return; }
+            selection.gameObject.SetActive(false);
+            ShowHome();
+        }
+        else if (workshop.gameObject.activeSelf)
+        {
+            // Первый Esc закрывает закреплённое окно подробностей (WorkshopPopup), второй — выходит из Мастерской.
+            if (workshopTree.PopupPinned || WorkshopTree.EscapeHandledFrame == Time.frameCount) return;
+            workshop.gameObject.SetActive(false);
+            RefreshWeaponLocks();
+            ShowHome();
+        }
+        else if (modifiersScreen.gameObject.activeSelf) { modifiersScreen.gameObject.SetActive(false); ShowHome(); }
+        else if (settingsScreen.gameObject.activeSelf) { settingsScreen.gameObject.SetActive(false); ShowHome(); }
+        else if (statsScreen.gameObject.activeSelf) { statsScreen.gameObject.SetActive(false); ShowHome(); }
     }
 
     public void ShowWorkshop()
@@ -237,7 +280,7 @@ public class StartMenu : MonoBehaviour
         Button back = GameUi.Button(statsScreen, GameText.Source("challengescreen.088"), new Vector2(0.4f, 0.04f), new Vector2(0.6f, 0.115f), () =>
         {
             statsScreen.gameObject.SetActive(false);
-            home.gameObject.SetActive(true);
+            ShowHome();
         });
         UiArtwork.Round(back.GetComponent<Image>());
         statsScreen.gameObject.SetActive(false);
@@ -379,7 +422,7 @@ public class StartMenu : MonoBehaviour
         challengeScreen = ChallengeScreen.Build(modifiersScreen, () =>
         {
             modifiersScreen.gameObject.SetActive(false);
-            home.gameObject.SetActive(true);
+            ShowHome();
         }, null);
         modifiersScreen.gameObject.SetActive(false);
     }
@@ -400,7 +443,7 @@ public class StartMenu : MonoBehaviour
         {
             workshop.gameObject.SetActive(false);
             RefreshWeaponLocks();
-            home.gameObject.SetActive(true);
+            ShowHome();
         });
         workshop.gameObject.SetActive(false);
     }
@@ -426,6 +469,12 @@ public class StartMenu : MonoBehaviour
             CoopMode.Unlocked = !CoopMode.Unlocked;
             RefreshCoopLabel();
         }
+        if (waiting && home.gameObject.activeSelf && Input.GetKeyDown(KeyCode.F10) && testArenaButton != null)
+        {
+            TestArenaShown = !TestArenaShown;
+            testArenaButton.gameObject.SetActive(TestArenaShown);
+        }
+        if (waiting && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton1))) HandleBack();
     }
 
     private void ChooseWeapon(int index)
@@ -483,6 +532,7 @@ public class StartMenu : MonoBehaviour
             return;
         }
         waiting = false;
+        UiFocus.Clear();   // Пробел в бою — рывок, а не Submit по кнопке меню
         GameAudio.SetMusic(true);
         GetComponent<PlayerProgression>().ApplyMetaBonuses();
         if (second != null) second.GetComponent<PlayerProgression>().ApplyMetaBonuses();

@@ -71,6 +71,7 @@ public class MiniBoss : MonoBehaviour
             if (pick == previous) pick = (pick + 1 + Random.Range(0, 4)) % 5;
             previous = pick;
             LastAttack = pick == 0 ? "Slam" : pick == 1 ? "Charge" : pick == 2 ? "Boulders" : pick == 3 ? "Roar" : "DoubleSlam";
+            float recovery = pick == 4 ? DoubleSlamRecovery : 0f;   // окно передышки после двойного удара (21.11.2026)
             if (pick == 0) yield return Slam();
             else if (pick == 1) yield return Charge();
             else if (pick == 2) yield return Boulders();
@@ -79,7 +80,7 @@ public class MiniBoss : MonoBehaviour
             if (Anim != null) Anim.Release();
             if (ai != null) ai.MovementLocked = false;
             if (!Enraged && Health != null && Health.CurrentHealth < Health.maxHealth / 2) Enrage();
-            yield return Wait(Enraged ? 2.2f : 3.2f);
+            yield return Wait((Enraged ? 2.2f : 3.2f) + recovery);
         }
     }
 
@@ -185,6 +186,8 @@ public class MiniBoss : MonoBehaviour
         }
         yield return Wait(0.4f);
     }
+
+    public const float DoubleSlamRecovery = 1.2f;
 
     // Двойной удар: сначала круг перед собой, сразу за ним — под героем.
     private IEnumerator DoubleSlam()

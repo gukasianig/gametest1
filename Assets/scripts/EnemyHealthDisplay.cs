@@ -14,6 +14,9 @@ public class EnemyHealthDisplay : MonoBehaviour
         public Image image;
         public Text label;
         public float height;
+        public bool numbers;     // с цифрами (элиты, танки, бронированные) или тонкая полоска без цифр
+        public bool always;      // показывать и при полном здоровье (только элиты)
+        public bool hidden;      // полное здоровье у обычного врага: полоски нет
     }
 
     private class DamageNumber
@@ -52,37 +55,50 @@ public class EnemyHealthDisplay : MonoBehaviour
     public void Register(Health health)
     {
         if (bars.ContainsKey(health)) return;
-        RectTransform root = Rect("Enemy HP", canvasRect, new Vector2(56, 19)); // было 82×28 и шрифт 14 — меньше по просьбе владельца
+        // У боссов своя полоса под таймером (BossHealthBar): мировую над моделью не рисуем.
+        if (health.GetComponent<BossController>() != null || health.GetComponent<MiniBoss>() != null) return;
+        bool elite = health.name.StartsWith("Elite");
+        bool heavy = health.name.Contains("Enemy_tank") || health.name.Contains("Enemy_Armored");
+        bool withNumbers = elite || heavy;
+        RectTransform root = Rect("Enemy HP", canvasRect, withNumbers ? new Vector2(56, 19) : new Vector2(40, 5));
         Image background = root.gameObject.AddComponent<Image>();
         background.color = new Color(0.03f, 0.04f, 0.06f, 0.95f);
         background.raycastTarget = false;
         RectTransform fill = Rect("Fill", root, Vector2.zero);
         fill.anchorMin = new Vector2(0, 0);
-        fill.anchorMax = new Vector2(1, 0.3f);
+        fill.anchorMax = new Vector2(1, withNumbers ? 0.3f : 1f);
         fill.offsetMin = new Vector2(1.5f, 1.5f);
         fill.offsetMax = new Vector2(-2, -1);
         Image image = fill.gameObject.AddComponent<Image>();
         image.raycastTarget = false;
-        Text label = TextLabel(root, "HP", 10);
-        label.horizontalOverflow = HorizontalWrapMode.Overflow; // «1200 / 1200» не переносится на вторую строку
-        label.rectTransform.anchoredPosition = new Vector2(0, 3);
+        Text label = null;
+        if (withNumbers)
+        {
+            label = TextLabel(root, "HP", 10);
+            label.horizontalOverflow = HorizontalWrapMode.Overflow; // «1200 / 1200» не переносится на вторую строку
+            label.rectTransform.anchoredPosition = new Vector2(0, 3);
+        }
         Collider body = health.GetComponentInChildren<Collider>();
         float height = body != null ? body.bounds.max.y - health.transform.position.y + 0.45f : 1.5f;
-        bars.Add(health, new HealthBar { root = root, fill = fill, image = image, label = label, height = height });
+        bars.Add(health, new HealthBar { root = root, fill = fill, image = image, label = label, height = height,
+            numbers = withNumbers, always = elite });
         Refresh(health);
         // A new rect sits at the canvas centre (where the hero is) until the next LateUpdate: hide/place it now.
-        Place(root, health.transform.position + Vector3.up * height, Vector2.zero);
+        if (!bars[health].hidden) Place(root, health.transform.position + Vector3.up * height, Vector2.zero);
     }
 
     public void Refresh(Health health)
     {
         if (!bars.TryGetValue(health, out HealthBar bar)) return;
         float fraction = Mathf.Clamp01((float)health.CurrentHealth / Mathf.Max(1, health.maxHealth));
-        bar.fill.anchorMax = new Vector2(fraction, 0.3f);
+        bar.fill.anchorMax = new Vector2(fraction, bar.numbers ? 0.3f : 1f);
         bar.fill.offsetMax = new Vector2(1.5f - 3f * fraction, -1);
         bar.image.enabled = fraction > 0;
         bar.image.color = Color.Lerp(new Color(1f, 0.25f, 0.2f), new Color(0.3f, 0.9f, 0.55f), fraction);
-        bar.label.text = health.CurrentHealth + " / " + health.maxHealth;
+        if (bar.label != null) bar.label.text = health.CurrentHealth + " / " + health.maxHealth;
+        // Обычные враги и танки скрывают полоску при полном здоровье; элиты показывают её сразу.
+        bar.hidden = !bar.always && health.CurrentHealth >= health.maxHealth;
+        if (bar.hidden) bar.root.gameObject.SetActive(false);
     }
 
     public void Unregister(Health health)
@@ -95,7 +111,14 @@ public class EnemyHealthDisplay : MonoBehaviour
     public void ShowDamage(Health health, int amount, bool crit = false)
     {
         if (amount <= 0 || !GameSettings.DamageNumbers) return;
-        float height = bars.TryGetValue(health, out HealthBar bar) ? bar.height : 1.5f;
+        float height = 1.5f;
+        if (bars.TryGetValue(health, out HealthBar bar)) height = bar.height;
+        else
+        {
+            // Боссы без мировой полосы: числа урона по-прежнему над моделью.
+            Collider body = health.GetComponentInChildren<Collider>();
+            if (body != null) height = body.bounds.max.y - health.transform.position.y + 0.45f;
+        }
         RectTransform root = Rect("Damage " + amount, canvasRect, new Vector2(100, 40));
         Text label = TextLabel(root, "-" + amount + (crit ? "!" : ""), crit ? 32 : 24);
         label.color = crit ? new Color(1f, 0.35f, 0.2f) : new Color(1f, 0.8f, 0.3f);
@@ -113,6 +136,7 @@ public class EnemyHealthDisplay : MonoBehaviour
         foreach (KeyValuePair<Health, HealthBar> item in bars)
         {
             if (item.Key == null) continue;
+            if (item.Value.hidden) continue;
             Place(item.Value.root, item.Key.transform.position + Vector3.up * item.Value.height, Vector2.zero);
         }
         for (int i = numbers.Count - 1; i >= 0; i--)

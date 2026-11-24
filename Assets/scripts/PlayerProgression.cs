@@ -36,6 +36,8 @@ public class PlayerProgression : MonoBehaviour
     private Image toastStripe, toastIcon;
     private UpgradeIcon toastVector;
     private const float ToastLife = 2.6f, ToastDelay = 0.28f;
+    // Подсказки первого забега прячутся, пока на экране тост полученного улучшения.
+    public bool ToastVisible => toastTime > 0f;
     private RectTransform toastBadge, toastShine;
     private float toastTime;
     private AutoShoter shooter;
@@ -183,6 +185,8 @@ public class PlayerProgression : MonoBehaviour
     {
         if (definition == null || string.IsNullOrWhiteSpace(definition.id) || banished.Contains(definition.id) || definition.amount <= 0f ||
             (!ignoreLevel && Level < definition.minimumLevel) || Rank(definition.id) >= definition.maxRanks) return false;
+        // Предел урона ×5 считается по фактическому множителю (как в ApplyStats), а не только по бонусу карточек.
+        if (definition.effect == UpgradeEffect.Damage && RawDamageMultiplier() >= Cap(UpgradeEffect.Damage) - 0.0001f) return false;
         if ((definition.effect == UpgradeEffect.GrenadeDamage || definition.effect == UpgradeEffect.GrenadeRadius) && shooter.grenadePrefab == null) return false;
         if ((definition.effect == UpgradeEffect.OrbitDamage || definition.effect == UpgradeEffect.OrbitCount) &&
             (orbits == null || orbits.orbitPrefab == null)) return false;
@@ -684,10 +688,16 @@ public class PlayerProgression : MonoBehaviour
 
     private float cursedDamage, cursedAttackSpeed;
 
+    // Полный множитель урона до предела: карточки + мета + «Стеклянная пушка» + мастерство оружия.
+    private float RawDamageMultiplier()
+    {
+        return 1f + Bonus(UpgradeEffect.Damage) + cursedDamage + .05f * WorkshopProjects.Mastery(shooter.WeaponIndex);
+    }
+
     private void ApplyStats()
     {
         ApplyCombatBonuses();
-        DamageMultiplier = Mathf.Min(Mathf.Max(1f, Cap(UpgradeEffect.Damage)), 1f + Bonus(UpgradeEffect.Damage) + cursedDamage + .05f * WorkshopProjects.Mastery(shooter.WeaponIndex));
+        DamageMultiplier = Mathf.Min(Mathf.Max(1f, Cap(UpgradeEffect.Damage)), RawDamageMultiplier());
         AttackSpeedMultiplier = Mathf.Min(Mathf.Max(1f, Cap(UpgradeEffect.AttackSpeed)), 1f + Bonus(UpgradeEffect.AttackSpeed) + cursedAttackSpeed);
         if (WorkshopProjects.HasRelic(4)) AttackSpeedMultiplier *= .95f;
         shooter.SetProgressionMultipliers(DamageMultiplier, AttackSpeedMultiplier);

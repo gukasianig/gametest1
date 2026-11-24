@@ -79,12 +79,15 @@ public class FirstRunHints : MonoBehaviour
         }
 
         float target = 0f;
-        if (index >= 0 && session.State == GameRunState.Playing)
+        PlayerProgression progression = PlayerProgression.Instance;
+        bool toast = progression != null && progression.ToastVisible;
+        if (index >= 0 && !toast && session.State == GameRunState.Playing)
         {
             Hint hint = Hints[index];
             target = Mathf.Clamp01(Mathf.Min((t - hint.start) / Fade, (hint.end - t) / Fade));
         }
         // Unscaled: an early dash hides the plate quickly, a level-up screen hides it at once.
-        group.alpha = session.State == GameRunState.Playing ? Mathf.MoveTowards(group.alpha, target, Time.unscaledDeltaTime / Fade) : 0f;
+        group.alpha = session.State == GameRunState.Playing
+            ? (toast ? 0f : Mathf.MoveTowards(group.alpha, target, Time.unscaledDeltaTime / Fade)) : 0f;
     }
 }

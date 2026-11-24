@@ -17,11 +17,16 @@ public partial class BossController
     }
     private static readonly Color Acid = new Color(0.55f, 1f, 0.3f);
 
-    // Рой: зелёные метки вокруг королевы, затем выбегают 18 мелких врагов (26 в ярости).
+    // Рой: зелёные метки вокруг королевы, враги выбегают 3 порциями через 0,9 с (по 6, в ярости по 8),
+    // затем 2 с передышки — расчистить проход и пострелять в саму королеву (21.11.2026; раньше 18/26 разом).
+    public const int BroodWaves = 3;
+    public const float BroodWaveInterval = 0.9f, BroodRecovery = 2f;
+    public static int BroodWaveSize(bool enraged) { return enraged ? 8 : 6; }
+
     private IEnumerator QueenBrood()
     {
         WaveManager waves = FindObjectOfType<WaveManager>();
-        int count = Mathf.Min(Enraged ? 26 : 18, QueenMinionLimit - QueenMinionsAlive);
+        int count = Mathf.Min(BroodWaveSize(Enraged) * BroodWaves, QueenMinionLimit - QueenMinionsAlive);
         if (waves == null || count <= 0) { yield return QueenAcid(); yield break; }   // роя достаточно — плевок
         var spots = new Vector3[count];
         var marks = new GameObject[count];
@@ -38,15 +43,30 @@ public partial class BossController
         yield return Wait(0.9f);
         Telegraphing = false;
         if (Anim != null) { Anim.Release(); Anim.Fire(); }
-        for (int i = 0; i < count; i++)
+        // Метки перемешаны по кругу: каждая порция выбегает с разных сторон, а не одним сектором.
+        // Порция k берёт каждую третью метку (k, k+3, k+6…).
+        for (int wave = 0; wave < BroodWaves && wave < count; wave++)
         {
-            if (marks[i] != null) Destroy(marks[i]);
-            EnemyFx.Blobs(spots[i] + Vector3.up * 0.3f, Acid, 6, 3f, 0.12f, 0.4f, spots[i].y);
-            if (QueenMinionsAlive >= QueenMinionLimit) break;
-            GameObject minion = waves.SpawnMinionAt("Enemy_Fast", spots[i], 0.75f);
-            if (minion != null && minion.TryGetComponent(out Health minionHealth)) queenMinions.Add(minionHealth);
+            if (wave > 0)
+            {
+                yield return Wait(BroodWaveInterval);
+                if (Health == null || Health.isDead) break;
+            }
+            for (int i = wave; i < count; i += BroodWaves) SpawnBroodAt(waves, spots, marks, i);
+            GameAudio.Play(Sfx.Deploy, 0.6f);
         }
-        GameAudio.Play(Sfx.Deploy, 0.8f);
+        foreach (GameObject mark in marks) if (mark != null) Destroy(mark);
+        recoveryBonus = BroodRecovery;
+    }
+
+    private void SpawnBroodAt(WaveManager waves, Vector3[] spots, GameObject[] marks, int i)
+    {
+        if (marks[i] != null) Destroy(marks[i]);
+        marks[i] = null;
+        EnemyFx.Blobs(spots[i] + Vector3.up * 0.3f, Acid, 6, 3f, 0.12f, 0.4f, spots[i].y);
+        if (QueenMinionsAlive >= QueenMinionLimit || waves == null) return;
+        GameObject minion = waves.SpawnMinionAt("Enemy_Fast", spots[i], 0.75f);
+        if (minion != null && minion.TryGetComponent(out Health minionHealth)) queenMinions.Add(minionHealth);
     }
 
     // Кислотный залп: веер из 7 (в ярости 9) кислотных сгустков.

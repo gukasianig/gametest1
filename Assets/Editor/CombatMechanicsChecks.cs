@@ -413,7 +413,13 @@ public static class CombatMechanicsChecks
         elite.GetComponent<EnemyAI>().MovementLocked = true;
         Health eliteHealth = elite.GetComponent<Health>();
         eliteHealth.SetHealth(1000);
+        // Luck also adds crit chance (19.11.2026): without it this hit sometimes crit (42 instead of 28). Zero luck for this one hit.
+        int luckRanks = ranks["luck"];
+        ranks["luck"] = 0;
+        typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
         new WeaponElementAttack(0).Hit(eliteHealth, 20);
+        ranks["luck"] = luckRanks;
+        typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
         int eliteHit = Mathf.RoundToInt(20 * eliteExpected);
         Require(Mathf.Abs(1000 - eliteHealth.CurrentHealth - eliteHit) <= 1, "Elite hunter damage " + (1000 - eliteHealth.CurrentHealth) + " (expected " + eliteHit + ")");
         UnityEngine.Object.Destroy(elite);
@@ -477,5 +483,24 @@ public static class CombatMechanicsChecks
         health.ReduceMaxHealth(0.3f);
         Require(health.maxHP == Mathf.RoundToInt(maxBefore * 0.7f) && health.CurrentHP <= health.maxHP, "Cursed max health: " + maxBefore + " -> " + health.maxHP);
         Pass("Cursed cards: damage x1.6, attack speed x1.4, enemies +15% speed and +25% HP, max HP -30% without healing.");
+
+        // Предел урона ×5 учитывает «Стеклянную пушку» (+1,0) и мастерство: карточка «Урон пуль» не выпадает на пределе.
+        UpgradeDefinition damageCard = progression.catalog.entries.Find(e => e.effect == UpgradeEffect.Damage);
+        Require(damageCard != null, "No damage card in the catalog.");
+        ranks[damageCard.id] = 0;
+        typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
+        Require(progression.Available(damageCard, true), "Damage card should be offered below the cap (x" + progression.DamageMultiplier + ").");
+        int needRanks = Mathf.Min(damageCard.maxRanks - 1, Mathf.CeilToInt((5f - progression.DamageMultiplier) / damageCard.amount) + 1);
+        ranks[damageCard.id] = needRanks;
+        ranks["chest_rage"] = 1;   // особое улучшение из сундука (+0,4 урона): доводит множитель до предела
+        typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
+        bool atCap = progression.DamageMultiplier >= 4.999f;
+        Require(atCap, "Damage multiplier did not reach the cap: x" + progression.DamageMultiplier);
+        Require(!progression.Available(damageCard, true), "Damage card still offered at the x5 cap with Glass Cannon.");
+        Pass("Damage cap: with Glass Cannon the multiplier reached x" + progression.DamageMultiplier.ToString("0.##") + " at rank " + needRanks + ", card offered " +
+            progression.Available(damageCard, true) + (atCap ? " (at cap: must be False)." : " (cap not reached: rank limit, informational)."));
+        ranks[damageCard.id] = 0;
+        ranks.Remove("chest_rage");
+        typeof(PlayerProgression).GetMethod("ApplyStats", flags2).Invoke(progression, null);
     }
 }

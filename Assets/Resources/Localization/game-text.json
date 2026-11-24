@@ -452,8 +452,8 @@
     },
     {
       "id": "challengescreen.091",
-      "ru": "ЗАКРЫТО\n<size=24>Победи Стража арены, чтобы открыть испытания.\nЗа первую победу — +",
-      "en": "LOCKED\n<size=24>Defeat the Arena Guardian to unlock challenges.\nFirst victory bonus: +"
+      "ru": "ЗАКРЫТО\n<size=24>Победи финального босса, чтобы открыть испытания.\nЗа первую победу — +",
+      "en": "LOCKED\n<size=24>Defeat the final boss to unlock challenges.\nFirst victory bonus: +"
     },
     {
       "id": "challengescreen.092",
@@ -1362,18 +1362,18 @@
     },
     {
       "id": "runmodifiers.269",
-      "ru": "Страж приходит через 5 минут вместо 10",
-      "en": "The Guardian arrives after 5 minutes instead of 10"
+      "ru": "Финальный босс приходит через 5 минут вместо 10",
+      "en": "The final boss arrives after 5 minutes instead of 10"
     },
     {
       "id": "runmodifiers.270",
-      "ru": "Злой Страж",
-      "en": "Enraged Guardian"
+      "ru": "Злой финальный босс",
+      "en": "Enraged final boss"
     },
     {
       "id": "runmodifiers.271",
-      "ru": "У Стража +60% здоровья, атакует чаще",
-      "en": "The Guardian has +60% health and attacks more often"
+      "ru": "У финального босса +60% здоровья, атакует чаще",
+      "en": "The final boss has +60% health and attacks more often"
     },
     {
       "id": "runmodifiers.272",
@@ -3852,8 +3852,8 @@
     },
     {
       "id": "hints.move",
-      "ru": "Движение: WASD · Оружие стреляет само",
-      "en": "Move: WASD · Your weapon fires on its own"
+      "ru": "Движение: WASD · Оружие стреляет само · Зажми ЛКМ для фокуса цели",
+      "en": "Move: WASD · Your weapon fires on its own · Hold LMB to focus a target"
     },
     {
       "id": "hints.dash",

@@ -87,6 +87,8 @@ public static class GameUi
         Button button = rect.gameObject.AddComponent<Button>();
         button.targetGraphic = rect.GetComponent<Image>();
         button.onClick.AddListener(action);
+        rect.gameObject.AddComponent<UiFocusFrame>();   // рамка при выборе стрелками/геймпадом (21.11.2026)
+        rect.gameObject.AddComponent<UiSound>();        // звук наведения и нажатия (21.11.2026)
         Label(rect, value, Vector2.zero, Vector2.one, 25);
         return button;
     }

@@ -19,6 +19,10 @@ MonoBehaviour:
   - 6
   - 10
   - 16
+  - 28
+  - 46
+  - 74
+  - 115
   attractionRadius: 4
   collectionRadius: 0.8
   attractionSpeed: 9

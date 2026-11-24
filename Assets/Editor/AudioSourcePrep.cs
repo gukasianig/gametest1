@@ -110,6 +110,14 @@ public static class AudioSourcePrep
             { "Ice", new[] { "impactGlass_medium_000", "impactGlass_medium_001", "impactGlass_medium_002", "impactGlass_medium_003", "impactGlass_medium_004" } },
             // Установка турели: короткий металлический лязг.
             { "Deploy", new[] { "impactMetal_medium_000", "impactMetal_medium_001", "impactMetal_medium_002", "impactMetal_medium_003", "impactMetal_medium_004" } },
+            // 21.11.2026: Kenney Digital Audio / Interface Sounds / UI SFX Set (CC0) — опыт, уровень, рывок, сундук, кнопки меню.
+            { "Pickup", new[] { "pepSound3" } },
+            { "LevelUp", new[] { "powerUp2" } },
+            { "HeroDash", new[] { "phaseJump1", "phaseJump2", "phaseJump3" } },
+            { "Chest", new[] { "confirmation_002" } },
+            { "UiHover", new[] { "rollover2" } },
+            { "UiClick", new[] { "click_001" } },
+            { "UiBack", new[] { "back_001" } },
         };
         foreach (var pair in map)
         {

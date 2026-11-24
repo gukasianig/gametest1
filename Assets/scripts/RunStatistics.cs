@@ -73,6 +73,7 @@ public class RunStatistics : MonoBehaviour
 
     public void EndRun()
     {
+        bool firstEnd = started && !finished;   // одна строка телеметрии за забег
         EndBoss(false);
         finished = true;
         panel.SetActive(false);
@@ -95,6 +96,61 @@ public class RunStatistics : MonoBehaviour
             Report.heroes.Add(build);
         }
         Report.incoming.Sort((a, b) => b.amount.CompareTo(a.amount));
+        if (firstEnd && !GameSession.TestMode && !Application.isBatchMode) AppendPlaytestRow();
+    }
+
+    // Телеметрия для баланса (21.11.2026): одна строка за реальный забег в persistentDataPath/playtest_runs.csv.
+    // Канонические значения без перевода; ошибка доступа к файлу не должна ломать экран результатов.
+    public const string PlaytestFile = "playtest_runs.csv";
+    private const string PlaytestHeader = "Date,Result,Weapon,Branch,Evolved,DurationSec,Level,Wave,Kills,DamageDealt,AvgDPS,DamageTaken,DeathCause,BossTimeSec,Threat,EndlessRound";
+
+    private void AppendPlaytestRow()
+    {
+        try
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            GameSession session = GameSession.Instance;
+            RunHeroReport build = Report.heroes.Count > 0 ? Report.heroes[0] : null;
+            string result = session == null ? "Unknown" : session.State == GameRunState.Victory ? "Victory" : session.State == GameRunState.Defeat ? "Defeat" : session.State.ToString();
+            string weapon = shooter != null && shooter.baseWeapon != null && !string.IsNullOrEmpty(shooter.baseWeapon.weaponName)
+                ? shooter.baseWeapon.weaponName : build != null ? "weapon" + build.weapon : "";
+            float duration = Mathf.Max(0f, Elapsed);
+            string[] cells =
+            {
+                System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", inv),
+                result,
+                weapon,
+                build != null ? build.branch + (build.branchRank > 0 ? "+" + build.branchRank : "") : "",
+                build != null && build.evolved ? "1" : "0",
+                duration.ToString("0.0", inv),
+                (progression != null ? progression.Level : 0).ToString(inv),
+                (waves != null ? waves.wave : 0).ToString(inv),
+                Kills.ToString(inv),
+                DamageDealt.ToString(inv),
+                (duration > 0.5f ? DamageDealt / duration : 0f).ToString("0.0", inv),
+                Report.DamageTaken.ToString(inv),
+                Report.hasDeathCause ? Report.deathCause.ToString() : "",
+                Report.BossSeconds.ToString("0.0", inv),
+                RunModifiers.Threat.ToString(inv),
+                (Report.endless ? Report.rounds : 0).ToString(inv),
+            };
+            for (int i = 0; i < cells.Length; i++) cells[i] = CsvCell(cells[i]);
+            string path = System.IO.Path.Combine(Application.persistentDataPath, PlaytestFile);
+            string line = string.Join(",", cells) + "\n";
+            if (!System.IO.File.Exists(path)) line = PlaytestHeader + "\n" + line;
+            System.IO.File.AppendAllText(path, line, new UTF8Encoding(false));
+        }
+        catch (System.Exception error)
+        {
+            Debug.LogWarning("Playtest CSV not written: " + error.Message);
+        }
+    }
+
+    private static string CsvCell(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+        if (value.IndexOfAny(new[] { ',', '"', '\n', '\r' }) < 0) return value;
+        return "\"" + value.Replace("\"", "\"\"") + "\"";
     }
 
     public void RecordDamage(int amount)

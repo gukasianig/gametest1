@@ -202,7 +202,21 @@ public static class AudioChecks
         GameAudio.SetMusic(true);
         until = EditorApplication.timeSinceStartup + 20;
         while ((music.clip != gameTrack || !music.isPlaying || music.volume < audibleVolume) && EditorApplication.timeSinceStartup < until) yield return null;
-        Need(music.clip == gameTrack && music.isPlaying && music.loop && music.volume >= audibleVolume, "Darkness Road replaces the menu loop");
+        Need(music.clip == gameTrack && music.isPlaying && music.loop && music.volume >= audibleVolume, "game music replaces the menu loop");
+
+        // Музыка босса (21.11.2026): пока жив главный босс — BossMusic, после него снова музыка забега.
+        AudioClip bossTrack = Resources.Load<AudioClip>("RecordedAudio/BossMusic");
+        Need(bossTrack != null && bossTrack.loadType == AudioClipLoadType.Streaming, "boss music imported as streaming (" + (bossTrack != null ? bossTrack.length.ToString("F0") : "0") + " s)");
+        GameAudio.BossFight(true);
+        until = EditorApplication.timeSinceStartup + 20;
+        while ((music.clip != bossTrack || !music.isPlaying || music.volume < audibleVolume) && EditorApplication.timeSinceStartup < until) yield return null;
+        Need(music.clip == bossTrack && music.isPlaying && music.loop, "boss music plays while a boss is alive");
+        GameAudio.BossFight(false);
+        until = EditorApplication.timeSinceStartup + 20;
+        while ((music.clip != gameTrack || !music.isPlaying || music.volume < audibleVolume) && EditorApplication.timeSinceStartup < until) yield return null;
+        Need(music.clip == gameTrack && music.isPlaying, "game music returns after the boss");
+        foreach (Sfx s in new[] { Sfx.Pickup, Sfx.LevelUp, Sfx.HeroDash, Sfx.Chest, Sfx.UiHover, Sfx.UiClick, Sfx.UiBack })
+            Need(!sets[(int)s][0].name.StartsWith("sfx_"), s + " uses file(s) x" + sets[(int)s].Length + " (" + sets[(int)s][0].name + ", " + sets[(int)s][0].length.ToString("F2") + " s)");
 
         AutoShoter shooter = GameObject.FindGameObjectWithTag("Player").GetComponent<AutoShoter>();
         var shoot = typeof(AutoShoter).GetMethod("Shoot", BindingFlags.Instance | BindingFlags.NonPublic);

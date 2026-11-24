@@ -56,10 +56,13 @@ public static class CoopChecks
     private static void Pass(string text) { lines.Add("PASS: " + text); File.WriteAllLines(Report, lines); }
     private static void Require(bool condition, string text) { if (!condition) throw new Exception(text); }
 
+    private static bool? coopWasUnlocked;
+
     private static void Finish(bool success, string text)
     {
         EditorApplication.update -= Tick;
         CoopMode.Players = 1;
+        if (coopWasUnlocked.HasValue) { CoopMode.Unlocked = coopWasUnlocked.Value; coopWasUnlocked = null; }
         lines.Add((success ? "PASS: " : "FAIL: ") + text);
         File.WriteAllLines(Report, lines);
         EditorApplication.Exit(success ? 0 : 1);
@@ -86,6 +89,9 @@ public static class CoopChecks
         GameObject first = PlayerProgression.Instance.gameObject;
 
         // 0. Главное меню: «Кооператив» включает двух игроков, «Старт» — одного.
+        // С 11.11 кооператив закрыт ключом (PlayerPrefs CoopUnlocked, F9) — на время проверки открываем, в Finish возвращаем как было.
+        coopWasUnlocked = CoopMode.Unlocked;
+        CoopMode.Unlocked = true;
         yield return WaitReal(1.6); // появление меню (MenuIntro)
         GameObject coopButton = GameObject.Find("Кооператив"), startButton = GameObject.Find("Старт");
         Require(coopButton != null && startButton != null, "Menu buttons Старт/Кооператив missing.");

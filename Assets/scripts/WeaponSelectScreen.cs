@@ -77,6 +77,16 @@ public class WeaponSelectScreen : MonoBehaviour
         return weapon.kind != WeaponKind.Standard ? UiArtwork.WeaponGlyph(weapon.kind) : UiArtwork.Weapon(index);
     }
 
+    private static void StatRow(Text text)
+    {
+        text.rectTransform.offsetMin = new Vector2(2f, 0f);
+        text.rectTransform.offsetMax = new Vector2(-2f, 0f);
+        text.verticalOverflow = VerticalWrapMode.Overflow;
+        text.horizontalOverflow = HorizontalWrapMode.Overflow;
+        text.resizeTextMinSize = 10;
+        GameUi.Readable(text, 1f);
+    }
+
     // Урон за выстрел, выстрелов в секунду, дальность.
     private float Stat(WeaponData weapon, int stat)
     {
@@ -107,6 +117,7 @@ public class WeaponSelectScreen : MonoBehaviour
         tileFrames = new Outline[count];
         tileLocks = new GameObject[count];
         tileCosts = new Text[count];
+        tileButtons = new Button[count];
         int rows = Mathf.Max(1, Mathf.CeilToInt(selectable / (float)Columns));
         const float left = 0.04f, right = 0.56f, top = 0.785f, bottom = 0.155f, gap = 0.012f;
         float w = (right - left - gap * (Columns - 1)) / Columns;
@@ -140,12 +151,15 @@ public class WeaponSelectScreen : MonoBehaviour
         for (int s = 0; s < 3; s++)
         {
             float y = 0.335f - s * 0.055f;
-            Text name = GameUi.Label(panel, names[s], new Vector2(0.07f, y - 0.05f), new Vector2(0.32f, y), 16, Muted);
+            // Строка 0,055 высоты панели ≈ 25 px: со стандартными отступами Label (4+4 px) текст не помещался и обрезался.
+            Text name = GameUi.Label(panel, names[s], new Vector2(0.07f, y - 0.052f), new Vector2(0.34f, y + 0.002f), 15, new Color(0.78f, 0.84f, 0.9f));
             name.alignment = TextAnchor.MiddleLeft;
-            RectTransform bar = GameUi.Box(panel, "Stat Bar", new Vector2(0.32f, y - 0.034f), new Vector2(0.76f, y - 0.016f), new Color(0.08f, 0.1f, 0.13f, 1f));
+            StatRow(name);
+            RectTransform bar = GameUi.Box(panel, "Stat Bar", new Vector2(0.35f, y - 0.034f), new Vector2(0.76f, y - 0.016f), new Color(0.08f, 0.1f, 0.13f, 1f));
             statFills[s] = GameUi.Box(bar, "Fill", Vector2.zero, Vector2.one, GameUi.Accent).GetComponent<Image>();
-            statValues[s] = GameUi.Label(panel, "", new Vector2(0.77f, y - 0.05f), new Vector2(0.95f, y), 16, Color.white);
+            statValues[s] = GameUi.Label(panel, "", new Vector2(0.77f, y - 0.052f), new Vector2(0.95f, y + 0.002f), 15, Color.white);
             statValues[s].alignment = TextAnchor.MiddleRight;
+            StatRow(statValues[s]);
             for (int i = 0; i < count; i++)
                 if (weapons[i] != null && weapons[i].IsSelectable) statMax[s] = Mathf.Max(statMax[s], Stat(weapons[i], s));
         }
@@ -179,6 +193,12 @@ public class WeaponSelectScreen : MonoBehaviour
         Button button = tile.gameObject.AddComponent<Button>();
         button.targetGraphic = tileBacks[index];
         button.onClick.AddListener(() => Click(index));
+        tile.gameObject.AddComponent<UiSound>();
+        // Клавиатура/геймпад (21.11.2026): стрелки/стик переходят между плитками, фокус сразу показывает подробности,
+        // Enter/Пробел/Submit — как второй клик (в бой или покупка). Выбор мышью идёт прежним путём через Click.
+        button.navigation = new Navigation { mode = Navigation.Mode.Automatic };
+        tileButtons[index] = button;
+        tile.gameObject.AddComponent<SelectRelay>().onKeyboardSelect = () => Select(index);
         tileFrames[index] = tile.gameObject.AddComponent<Outline>();
         tileFrames[index].effectDistance = new Vector2(2.5f, -2.5f);
         GameUi.Box(tile, "Accent", new Vector2(0.08f, 0.94f), new Vector2(0.92f, 0.965f), new Color(accent.r, accent.g, accent.b, 0.7f));
@@ -193,6 +213,15 @@ public class WeaponSelectScreen : MonoBehaviour
         UiArtwork.Round(price.GetComponent<Image>());
         tileCosts[index] = GameUi.Label(price, "", Vector2.zero, Vector2.one, 14, new Color(0.97f, 0.8f, 0.48f));
         tileLocks[index] = locked;
+    }
+
+    private Button[] tileButtons;
+
+    // Начальный фокус экрана — плитка выбранного оружия (вызывать, когда экран уже активен).
+    public void FocusSelected()
+    {
+        if (tileButtons == null || Selected < 0 || Selected >= tileButtons.Length) return;
+        UiFocus.Set(tileButtons[Selected]);
     }
 
     private void Click(int index)
@@ -242,6 +271,7 @@ public class WeaponSelectScreen : MonoBehaviour
         Picker = Mathf.Clamp(player, 0, 1);
         firstWeapon = chosenByFirst;
         Refresh();
+        if (isActiveAndEnabled) FocusSelected();
     }
 
     public void Refresh()

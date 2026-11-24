@@ -134,10 +134,12 @@ public static class CombatHudChecks
         foreach (Button card in levelUp.GetComponentsInChildren<Button>())
         {
             Text text = card.GetComponentInChildren<Text>();
-            if (text == null || !text.text.Contains("<size=27>")) continue;
-            Require((text.text.Contains("→") || text.text.Contains("ПРОКЛЯТИЕ")) && (text.text.Contains("новое") || text.text.Contains("ранг")) &&
-                !text.text.Contains(">×"),
-                "Card text unclear: " + text.text);
+            // 19.11: compact cards (title size 22/19, not 27); 12.11: RU/EN — markers are checked in both languages.
+            if (text == null || !text.text.Contains("</b></size>\n<size=")) continue;
+            string t = text.text;
+            Require((t.Contains("→") || t.Contains("ПРОКЛЯТИЕ") || t.Contains("CURSE")) &&
+                (t.Contains("новое") || t.Contains("ранг") || t.Contains("new") || t.Contains("rank")) && !t.Contains(">×"),
+                "Card text unclear: " + t);
             checkedCards++;
         }
         Require(checkedCards >= 1, "No upgrade cards found.");
@@ -151,7 +153,8 @@ public static class CombatHudChecks
         Require(toast != null && toast.activeInHierarchy, "Upgrade toast not shown.");
         string toastText = "";
         foreach (Text label in toast.GetComponentsInChildren<Text>()) toastText += label.text + " | ";
-        Require(toastText.Contains("УЛУЧШЕНИЕ") && toastText.Contains("→") && toastText.Contains("ранг"), "Toast text: " + toastText);
+        Require((toastText.Contains("УЛУЧШЕНИЕ") || toastText.Contains("UPGRADE")) && toastText.Contains("→") &&
+            (toastText.Contains("ранг") || toastText.Contains("rank")), "Toast text: " + toastText);
         Capture("combat-hud-toast");
         Pass("Upgrade toast: " + toastText.Replace("<b>", "").Replace("</b>", "") + " frame Logs/combat-hud-toast.png.");
     }

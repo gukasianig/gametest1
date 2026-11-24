@@ -105,14 +105,17 @@ public static class WorkshopLayoutChecks
         StartMenu menu = PlayerProgression.Instance.GetComponent<StartMenu>();
         menu.ShowWorkshop();
         WorkshopTree tree = UnityEngine.Object.FindObjectOfType<WorkshopTree>();
-        Check(tree != null && tree.NodeCount == 54, "Missing nodes");
+        Check(tree != null && tree.NodeCount == 25, "Missing nodes (expected 25: hero + 5 projects + 8 single-node weapons + 2 branched weapons x 4): " + (tree == null ? -1 : tree.NodeCount));
         AutoShoter workshopShooter = PlayerProgression.Instance.GetComponent<AutoShoter>();
         for (int weapon = 0; weapon < 13; weapon++)
         {
             if (!workshopShooter.weapons[weapon].IsSelectable) continue;
             Transform group = Find(tree.transform, "Weapon group " + weapon);
             // Пистолет (оружие 0): три ветки Revolver/Dual/Sticky; остальные — четыре стихии.
-            int firstModule = weapon == 0 ? (int)WeaponElement.Revolver : 1, lastModule = weapon == 0 ? (int)WeaponElement.Sticky : 4;
+            // С 21.11 оружие без веток (IsLocked) — один узел; ветки есть у Пистолета и Автомата.
+            if (WeaponElements.IsLocked(weapon)) { Check(group != null && group.GetComponentsInChildren<Button>().Length == 1, "Single-node weapon grouping " + weapon); continue; }
+            bool branched = WeaponElements.HasBranches(weapon);
+            int firstModule = branched ? (int)WeaponElements.FirstBranch(weapon) : 1, lastModule = branched ? (int)WeaponElements.LastBranch(weapon) : 4;
             Check(group != null && group.GetComponentsInChildren<Button>().Length == 1 + lastModule - firstModule + 1, "Weapon/module grouping " + weapon);
             for (int e = firstModule; e <= lastModule; e++)
                 Check(Find(group, "Node weapon:" + weapon + ":" + (WeaponElement)e) != null, "Module belongs to wrong weapon");
@@ -120,6 +123,8 @@ public static class WorkshopLayoutChecks
         Pass("All selectable weapon clusters contain exactly their own weapon and four modules");
 
         // Select a locked module and check that the UI does not call its preview an owned effect.
+        // С 21.11 у оружия 2 нет узлов-стихий (один узел), этот блок про стихии/ключ больше неприменим: пропускаем до раскладки.
+        if (Find(tree.transform, "Node weapon:2:Frost") == null) goto Layout;
         Find(tree.transform, "Node weapon:2:Frost").GetComponent<Button>().onClick.Invoke();
         Button buy = Find(tree.transform, "Tree purchase").GetComponent<Button>();
         Button equip = Find(tree.transform, "Tree equip").GetComponent<Button>();
@@ -148,6 +153,7 @@ public static class WorkshopLayoutChecks
             Pass("Locked, available, bought and equipped module states update through actual UI buttons");
         }
 
+        Layout:
         Canvas canvas = tree.GetComponentInParent<Canvas>();
         // Three distinct aspect ratios. Only two top snapshots and one bottom snapshot are retained.
         foreach (Vector2Int size in new[] { new Vector2Int(1600, 900), new Vector2Int(1024, 768), new Vector2Int(2560, 1080) })

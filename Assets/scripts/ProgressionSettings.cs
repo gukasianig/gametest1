@@ -8,7 +8,7 @@ public class ProgressionSettings : ScriptableObject
     [Min(0f)] public float experienceGrowth = 10f;
     [Min(1f)] public float experienceExponent = 1.45f;
     [Tooltip("Fixed costs of the first levels (1->2, 2->3, 3->4); later levels use the formula above.")]
-    public int[] earlyLevelExperience = { 6, 10, 16 };
+    public int[] earlyLevelExperience = { 6, 10, 16, 28, 46, 74, 115 };
     [Header("Pickup (metres)")]
     [Min(0.1f)] public float attractionRadius = 4f;
     [Min(0.1f)] public float collectionRadius = 0.8f;

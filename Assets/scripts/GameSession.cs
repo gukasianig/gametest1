@@ -187,12 +187,24 @@ public class GameSession : MonoBehaviour
             Time.timeScale = State == GameRunState.Upgrade ? 0f : 1f;
             pause.gameObject.SetActive(false);
             settings.gameObject.SetActive(false);
+            UiFocus.Clear();
             return;
         }
         beforePause = State;
         State = GameRunState.Paused;
         Time.timeScale = 0f;
         pause.gameObject.SetActive(true);
+        UiFocus.Set(resumeButton);   // начальный фокус для клавиатуры/геймпада (21.11.2026)
+    }
+
+    private Button resumeButton, resultRestartButton;
+
+    // «Заново» — начальный фокус результатов, но через 0,6 с: Пробел рывка в момент смерти не должен сразу перезапустить забег.
+    private System.Collections.IEnumerator FocusResults()
+    {
+        UiFocus.Clear();
+        yield return new WaitForSecondsRealtime(0.6f);
+        if (result != null && result.gameObject.activeInHierarchy) UiFocus.Set(resultRestartButton);
     }
 
     // ---------------- Бесконечный режим (12.11.2026) ----------------
@@ -319,13 +331,14 @@ public class GameSession : MonoBehaviour
         foreach (PlayerHealth hero in CoopMode.Heroes)
             if (hero != null && hero.TryGetComponent(out PlayerProgression progression)) progression.CloseChoices();
         RunStatistics stats = GetComponent<RunStatistics>();
-        if (stats != null) stats.EndRun();
-        if (!TestMode) MetaProgress.Save();
+        // Причина смерти — до EndRun: она нужна строке телеметрии (playtest_runs.csv, 21.11.2026).
         if (stats != null && !victory && defeatedHero != null)
         {
             stats.Report.hasDeathCause = true;
             stats.Report.deathCause = defeatedHero.LastDamageCause;
         }
+        if (stats != null) stats.EndRun();
+        if (!TestMode) MetaProgress.Save();
         pause.gameObject.SetActive(false);
         settings.gameObject.SetActive(false);
         bossHud.Hide();
@@ -352,6 +365,7 @@ public class GameSession : MonoBehaviour
             AppendDeathSummary(victory);
             RunResultsView.Show(result, this, stats, GetComponent<PlayerProgression>(), waves);
             result.gameObject.SetActive(true);
+            StartCoroutine(FocusResults());
             return;
         }
         RunReward reward = TestMode ? new RunReward() : MetaProgress.RecordRun(SelectedWeapon, victory, Elapsed, kills, level,
@@ -366,6 +380,7 @@ public class GameSession : MonoBehaviour
         AppendDeathSummary(victory);
         RunResultsView.Show(result, this, stats, GetComponent<PlayerProgression>(), waves);
         result.gameObject.SetActive(true);
+        StartCoroutine(FocusResults());
     }
 
     private void AppendDeathSummary(bool victory)
@@ -409,7 +424,7 @@ public class GameSession : MonoBehaviour
         bossHud.Hide();
         pause = GameUi.Box(overlay.transform, "Pause", Vector2.zero, Vector2.one, GameUi.Background, true);
         GameUi.Label(pause, GameText.Source("gamesession.146"), new Vector2(0.2f, 0.72f), new Vector2(0.8f, 0.88f), 44);
-        GameUi.Button(pause, GameText.Source("gamesession.147"), new Vector2(0.33f, 0.58f), new Vector2(0.67f, 0.67f), TogglePause);
+        resumeButton = GameUi.Button(pause, GameText.Source("gamesession.147"), new Vector2(0.33f, 0.58f), new Vector2(0.67f, 0.67f), TogglePause);
         // Заново: тот же забег с тем же оружием, текущий забег не засчитывается (как и выход в меню из паузы).
         GameUi.Button(pause, GameText.Source("gamesession.148"), new Vector2(0.33f, 0.46f), new Vector2(0.67f, 0.55f), () => Reload(true));
         GameUi.Button(pause, GameText.Source("gamesession.149"), new Vector2(0.33f, 0.34f), new Vector2(0.67f, 0.43f), () => settings.gameObject.SetActive(true));
@@ -423,7 +438,7 @@ public class GameSession : MonoBehaviour
         resultTitle.alignment = TextAnchor.MiddleLeft;
         resultTitle.fontStyle = FontStyle.Bold;
         resultBody = GameUi.Label(result, "", new Vector2(.05f, .12f), new Vector2(.95f, .24f), 17);
-        GameUi.Button(result, GameText.Source("gamesession.148"), new Vector2(.25f, .025f), new Vector2(.49f, .105f), () => Reload(true));
+        resultRestartButton = GameUi.Button(result, GameText.Source("gamesession.148"), new Vector2(.25f, .025f), new Vector2(.49f, .105f), () => Reload(true));
         GameUi.Button(result, GameText.Source("gamesession.150"), new Vector2(.51f, .025f), new Vector2(.75f, .105f), () => Reload(false));
         result.gameObject.SetActive(false);
     }

@@ -3,8 +3,9 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 // Новые значения добавлять только в конец: числа enum используются как индексы.
+// 21.11.2026: UiHover/UiClick/UiBack — кнопки меню (UiSound, StartMenu.HandleBack), файлы Kenney CC0 в Sfx/Ui*.
 // 11.11.2026 (ощущение от боя): LevelUp — новый уровень, Pickup — кристалл (высота растёт серией), Chest — сундук, Heartbeat — низкое HP.
-public enum Sfx { Shot, Rail, Arc, Rocket, Ice, Flame, Throw, Explosion, Hit, Kill, SawCut, Shotgun, Zap, Deploy, AutoShot, LevelUp, Pickup, Chest, Heartbeat, HeroStep, HeroDash, HeroHurt, HeroDown }
+public enum Sfx { Shot, Rail, Arc, Rocket, Ice, Flame, Throw, Explosion, Hit, Kill, SawCut, Shotgun, Zap, Deploy, AutoShot, LevelUp, Pickup, Chest, Heartbeat, HeroStep, HeroDash, HeroHurt, HeroDown, UiHover, UiClick, UiBack }
 
 // Зацикленные звуки, которые звучат, пока их «держат» каждый кадр (GameAudio.Hold).
 public enum SfxLoop { Saw, Flame }
@@ -36,7 +37,8 @@ public class GameAudio : MonoBehaviour
     private int nextVoice;
     private LoopState[] loops;
     private AudioSource music;
-    private AudioClip menuMusic, gameMusic;
+    private AudioClip menuMusic, gameMusic, bossMusic;
+    private static int bossFights;   // живые главные боссы: пока есть хоть один, в забеге звучит BossMusic (21.11.2026)
     private AudioClip wantedMusic;
     private Task<float[]> menuTask, gameTask;
     private int musicWanted = -1;   // -1 нет, 0 меню, 1 забег
@@ -99,7 +101,14 @@ public class GameAudio : MonoBehaviour
 
     public static void SetMusic(bool inGame)
     {
+        bossFights = 0;
         Get().musicWanted = inGame ? 1 : 0;
+    }
+
+    // Главный босс появился (true) или исчез (false). Без Get(): вызывается и из OnDestroy при выходе из игры.
+    public static void BossFight(bool on)
+    {
+        bossFights = Mathf.Max(0, bossFights + (on ? 1 : -1));
     }
 
     private static float MinGap(Sfx sfx)
@@ -115,6 +124,7 @@ public class GameAudio : MonoBehaviour
             case Sfx.Pickup: return 0.045f;
             case Sfx.LevelUp: return 0.3f;
             case Sfx.Heartbeat: return 0.3f;
+            case Sfx.UiHover: return 0.05f;
             default: return 0.03f;
         }
     }
@@ -162,6 +172,7 @@ public class GameAudio : MonoBehaviour
         music.volume = 0f;
         menuMusic = Resources.Load<AudioClip>(RecordedAudio + "MenuMusic") ?? Files("MenuMusic", 0f)?[0];
         gameMusic = Resources.Load<AudioClip>(RecordedAudio + "GameMusic") ?? Files("GameMusic", 0f)?[0];
+        bossMusic = Resources.Load<AudioClip>(RecordedAudio + "BossMusic");   // нет файла — у босса обычная музыка забега
         if (menuMusic == null) menuTask = Task.Run(() => Synth.MenuMusicData());
         if (gameMusic == null) gameTask = Task.Run(() => Synth.GameMusicData());
     }
@@ -190,6 +201,10 @@ public class GameAudio : MonoBehaviour
             case Sfx.Pickup: return 0.35f;
             case Sfx.Chest: return 0.7f;
             case Sfx.Heartbeat: return 0.8f;
+            case Sfx.HeroDash: return 0.5f;
+            case Sfx.UiHover: return 0.25f;
+            case Sfx.UiClick: return 0.45f;
+            case Sfx.UiBack: return 0.45f;
             default: return 0.7f;
         }
     }
@@ -208,6 +223,9 @@ public class GameAudio : MonoBehaviour
             case Sfx.Deploy: return 0.4f;
             case Sfx.Arc: return 0.3f;
             case Sfx.Flame: return 0.8f;
+            case Sfx.Pickup: return 0.3f;
+            case Sfx.HeroDash: return 0.4f;
+            case Sfx.LevelUp: return 1.2f;
             default: return 0f;
         }
     }
@@ -260,7 +278,8 @@ public class GameAudio : MonoBehaviour
     {
         UpdateLoops();
         if (musicWanted < 0) return;
-        wantedMusic = musicWanted == 1 ? ReadyMusic(ref gameMusic, gameTask, "music_game") : ReadyMusic(ref menuMusic, menuTask, "music_menu");
+        wantedMusic = musicWanted == 1 && bossFights > 0 && bossMusic != null ? bossMusic
+            : musicWanted == 1 ? ReadyMusic(ref gameMusic, gameTask, "music_game") : ReadyMusic(ref menuMusic, menuTask, "music_menu");
         if (wantedMusic == null)
         {
             // Нужная петля ещё считается: прежнюю гасим.

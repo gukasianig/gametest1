@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class AutoShoter : MonoBehaviour
 {
@@ -229,12 +230,15 @@ private float currentSpread;
    void Update()
    {
     pendingAimedShot = null;
-    if (Time.timeScale == 0f) return;
+    if (Time.timeScale == 0f) { UpdateFocusRing(null); return; }
     if (CoopMode.Active && ownHealth != null && ownHealth.IsDead) return;
     timer += Time.deltaTime;
     TickSupportUnits();
     bool isSpecial = baseWeapon != null && baseWeapon.kind != WeaponKind.Standard;
-    Transform target = isSpecial ? WeaponTargets.Pick(transform.position, range, baseWeapon.targeting) : FindClosestEnemy();
+    Transform focus = ManualFocusTarget();
+    Transform target = focus != null ? focus : isSpecial ? WeaponTargets.Pick(transform.position, range, baseWeapon.targeting) : FindClosestEnemy();
+    UpdateFocusRing(focus);
+    if (focus != null && DualAiming) rightAimTarget = focus;   // правый ствол Dual держит выбранную цель
     Vector3 facing = target != null ? target.position - transform.position : Vector3.zero;
     if (DualAiming)
     {
@@ -586,6 +590,85 @@ private float currentSpread;
     }
 
     // Ближайшая цель в радиусе: обход EnemyAI.All и босса вместо FindGameObjectsWithTag каждый кадр (20.11.2026, аллокации).
+    // Ручной фокус (21.11.2026): пока зажата ЛКМ, игрок 1 стреляет во врага, ближайшего к курсору
+    // (не дальше FocusCursorRadius от точки курсора и в пределах дальности оружия). Иначе — обычный автоприцел.
+    public const float FocusCursorRadius = 6f;
+    private static readonly List<Health> focusBuffer = new List<Health>();
+    private GameObject focusRing;
+    private LineRenderer focusLine;
+    public Transform FocusTarget { get; private set; }
+
+    private Transform ManualFocusTarget()
+    {
+        FocusTarget = null;
+        if (Time.timeScale <= 0f || !Input.GetMouseButton(0)) return null;
+        if (movement != null && movement.playerIndex != 0) return null;
+        GameSession session = GameSession.Instance;
+        if (session != null && session.State != GameRunState.Playing) return null;
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return null;
+        Camera view = Camera.main;
+        if (view == null) return null;
+        Ray ray = view.ScreenPointToRay(Input.mousePosition);
+        if (!new Plane(Vector3.up, transform.position).Raycast(ray, out float enter)) return null;
+        Vector3 cursor = ray.GetPoint(enter);
+        WeaponTargets.Collect(focusBuffer);
+        Transform best = null;
+        float bestDistance = FocusCursorRadius;
+        foreach (Health enemy in focusBuffer)
+        {
+            if (enemy == null || !ValidAimTarget(enemy.transform)) continue;
+            float distance = WeaponTargets.Flat(cursor, enemy.transform.position);
+            if (distance <= bestDistance) { bestDistance = distance; best = enemy.transform; }
+        }
+        FocusTarget = best;
+        return best;
+    }
+
+    // Тонкое прицельное кольцо под целью в фокусе; один объект на стрелка, видно только при активном фокусе.
+    private void UpdateFocusRing(Transform focus)
+    {
+        if (focus == null)
+        {
+            if (focusRing != null && focusRing.activeSelf) focusRing.SetActive(false);
+            return;
+        }
+        if (focusRing == null)
+        {
+            focusRing = new GameObject("Focus ring", typeof(LineRenderer));
+            focusLine = focusRing.GetComponent<LineRenderer>();
+            focusLine.useWorldSpace = false;
+            focusLine.loop = true;
+            focusLine.positionCount = 40;
+            focusLine.widthMultiplier = 0.07f;
+            focusLine.sharedMaterial = EnemyFx.Mat(new Color(1f, 0.82f, 0.3f));
+            focusLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            focusLine.receiveShadows = false;
+            for (int i = 0; i < 40; i++)
+            {
+                float a = i * Mathf.PI * 2f / 40;
+                focusLine.SetPosition(i, new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)));
+            }
+        }
+        Vector3 at = focus.position;
+        at.y = GroundHeight.At(at) + 0.08f;
+        Health health = focus.GetComponent<Health>();
+        float radius = (health != null ? WeaponTargets.BodyRadius(health) : 0.6f) + 0.35f;
+        focusRing.transform.SetPositionAndRotation(at, Quaternion.identity);
+        focusRing.transform.localScale = new Vector3(radius, 1f, radius);
+        if (!focusRing.activeSelf) focusRing.SetActive(true);
+    }
+
+    private void OnDisable()
+    {
+        if (focusRing != null) focusRing.SetActive(false);
+        FocusTarget = null;
+    }
+
+    private void OnDestroy()
+    {
+        if (focusRing != null) Destroy(focusRing);
+    }
+
     Transform FindClosestEnemy()
     {
         return NearestTarget(null);

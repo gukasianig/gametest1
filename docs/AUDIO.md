@@ -1,6 +1,6 @@
 # Звук
 
-Обновлено 9 ноября 2026. Музыка меню и боя, пистолет, автомат и дробовик используют подготовленные записи из `Assets/Audio/Resources/RecordedAudio/`. Остальные эффекты загружаются из `Resources/Sfx/` или синтезируются в `GameAudio.cs`.
+Обновлено 21 ноября 2026. Музыка меню, боя и босса, пистолет, автомат и дробовик используют подготовленные записи из `Assets/Audio/Resources/RecordedAudio/`. Остальные эффекты загружаются из `Resources/Sfx/` или синтезируются в `GameAudio.cs`.
 
 ## Откуда какой звук
 
@@ -19,8 +19,13 @@
 | петля пилы `SawLoop` | BigSoundBank 1136 «Table saw, cut» | ровный холостой участок 46,1–47,7 с, сшит в бесшовную петлю |
 | `SawCut` | BigSoundBank 1136 | начала резов на 8,0 / 15,9 / 24,1 / 37,2 с, по 0,45 с |
 | `Arc` | синтез `GameAudio.Arc` (09.11) | короткий «зап» 0,25 с: нисходящий тон 1400→240 Гц с ЧМ и тихим треском под ФНЧ; файлы сварки удалены, `BuildArc` отключён |
-| `MenuMusic` / `GameMusic` | yd / MintoDog, CC0 | Factory Ambiance, 122 с с перекрёстным затуханием, и Darkness Road Remake, 128 с, только музыка. Потоковый импорт OGG. |
-| `Rocket`, `Throw` (бросок пилы) | синтез `GameAudio` | — |
+| `MenuMusic` | yd, CC0 | Factory Ambiance, 122 с с перекрёстным затуханием. Потоковый импорт OGG. |
+| `GameMusic` | владелец, 21.11 — `Battle_1.ogg` из «Загрузок», **источник и лицензия не записаны** | 299 с, 44,1 кГц стерео, потоковый импорт; файл заменён на месте (GUID прежний). Прежний Darkness Road Remake (MintoDog, CC0) — в `_incoming/audio-replaced-2026-11-21/`. |
+| `BossMusic` | владелец, 21.11 — `boss_battle_loop.mp3`, **источник и лицензия не записаны** | ~102 с, MP3 192 кбит/с → Vorbis, потоковый. Играет, пока жив главный босс (`BossController` → `GameAudio.BossFight`); нет файла — обычная музыка забега. У MP3 на стыке петли возможна короткая пауза. |
+| `Pickup` / `LevelUp` / `HeroDash` | Kenney Digital Audio, CC0 | `pepSound3` (обрезка 0,3 с) / `powerUp2` / `phaseJump1-3` (обрезка 0,4 с). Подобраны по названиям, не на слух. |
+| `Chest` | Kenney Interface Sounds, CC0 | `confirmation_002` |
+| `UiHover` / `UiClick` / `UiBack` (кнопки меню) | Kenney UI SFX Set / Interface Sounds, CC0 | `rollover2` / `click_001` / `back_001`. Наведение и стрелки — `UiSound` (GameUi.Button, плитки оружия, узлы Мастерской), Esc назад — `StartMenu.HandleBack`. |
+| `Rocket`, `Throw` (бросок пилы), `Heartbeat`, `HeroStep`/`HeroHurt`/`HeroDown` | синтез `GameAudio` | — |
 
 Файлы собирает `Assets/Editor/AudioSourcePrep.cs` (`Build`) из исходников `Assets/Audio/Source/` (в сборку не попадают — на них нет ссылок). Громкость файлов из `Sfx/` при загрузке выравнивается по пику `GameAudio.Peak` (нужен импорт «Decompress On Load», он стоит по умолчанию). Частые короткие звуки при загрузке обрезаются по `GameAudio.MaxSeconds` (смерть 0,4 с, попадание 0,2 с, выстрел 0,3 с…), чтобы длинный файл не тянулся. Вернуть синтез для звука — удалить его папку в `Resources/Sfx/`.
 

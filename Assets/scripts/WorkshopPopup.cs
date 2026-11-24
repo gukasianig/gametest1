@@ -9,6 +9,9 @@ public partial class WorkshopTree
     private const float PopupWidth = 290f, PopupGap = 6f, PopupMargin = 6f;
 
     private bool IsPicked(Node node) { return pinned && node == selected; }
+    // Esc сначала закрывает закреплённое окно; в этот кадр StartMenu не выходит из Мастерской (21.11.2026).
+    public static int EscapeHandledFrame { get; private set; } = -1;
+    public bool PopupPinned => pinned;
 
     private void Pin(Node node, bool reveal = true)
     {
@@ -51,7 +54,7 @@ public partial class WorkshopTree
         bool overPanel = shown != null && PointerOver(detailPanel);
         if (over != null) lastHoverTime = Time.unscaledTime;
 
-        if (Input.GetKeyDown(KeyCode.Escape) && pinned) { pinned = false; ShowPopup(null); Refresh(); return; }
+        if (Input.GetKeyDown(KeyCode.Escape) && pinned) { EscapeHandledFrame = Time.frameCount; pinned = false; ShowPopup(null); Refresh(); return; }
         if (Input.GetMouseButtonDown(0) && pinned && over == null && !overPanel && PointerOver(Scroll.viewport))
         {
             pinned = false; ShowPopup(null); Refresh(); return;

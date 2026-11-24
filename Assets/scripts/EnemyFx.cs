@@ -199,6 +199,9 @@ public static class EnemyFx
         p.grow = 0.35f;
     }
 
+    // Буро-земляной ожог от взрывов, камней и метеоритов (21.11.2026): почти чёрный (0.08, 0.06, 0.05) резал глаз на траве.
+    public static readonly Color ScorchColor = new Color(0.3f, 0.22f, 0.14f);
+
     // Плоское пятно на земле (лужа, ожог): быстро растекается и медленно сжимается.
     public static void GroundSplat(Vector3 position, float radius, Color color, float life)
     {
@@ -378,7 +381,7 @@ public static class EnemyFx
 
         Ring(new Vector3(position.x, groundY + 0.1f, position.z), radius * 1.15f, Hot, 0.35f, 0.5f);
         Ring(new Vector3(position.x, groundY + 0.1f, position.z), radius * 0.8f, Orange, 0.5f, 0.3f);
-        GroundSplat(new Vector3(position.x, groundY, position.z), radius * 0.42f, new Color(0.1f, 0.08f, 0.08f), 3f);
+        GroundSplat(new Vector3(position.x, groundY, position.z), radius * 0.42f, ScorchColor, 3f);
         LightFlash(center + Vector3.up, new Color(1f, 0.6f, 0.25f), radius * 5f, 6f + 6f * power, 0.4f);
         if (shake) ScreenShake.AddAt(position, 0.35f + 0.45f * power);
     }
@@ -661,7 +664,9 @@ public class FxSplat : MonoBehaviour
         float s = size * (0.6f + 0.4f * (1f - (1f - open) * (1f - open)));
         transform.localScale = new Vector3(s, 1f, s);
         float t = age / life;
-        tint.a = t < 0.6f ? 1f : 1f - (t - 0.6f) / 0.4f;
+        // Плавное угасание последних 45% жизни (smoothstep, без резкого обрыва в конце).
+        float fade = Mathf.InverseLerp(0.55f, 1f, t);
+        tint.a = 1f - fade * fade * (3f - 2f * fade);
         block.SetColor("_BaseColor", tint);
         cached.SetPropertyBlock(block);
     }

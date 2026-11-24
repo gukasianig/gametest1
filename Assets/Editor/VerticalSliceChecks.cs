@@ -113,16 +113,31 @@ public static class VerticalSliceChecks
                 if (++count > 30) throw new Exception("Upgrade cap did not stop selection.");
             }
             Require(progression.Rank(entry.id) > 0 && !progression.Available(entry), "Rank/cap invalid.");
-            if (effect == UpgradeEffect.Damage) Require(shooter.CurrentDamage == Mathf.RoundToInt(shooter.baseWeapon.damage * 5f), "Damage cap mismatch.");
-            if (effect == UpgradeEffect.AttackSpeed) Require(Mathf.Abs(shooter.CurrentFireInterval - shooter.baseWeapon.fireRate / 3f) < 0.001f, "Fire interval cap mismatch.");
-            if (effect == UpgradeEffect.Movement) Require(Mathf.Abs(movement.SpeedMultiplier - 2f) < 0.001f, "Movement cap mismatch.");
-            if (effect == UpgradeEffect.Pickup) Require(Mathf.Abs(progression.AttractionRadius - 12f) < 0.001f, "Pickup cap mismatch.");
+            // 21.11.2026: the maximum follows the catalog (19.11: damage 24 x +0.12 = x3.88) and the settings cap, not fixed numbers.
+            ProgressionSettings caps = progression.settings;
+            float capSetting = effect == UpgradeEffect.Damage ? caps.maxDamageMultiplier : effect == UpgradeEffect.AttackSpeed ? caps.maxAttackSpeedMultiplier :
+                effect == UpgradeEffect.Movement ? caps.maxMovementMultiplier : caps.maxPickupRadiusMultiplier;
+            float expectedMax = Mathf.Min(Mathf.Max(1f, capSetting), 1f + entry.maxRanks * entry.amount);
+            if (effect == UpgradeEffect.Damage)
+            {
+                int expectedDamage = Mathf.Max(1, Mathf.RoundToInt(shooter.baseWeapon.damage * WeaponTuning.Multiplier(shooter.startWeaponIndex) * expectedMax));
+                Require(shooter.CurrentDamage == expectedDamage, "Damage cap mismatch: " + shooter.CurrentDamage + " (expected " + expectedDamage + ", x" + expectedMax + ")");
+            }
+            if (effect == UpgradeEffect.AttackSpeed) Require(Mathf.Abs(shooter.CurrentFireInterval - shooter.baseWeapon.fireRate / expectedMax) < 0.001f,
+                "Fire interval cap mismatch: " + shooter.CurrentFireInterval + " (expected " + shooter.baseWeapon.fireRate / expectedMax + ")");
+            if (effect == UpgradeEffect.Movement) Require(Mathf.Abs(movement.SpeedMultiplier - expectedMax) < 0.001f, "Movement cap mismatch: " + movement.SpeedMultiplier + " (expected " + expectedMax + ")");
+            if (effect == UpgradeEffect.Pickup)
+            {
+                float expectedRadius = Mathf.Max(progression.CollectionRadius, caps.attractionRadius * expectedMax);
+                Require(Mathf.Abs(progression.AttractionRadius - expectedRadius) < 0.001f, "Pickup cap mismatch: " + progression.AttractionRadius + " (expected " + expectedRadius + ")");
+            }
             progression.AddExperience(progression.settings.ExperienceForLevel(progression.Level) - progression.Experience);
             Require(!progression.Choosing && session.State == GameRunState.Playing, "Maxed catalog blocks the game.");
         }
         Pass("A07: numerical damage/fire/movement/pickup upgrades, rank limits, fully maxed fallback.");
 
-        progression.catalog.entries = all.FindAll(entry => entry.effect == UpgradeEffect.GrenadeRadius);
+        // 21.11.2026: grenade radius now needs grenade damage first, so the queue uses the grenade damage card (ranks are cleared below).
+        progression.catalog.entries = all.FindAll(entry => entry.effect == UpgradeEffect.GrenadeDamage);
         int oldLevel = progression.Level;
         int amount = -progression.Experience;
         for (int i = 0; i < 3; i++) amount += progression.settings.ExperienceForLevel(oldLevel + i);
@@ -164,15 +179,22 @@ public static class VerticalSliceChecks
         Pass("D01-D04: data catalog, 2500 distinct weighted offer rolls, rarity counts " + string.Join("/", rarityCounts));
 
         progression.catalog.entries = all.FindAll(entry => entry.effect == UpgradeEffect.GrenadeDamage);
+        float grenadeAmount = progression.catalog.entries[0].amount;   // expectations follow the catalog (19.11: +0.4)
         progression.AddExperience(progression.settings.ExperienceForLevel(progression.Level) - progression.Experience);
         Require(progression.SelectOfferedUpgrade(0), "Grenade improvement unavailable.");
-        Require(shooter.CurrentGrenadeDamage == Mathf.RoundToInt(shooter.grenadeDamage * 1.3f), "Grenade upgrade mismatch.");
+        Require(shooter.CurrentGrenadeDamage == Mathf.RoundToInt(shooter.grenadeDamage * Mathf.Min(5f, 1f + grenadeAmount)),
+            "Grenade upgrade mismatch: " + shooter.CurrentGrenadeDamage + " (expected x" + (1f + grenadeAmount) + ")");
         orbits.SetDamageMultiplier(1.25f);
         Require(orbits.CurrentDamage == Mathf.RoundToInt(orbits.orbitDamage * 1.25f), "Orbit multiplier invalid.");
-        progression.catalog.entries = all.FindAll(entry => entry.effect == UpgradeEffect.GrenadeRadius);
+        // Radius needs the grenade card in the catalog (Bonus counts catalog entries), so keep both and pick the radius offer.
+        progression.catalog.entries = all.FindAll(entry => entry.effect == UpgradeEffect.GrenadeRadius || entry.effect == UpgradeEffect.GrenadeDamage);
+        float radiusAmount = progression.catalog.entries.Find(entry => entry.effect == UpgradeEffect.GrenadeRadius).amount;
         progression.AddExperience(progression.settings.ExperienceForLevel(progression.Level) - progression.Experience);
-        Require(progression.SelectOfferedUpgrade(0), "Grenade radius improvement unavailable.");
-        Require(Mathf.Abs(shooter.CurrentGrenadeRadius - shooter.grenadeRadius * 1.2f) < 0.001f, "Grenade radius mismatch.");
+        int radiusOffer = -1;
+        for (int i = 0; i < progression.Offered.Count; i++) if (progression.Offered[i].effect == UpgradeEffect.GrenadeRadius) radiusOffer = i;
+        Require(radiusOffer >= 0 && progression.SelectOfferedUpgrade(radiusOffer), "Grenade radius improvement unavailable.");
+        Require(Mathf.Abs(shooter.CurrentGrenadeRadius - shooter.grenadeRadius * Mathf.Min(2.5f, 1f + radiusAmount)) < 0.001f,
+            "Grenade radius mismatch: " + shooter.CurrentGrenadeRadius + " (expected x" + (1f + radiusAmount) + ")");
         GameObject dummy = new GameObject("Composite damage test");
         dummy.tag = "Enemy";
         dummy.transform.position = new Vector3(0, 1, -55);
@@ -272,25 +294,46 @@ public static class VerticalSliceChecks
         health.IncreaseMaxHealth(1000);
         session.survivalSeconds = 600f;
         SetProperty(session, "Elapsed", 590f);
-        yield return null;
-        yield return null;
-        Require(session.BossWarning && waves.Suspended, "Boss preparation did not stop waves.");
+        // Two frames were not always enough (the clock only runs in Playing); wait up to 2 s of real time.
+        double warningBy = EditorApplication.timeSinceStartup + 2;
+        while (!session.BossWarning && EditorApplication.timeSinceStartup < warningBy) yield return null;
+        // 12.11.2026 (owner request): waves are no longer stopped for the boss; this check stopped them itself at the start,
+        // so only the warning is verified here.
+        Require(session.BossWarning, "Boss preparation (warning) did not start at 590 s: state=" + session.State + ", elapsed=" + session.Elapsed +
+            ", timeScale=" + Time.timeScale + ", pending=" + progression.PendingChoices);
+        // The final boss is random since 12.11; this cycle (fan projectiles, three telegraphs) is the Guardian's.
+        SetProperty(session, "NextBoss", BossKind.Guardian);
         SetProperty(session, "Elapsed", 600f);
         double bossDeadline = EditorApplication.timeSinceStartup + 3;
         while (session.Boss == null && EditorApplication.timeSinceStartup < bossDeadline) yield return null;
         BossController boss = session.Boss;
-        Require(boss != null && boss.Health.maxHealth == 2600, "Boss did not enter safely: state=" + session.State +
+        Require(boss != null && boss.Health.maxHealth == BossController.StartingHealth(boss.Kind), "Boss did not enter safely: state=" + session.State +
             ", elapsed=" + session.Elapsed + ", warning=" + session.BossWarning);
         bool[] warnings = new bool[3];
         bool sawProjectiles = false;
+        var attacksSeen = new List<string>();
         float bossUntil = Time.time + 15f;
-        while (Time.time < bossUntil)
+        while (Time.time < bossUntil && !(warnings[0] && warnings[1] && warnings[2] && sawProjectiles))
         {
             if (boss.Telegraphing && boss.AttackIndex > 0) warnings[(boss.AttackIndex - 1) % 3] = true;
             if (UnityEngine.Object.FindObjectsOfType<EnemyProjectile>().Length > 0) sawProjectiles = true;
+            if (attacksSeen.Count == 0 || attacksSeen[attacksSeen.Count - 1] != boss.LastAttack) attacksSeen.Add(boss.LastAttack);
             yield return null;
         }
-        Require(warnings[0] && warnings[1] && warnings[2] && sawProjectiles, "Boss attack/telegraph cycle incomplete.");
+        // 19.11.2026: Guardian attacks after the first are random, and only the fan fires projectiles; if it did not come up, run it directly.
+        if (!sawProjectiles)
+        {
+            boss.StartCoroutine((IEnumerator)typeof(BossController).GetMethod("Fan", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(boss, null));
+            float fanUntil = Time.time + 4f;
+            while (Time.time < fanUntil && !sawProjectiles)
+            {
+                if (UnityEngine.Object.FindObjectsOfType<EnemyProjectile>().Length > 0) sawProjectiles = true;
+                yield return null;
+            }
+            attacksSeen.Add("Fan (forced)");
+        }
+        Require(warnings[0] && warnings[1] && warnings[2] && sawProjectiles, "Boss attack/telegraph cycle incomplete: warnings " + warnings[0] + "/" + warnings[1] + "/" + warnings[2] +
+            ", projectiles " + sawProjectiles + ", attacks " + string.Join(", ", attacksSeen));
         boss.Health.TakeDamage(int.MaxValue);
         // 11.11.2026: смерть Стража — замедленная сцена ~1,7 с (CombatFeel.BossKilled), победа после неё.
         double victoryBy = EditorApplication.timeSinceStartup + 4.0;

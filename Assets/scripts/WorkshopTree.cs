@@ -507,6 +507,7 @@ public partial class WorkshopTree : MonoBehaviour
         node.button = rect.gameObject.AddComponent<Button>();
         node.button.targetGraphic = node.diamond;
         node.button.transition = Selectable.Transition.None;
+        rect.gameObject.AddComponent<UiSound>();
         node.button.onClick.AddListener(() => { centerMode = false; Pin(node); });
         node.picture = UiArtwork.Picture(rect, sprite, new Vector2(.04f, .04f), new Vector2(.96f, .96f));
         node.diamond.Picture = node.picture.rectTransform;
@@ -530,6 +531,8 @@ public partial class WorkshopTree : MonoBehaviour
             module ? 52f : weapon ? 230f : 240f, module ? 22f : 32f, module ? 14 : 22, new Color(.84f, .9f, .94f));
         captionText.transform.parent.name = "Node caption";
         captionText.resizeTextMinSize = module ? 8 : 12;
+        // Ветки Пистолета и Автомата: мелкие названия внутри плитки не нужны, остаются иконка и «0/3» (название — в панели справа).
+        if (module && WeaponElements.IsBranch(node.element)) captionText.transform.parent.gameObject.SetActive(false);
         captionText.rectTransform.offsetMin = captionText.rectTransform.offsetMax = Vector2.zero;
         node.state = LabelAt(rect, "", size * .5f, module ? size + 36f : weapon ? size + 13f : size + 25f,
             module ? 52f : 160f, module ? 18f : 26f, module ? 12 : 16, GameUi.Accent);

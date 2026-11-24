@@ -1,5 +1,61 @@
 # Журнал изменений (новые сверху; держать ≤ ~20 КБ, старое переносить в `docs/archive/`)
 
+## 2026-11-23 — имя босса в сжатой `BossHealthBar`
+- `BossHealthBar.cs`: плашка 42→50 px (`Height`), имя (шрифт до 22, мин. 16) в верхних ~56% высоты, полоса HP — нижние 30%; «ЯРОСТЬ» справа в той же строке (имя ≤70% ширины), не перекрывает имя. Мировые полоски боссов, фазы, HP и урон не тронуты. `ArenaEvents` берёт `BossHealthBar.Height`, анонс сдвигается сам.
+- Проверки (batch, 23.11): `MiniBossChecks`, `BossShowcaseChecks` — 0 падений, 0 ошибок; кадры `Logs/mini-boss.png`, `Logs/boss-showcase.png` (Страж, Королева, Снайпер, Громила) — имя и цифры HP читаются, «ЯРОСТЬ» без наложения. `CombatHudChecks`, `WorkshopProjectsChecks.RunEquipmentBatch` PASS.
+- Не подтверждено: `WorkshopLayoutChecks` падает NullReference на `Node weapon:N:Poison` (WorkshopLayoutChecks.cs:168, устаревшее ожидание, 3 кадра раскладки при этом сохранены); отдельного кадра «рой Королевы крупно» и «toast поверх FirstRunHints» нет — по коду `FirstRunHints` гасит плашку при `ToastVisible`.
+
+## 2026-11-22 — HUD врагов/боссов/событий, кривая опыта, кап урона, тексты испытаний
+- `EnemyHealthDisplay`: обычные враги — тонкая полоска без цифр только после урона; элиты — с цифрами сразу; `Enemy_tank`/`Enemy_Armored` — с цифрами после урона; у `BossController`/`MiniBoss` мировая полоска не создаётся (числа урона остались).
+- `ArenaEvents`: центральный баннер → компактный анонс под таймером (~2 с, ниже полосы босса, если она видна); плашка справа не менялась. `FirstRunHints` прячется на время тоста (`PlayerProgression.ToastVisible`). `BossHealthBar`: высота 58→42, отступ 110→105 (`AnyVisible`/`Height`).
+- `WeaponSelectScreen`: подписи шкал Урон/Темп/Дальность не показывались (высота строки < шрифта + отступы Label → обрезка) — исправлено; тексты RU/EN уже были в каталоге. Тот же дефект устранён в анонсе событий и в имени/«ЯРОСТЬ» полосы босса. `WorkshopTree.AddNode`: у веток Пистолета/Автомата подписи узлов скрыты (иконка и `0/3`).
+- `Progression.asset` и дефолт `ProgressionSettings`: `earlyLevelExperience` = 6, 10, 16, 28, 46, 74, 115 (уровни 1→8; с 8→9 по формуле 180, 9→10 216).
+- `PlayerProgression.Available()`: «Урон пуль» не выпадает на пределе ×5 — учитывается полный множитель (`RawDamageMultiplier`: карточки + мета + «Стеклянная пушка» + мастерство), как в `ApplyStats`.
+- Тексты: «Страж» → «финальный босс» в `runmodifiers.269/270/271`, `challengescreen.091` (RU/EN), `GameTextSources.cs` перегенерирован. Остальные «Страж» (бой, Мастерская, реликвия) не трогали.
+
+## 2026-11-21 — Звуки и музыка из «Загрузок»
+- `GameMusic.ogg` заменён на `Battle_1.ogg` (GUID прежний, старый трек в `_incoming/audio-replaced-2026-11-21/`); новый `RecordedAudio/BossMusic.mp3` + `GameAudio.BossFight` из `BossController.Start/OnDestroy` — музыка босса, пока он жив. Лицензия обоих треков не записана — спросить владельца.
+- Kenney CC0 в `Resources/Sfx/` (и исходники в `Audio/Source/Kenney/`, карта в `AudioSourcePrep.BuildFromKenney`): Pickup, LevelUp, HeroDash, Chest вместо синтеза; новые `Sfx.UiHover/UiClick/UiBack` (в конце enum) и компонент `UiSound.cs` (наведение/стрелки/нажатие) на `GameUi.Button`, плитках оружия и узлах Мастерской; Esc назад в меню — `UiBack`.
+- `AudioChecks.RunPlayBatch` дополнен: музыка босса и возврат, новые звуки взяты из файлов.
+
+## 2026-11-21 — Шрифт интерфейса GameFont (Jura SemiBold)
+- `Assets/Resources/Fonts/GameFont.ttf` (Jura SemiBold, новый файл, импортирован — `.meta` guid fc6db9bd…) подхватывается `GameUi.DefaultFont` через `Resources.Load("Fonts/GameFont")`.
+- В Jura есть вся латиница и кириллица, но нет → ← ↑ ↓ ★ ● ○ ► ■ ✓ (разбор cmap). В импорте добавлены fallback-шрифты Windows: Segoe UI, Segoe UI Symbol, Arial (`fontNames` в .meta).
+- Новая `Assets/Editor/FontChecks.cs` (`FontChecks.RunBatch`, меню Tools/Checks/Game font): шрифт из Resources, растеризация латиницы, кириллицы и символов UI.
+
+## 2026-11-21 — CombatHudChecks и WeaponChecks под текущую игру
+- `CombatHudChecks`: карточки ищутся по разметке `</b></size>\n<size=` (компактные карточки 19.11, а не `<size=27>`), маркеры «новое/ранг/ПРОКЛЯТИЕ/УЛУЧШЕНИЕ» проверяются и в EN (new/rank/CURSE/UPGRADE).
+- `WeaponChecks`, раздел поворота: с героем v3 выстрел даёт поза прицеливания (PoseAiming), `FaceNow` не вызывается — тело доворачивает `PlayMovement`. Проверка включает `PlayMovement` на этот раздел (ввод в batch нулевой) и ждёт поворот до 0,8 с после попадания; без этого тело крутилось с заданной тестом скоростью и угол совпадал случайно.
+
+## 2026-11-21 — Меню к публичному билду: Тест-арена по F10, Esc назад, фокус клавиатуры/геймпада
+- `StartMenu`: «Тест-арена» видна только в редакторе (`#if UNITY_EDITOR`), в билде скрыта, F10 на главном экране показывает/прячет (на сессию). Esc / кнопка геймпада 1 (B) — назад из выбора оружия (в коопе игрок 2 → игрок 1), Мастерской (первый Esc закрывает закреплённое окно — `WorkshopTree.EscapeHandledFrame/PopupPinned`), Испытаний, Настроек, Статистики; на главном ничего. Возврат домой — `ShowHome()` с фокусом на «Старт».
+- Новые `UiFocus` (Set/Clear), `UiFocusFrame` (рамка при выборе стрелками, не мышью; добавляется в `GameUi.Button`), `SelectRelay`. `MenuButtonFx` подсвечивается и от фокуса клавиатуры.
+- Начальный фокус: «Старт»; плитка выбранного оружия (`WeaponSelectScreen.FocusSelected`, и при смене игрока в коопе); «Продолжить» в паузе; «Заново» в результатах через 0,6 с (Пробел рывка в момент смерти не перезапускает). Фокус снимается при входе в бой и выходе из паузы (Пробел = Submit).
+- Плитки оружия: `Navigation.Automatic`, фокус стрелками сразу показывает подробности (SelectRelay), Enter/Пробел/Submit = второй клик (в бой или покупка). Мышь — как раньше (первый клик выбирает).
+- Проверки: `CoopChecks` открывает замок кооператива на время прогона и возвращает прежнее значение (с 11.11 кооп закрыт ключом, проверка падала).
+
+## 2026-11-21 — VerticalSliceChecks снова проходит
+- Потолки A07 считаются как `min(cap из ProgressionSettings, 1 + maxRanks·amount)` (урон 24×0,12 = ×3,88; учтён `WeaponTuning`), вместо 5/3/2/12.
+- HP босса — новый `BossController.StartingHealth(kind)` (используется и при создании) вместо 2600; финальный босс в проверке — Страж (`NextBoss`), «Веер» запускается напрямую, если не выпал случайно за 15 с.
+- Очередь 3 уровней — на карточке «Гранаты» (радиус теперь требует гранаты, а Bonus считается по каталогу); гранаты/радиус ждут ×(1+amount) из каталога; для радиуса в каталоге оставлены обе карточки.
+- Предупреждение о боссе ждётся до 2 с (двух кадров не всегда хватало), проверка остановки волн убрана: с 12.11 волны не останавливаются, а тест сам выключает их в начале.
+
+## 2026-11-21 — Фокус цели по ЛКМ
+- `AutoShoter.ManualFocusTarget`: игрок 1, пока зажата ЛКМ (игра идёт, курсор не над UI), — луч камеры на плоскость высоты героя, из `WeaponTargets.Collect` берётся живой враг в дальности оружия, ближайший к курсору в радиусе `FocusCursorRadius` 6 м; он заменяет автовыбор (у Dual — правый ствол). Нет такого врага — обычный автоприцел. `FocusTarget` — для проверок.
+- Кольцо фокуса: один LineRenderer на стрелка (жёлтый, 0,07 м, радиус тела +0,35), включается только при фокусе, прячется на паузе/OnDisable.
+- Подсказка `hints.move` дополнена «Зажми ЛКМ для фокуса цели» / «Hold LMB to focus a target».
+- `CombatMechanicsChecks`: удар по элите делается при удаче 0 — удача даёт +10% крита за ранг, и проверка изредка падала (42 вместо 28).
+
+## 2026-11-21 — Телеметрия забегов в CSV
+- `RunStatistics.EndRun` → `AppendPlaytestRow`: одна строка в `persistentDataPath/playtest_runs.csv` (заголовок при создании) только в первом EndRun забега, не в TestMode и не в batch. Колонки: Date,Result,Weapon,Branch,Evolved,DurationSec,Level,Wave,Kills,DamageDealt,AvgDPS,DamageTaken,DeathCause,BossTimeSec,Threat,EndlessRound; InvariantCulture, экранирование CSV, UTF-8 без BOM, всё в try/catch (ошибка — только LogWarning).
+- Weapon — `WeaponData.weaponName`, Branch — `WeaponElement`(+ранг), DeathCause — `HeroDamageCause`; в коопе пишется первый герой. `GameSession.Finish`: причина смерти теперь записывается до `EndRun` (иначе строка её не видела).
+
+## 2026-11-21 — Ритм боёв с боссами: передышки, рой порциями, мягкие ожоги
+- `BossController`: `recoveryBonus` (атака выставляет, цикл сбрасывает) прибавляется к паузе после атаки, не умножаясь на ×0,6 второй фазы; `HeavyRecovery` 1,2 с — тройной таран Стража, тройной луч и луч-маятник Снайпера; `LastRecovery` для проверок.
+- `BossQueen.QueenBrood`: все метки сразу, затем 3 порции через 0,9 с (по 6, в ярости по 8; было 18/26 разом), порция k — каждая третья метка по кругу; после роя +2,0 с (`BroodRecovery`). Предел 60 миньонов прежний.
+- `MiniBoss`: после двойного удара +1,2 с (`DoubleSlamRecovery`).
+- `EnemyFx.ScorchColor` (0,3, 0,22, 0,14) вместо почти чёрных ожогов в `Explosion` и метеоритах `ArenaEvents`; `FxSplat` угасает плавно (smoothstep на последних 45% жизни) вместо линейного обрыва.
+
 ## 2026-11-21 — Быстрый старт опыта и подсказки первого забега (B07, частично)
 - `ProgressionSettings.earlyLevelExperience` = {6, 10, 16} (также в `Progression.asset`): цена уровней 1→2, 2→3, 3→4; с 4-го — прежняя формула 12+10·(n−1)^1,45. Первые 3 уровня: 32 опыта вместо 74.
 - Новый `FirstRunHints` (вызов из `GameSession.Begin`): только не TestMode и `MetaProgress.Data.runs == 0`; плашка снизу по часам забега 0–6 / 10–16 / 20–26 с, вторая скрывается после первого рывка; без паузы, без лучей (CanvasGroup, без GraphicRaycaster), на экране карточек/паузы скрыта.
@@ -23,29 +79,4 @@
 - `WorkshopTree.FocusSection/FocusProject`: при закреплённом окне переключают его на новый узел (`Pin`), раньше окно продолжало показывать прежнее оружие — ошибка переделки окна 18–19.11, ловилась `EquipmentChecks` («Project details did not return after weapon page»).
 - `WorkshopProjectsChecks`: число узлов без веток у закрытых оружий, проверка состава каждой «Weapon group», блок веток скрыт у оружия 2 и виден у пистолета.
 
-## 2026-11-21 — Запрет карточки (D06, первый этап)
-- `PlayerProgression`: `banished` (HashSet id), `BanishesLeft` = 2 на героя (сбрасывается с новым объектом героя в забеге), `BanishMode`, `ToggleBanishMode()`, `IsBanished(id)`; `Available()` отказывает запрещённым id. Выбор карточки в режиме запрета (`SelectOfferedUpgrade` → `BanishOffered`) не даёт улучшения: id в запрет, −1 заряд, режим выключается, карточка заменяется взвешенной из пула без лежащих на столе (`Candidates()`/`WeightedIndex()` вынесены из `RollOffers`/`PickWeighted`); нет замены — слот пропадает; карточек нет вовсе — окно закрывается (PendingChoices = 0, LeaveUpgrade).
-- UI только в обычном окне уровня (не сундук, не кооператив): кнопка «Запретить [B] (N)» справа от «Перебросить» (обе по 0,255 ширины), клавиша `B`; в режиме — заголовок «ЗАПРЕТ КАРТОЧКИ / Выбери карточку…» янтарный, кнопка «Отмена запрета [B]», рамки карточек красно-янтарные с пульсом (`UpgradeCardFx.banishHighlight`). Переброс и закрытие окна выключают режим.
-- Тексты: `playerprogression.banish.title/button/cancel/hint` (RU/EN), localization.cjs — 768 записей, 0 ошибок.
-- `CombatMechanicsChecks`: проверка запрета (переключение без траты, 2 заряда, замена, недоступность, ранг 0); блок переброса+запрета перенесён перед разделом 9 со сбросом рангов; устаревшие ожидания привязаны к каталогу (крит, дроны/турели), шанс выпадения 1–4%, элита — вероятностно (200 попыток вдали от героя, малые сундуки удаляются). Раздел 9 тоже привязан к каталогу/коду: броня, реген, вампиризм, дальность, охотник на элиту, опыт, удача (ожидаемая доля выпадений), скорость орбит (`baseOrbitSpeed` × бонус), число карточек в превью.
-
-## 2026-11-21 — Рецепт эволюции в UI
-- `PlayerProgression.FeedsEvolution(def)`: карточка входит в рецепт текущего оружия (`CanEvolve`; «Урон пуль» < 5 или `evo.partner` < `partnerRanks`). `RefreshCards` добавляет над названием золотую строку «★ » + `playerprogression.207` + название эволюции. `EffectTitle(effect)` — название карточки каталога по эффекту.
-- `RunStatistics.AppendEvolution` (блок ОРУЖИЕ в Tab): эволюционировало — «Эволюция: <название>» золотом; иначе «Эволюция → <название>: Урон пуль X/5, <парная> Y/Z» (выполненное — зелёным) + «(из сундука)» или «★ Эволюция готова — откройте сундук!». Новые ID `runstatistics.evo.done/next/chest/ready` (RU/EN), `GameTextSources.cs` перегенерирован.
-
-## 2026-11-21 — Выбор карточек с клавиатуры в одиночной игре и сундуке
-- `PlayerProgression.ReadPausedChoiceKeys()` (из `Update`, когда `Choosing && !coopWindow`): `1`/`Num1`, `2`/`Num2`, `3`/`Num3` → `SelectOfferedUpgrade(0–2)`, `R` → `Reroll()` (не в сундуке). Только при `ChoiceStateOk` (состояние Upgrade — не поверх Esc-паузы). Защита 0,25 с по `Time.unscaledTime` после каждого `RefreshCards` (открытие, переброс, следующий выбор при нескольких уровнях). Кооперативные клавиши (`ReadChoiceKeys`) не менялись.
-- Подписи: `[1]`/`[2]`/`[3]` перед редкостью в правом верхнем углу карточки (и перед «ЭВОЛЮЦИЯ ОРУЖИЯ» в сундуке); кнопка переброса — `playerprogression.253` «Перебросить карточки [R]  (» / «Reroll cards [R]  (» (ID сохранён), `GameTextSources.cs` перегенерирован.
-
-## 2026-11-20 — Пул пуль и частиц EnemyFx (P02, частично)
-- `Bullet.Spawn(prefab, pos, rot)` / `Release()`: очередь неактивных пуль по префабу (до 256 в очереди), пуля, отпущенная в этом кадре, не выдаётся (отложенные события физики). `ResetState` при выдаче: урон/скорость/жизнь/pierce/ricochet/split/splitPrefab/forceCrit/elementAttack/stats — из префаба, `critPierceLeft = 2`, `hasHit`, владелец, `pierced`, масштаб префаба, исходные материалы и цвета следа (золотая пуля эволюции, ×1,8 заряженного, ×1,6 двойного, ×0,7 осколка не «залипают»), `TrailRenderer.Clear()`, скорость Rigidbody. Новый `Launch()` (модель, скорость, срок жизни) — явно в конце `AutoShoter.SpawnBullet` и `Split`; созданные напрямую `Instantiate` (проверки, старый `PlayerShooting`) запускаются из `Start` и по-прежнему уничтожаются. Модель `ProjectileModels.Skin` ставится один раз, при повторном выпуске её компенсация масштаба пересчитывается (вид как раньше: модель одного размера). `TintBullet` красит только исходные рендереры (`BaseRenderers`), не модель. `SetOwner` — на списках-буферах. Пулы очищаются при `sceneLoaded` (Single), null в очереди пропускаются.
-- `EnemyFx.Piece` (Blobs, Puff, Explosion, капли кислоты): сферы и кубы `FxPiece` из стеков, потолок `MaxPieces = 96` живых — при переполнении переиспользуется самая догоревшая. `FxPiece.Restart` сбрасывает все поля (velocity/gravity/drag/spin/grow/groundY/flat/stretch/ramp/age/stage, масштаб, материал), прежний `Start` → `Begin` в первом кадре. Цилиндры и прочие типы — как раньше (Destroy).
-- `CombatMechanicsChecks`: устаревшее ожидание размера каталога 35 → 50 (21.11). Проверки: NewCardsChecks OK (30 PASS, 0 ошибок); CombatMechanicsChecks падает раньше пуль на «Crit chance 0,28» (старый баланс).
-
-## 2026-11-20 — H08: слияние кристаллов опыта
-- `ExperiencePickup.Spawn(position, amount, merge = true)`: если в 1,8 м (по горизонтали) лежит кристалл, который сейчас не притягивается к игроку, новый объект не создаётся — опыт добавляется к нему (`amount` — точная сумма, `pieces` — число слитых). Флаг `attracted` обновляется в `CollectNearby` каждый кадр (магнит → все летят, слияний нет).
-- Вес: масштаб корня `0,25×0,4×0,25 × min(1,6; 1 + 0,12·log2(pieces))`, лёгкий повторный «пружинистый» толчок; оттенок по сумме: <40 обычный, ≥40 фиолетовый, ≥120 золотой — общие для всех кристаллов клоны исходных материалов (сдвиг тона `_BaseColor`, свечение `_EmissionColor`), уничтожаются в `Clear()`. Имя «Experience Crystal» не меняется.
-- Сбор: `max(pieces, round(amount × (1 + ExperienceGain)))`. Без бонуса к опыту сумма точная; с бонусом округление считается один раз от суммы (раньше — по каждому кристаллу, могло отличаться на ±1 за кристалл).
-- Наградные россыпи не сливаются (`merge: false`): припасы, удержание точки, сундук-страж, Громила, босс бесконечного режима, `TestArena`, `CardMotionChecks` — их считают ArenaEventChecks (≥14) и MiniBossChecks (≥10).
-
-Старее: `docs/archive/CHANGELOG_2026-11-20-rollover.md`, затем `docs/archive/CHANGELOG_2026-11-19-bosses-rollover.md`, `CHANGELOG_2026-11-19-cards-rollover.md`, `CHANGELOG_2026-11-19-late-rollover.md`.
+Старее: `docs/archive/CHANGELOG_2026-11-20-21-rollover.md`, `docs/archive/CHANGELOG_2026-11-20-rollover.md`, затем `CHANGELOG_2026-11-19-bosses-rollover.md`, `CHANGELOG_2026-11-19-cards-rollover.md`, `CHANGELOG_2026-11-19-late-rollover.md`.

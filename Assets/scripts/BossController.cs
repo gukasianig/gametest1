@@ -16,6 +16,9 @@ public partial class BossController : MonoBehaviour
     public static readonly string[] Titles = { GameText.Source("bosscontroller.069"), GameText.Source("bosscontroller.070"), GameText.Source("bosscontroller.071") };
     private static readonly string[] SkinKeys = { "Boss", "Swarm queen", "Storm sniper" };
     private static readonly int[] BaseHealth = { 5200, 4600, 4000 };
+    // HP при появлении с учётом испытаний и круга бесконечного режима (проверки берут его отсюда, а не числом).
+    public static int StartingHealth(BossKind kind) =>
+        Mathf.RoundToInt(BaseHealth[(int)kind] * HealthMultiplier * RunModifiers.BossHealth * GameSession.EndlessFactor);
     // 12.11.2026: финальный босс сильнее в несколько раз; 19.11.2026 ещё сильнее (HP ×4 → ×5, урон ×1,6 → ×1,9).
     public const float HealthMultiplier = 5f, DamageMultiplier = 1.9f;
     // Цвет босса: предупреждения, полоса HP, вспышки.
@@ -49,7 +52,7 @@ public partial class BossController : MonoBehaviour
         body.isKinematic = true;
         body.useGravity = false;
         Health health = root.AddComponent<Health>();
-        health.SetHealth(Mathf.RoundToInt(BaseHealth[(int)kind] * HealthMultiplier * RunModifiers.BossHealth * GameSession.EndlessFactor));
+        health.SetHealth(StartingHealth(kind));
         health.experienceReward = 0;
         BossController boss = root.AddComponent<BossController>();
         boss.Kind = kind;
@@ -85,6 +88,7 @@ public partial class BossController : MonoBehaviour
 
     private void Start()
     {
+        GameAudio.BossFight(true);
         Health = GetComponent<Health>();
         GameObject line = new GameObject("Attack warning", typeof(LineRenderer));
         line.transform.SetParent(transform, false);
@@ -164,6 +168,12 @@ public partial class BossController : MonoBehaviour
     private enum Attack { Slam, Fan, Dash, Shockwave, RockRain, TripleDash, Brood, Acid, Pounce, AcidPools, Spiral, Strikes, Beam, Sweep, Creep, TripleBeam }
     private Attack previous = (Attack)(-1);
 
+    // Окно передышки (21.11.2026): тяжёлые серии добавляют паузу до следующей атаки даже во второй фазе,
+    // чтобы был ритм «уклонился → нанёс урон». Атака сама выставляет бонус; цикл сбрасывает его перед каждой атакой.
+    public const float HeavyRecovery = 1.2f;
+    private float recoveryBonus;
+    public float LastRecovery { get; private set; }
+
     // Набор атак: первая — фирменная, дальше случайно без повтора подряд; во второй фазе добавляются сильные.
     private Attack NextAttack()
     {
@@ -220,6 +230,7 @@ public partial class BossController : MonoBehaviour
             attacking = true;
             Attack attack = NextAttack();
             AttackIndex++;
+            recoveryBonus = 0f;
             yield return Run(attack);
             previous = attack;
             attacking = false;
@@ -229,7 +240,8 @@ public partial class BossController : MonoBehaviour
             Telegraphing = false;
             if (Anim != null) Anim.Release();
             if (!Enraged && Health != null && Health.CurrentHealth < Health.maxHealth / 2) Enrage();
-            yield return Wait(attackDelay * RunModifiers.BossAttackDelay * (Enraged ? 0.6f : 1f));
+            LastRecovery = recoveryBonus;
+            yield return Wait(attackDelay * RunModifiers.BossAttackDelay * (Enraged ? 0.6f : 1f) + recoveryBonus);
         }
     }
 
@@ -425,6 +437,7 @@ public partial class BossController : MonoBehaviour
             yield return Dash(i == 0 ? 0.8f : 0.5f);
             yield return Wait(0.2f);
         }
+        recoveryBonus = HeavyRecovery;
     }
 
     // Ударные волны: кольца расходятся от Стража, их нужно перепрыгнуть рывком или переждать вдали.
@@ -579,6 +592,7 @@ public partial class BossController : MonoBehaviour
 
     private void OnDestroy()
     {
+        GameAudio.BossFight(false);
         if (warningMaterial != null) Destroy(warningMaterial);
     }
 }

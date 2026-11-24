@@ -139,6 +139,7 @@ public partial class BossController
         Telegraphing = false;
         if (Anim != null) { Anim.Release(); Anim.Fire(); }
         for (int i = 0; i < 3; i++) FireBeam(Quaternion.Euler(0f, (i - 1) * 20f, 0f) * direction, dashDamage);
+        recoveryBonus = HeavyRecovery;
     }
 
     // Луч-маятник: метит линией, затем луч поворачивается на 200° вокруг снайпера (перепрыгнуть рывком или уйти дальше 26 м).
@@ -188,6 +189,7 @@ public partial class BossController
         }
         warning.enabled = false;
         if (Anim != null) Anim.Release();
+        recoveryBonus = HeavyRecovery;
     }
 
     // Ползущие молнии: цепочка кругов от снайпера к герою, удары бегут по ней одна за другой.

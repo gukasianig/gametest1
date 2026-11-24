@@ -392,8 +392,8 @@
     },
     {
       "id": "challengescreen.079",
-      "ru": "СТРАЖ",
-      "en": "GUARDIAN"
+      "ru": "БОСС",
+      "en": "BOSS"
     },
     {
       "id": "challengescreen.080",
@@ -627,8 +627,8 @@
     },
     {
       "id": "gamesession.126",
-      "ru": "Страж побеждён (тест)",
-      "en": "Guardian defeated (test)"
+      "ru": "Финальный босс побеждён (тест)",
+      "en": "Final boss defeated (test)"
     },
     {
       "id": "gamesession.127",
@@ -712,8 +712,8 @@
     },
     {
       "id": "gamesession.143",
-      "ru": "\nНаграда за Стража: +200 опыта",
-      "en": "\nGuardian reward: +200 XP"
+      "ru": "\nНаграда за финального босса: +200 опыта",
+      "en": "\nFinal boss reward: +200 XP"
     },
     {
       "id": "gamesession.144",
@@ -722,8 +722,8 @@
     },
     {
       "id": "gamesession.145",
-      "ru": "ДО СТРАЖА",
-      "en": "GUARDIAN IN"
+      "ru": "ДО ФИНАЛА",
+      "en": "FINAL IN"
     },
     {
       "id": "gamesession.146",
@@ -2142,8 +2142,8 @@
     },
     {
       "id": "weaponelements.425",
-      "ru": "% урона попадания в секунду, 3 с. Обновляет длительность. На Стража вдвое слабее.",
-      "en": "% hit damage per second for 3 s. Refreshes duration. Half as effective against the Guardian."
+      "ru": "% урона попадания в секунду, 3 с. Обновляет длительность. На финального босса вдвое слабее.",
+      "en": "% hit damage per second for 3 s. Refreshes duration. Half as effective against the final boss."
     },
     {
       "id": "weaponelements.426",
@@ -2153,7 +2153,7 @@
     {
       "id": "weaponelements.427",
       "ru": "% на 2 с. На Стража действует вдвое слабее.",
-      "en": "% for 2 s. Half as effective against the Guardian."
+      "en": "% for 2 s. Half as effective against the final boss."
     },
     {
       "id": "weaponelements.428",
@@ -2172,8 +2172,8 @@
     },
     {
       "id": "weaponelements.431",
-      "ru": "% урона попадания в секунду, 4 с, до 3 стаков. На Стража вдвое слабее.",
-      "en": "% hit damage per second for 4 s, up to 3 stacks. Half as effective against the Guardian."
+      "ru": "% урона попадания в секунду, 4 с, до 3 стаков. На финального босса вдвое слабее.",
+      "en": "% hit damage per second for 4 s, up to 3 stacks. Half as effective against the final boss."
     },
     {
       "id": "weaponelements.432",
@@ -2567,8 +2567,8 @@
     },
     {
       "id": "workshoptree.498",
-      "ru": "% урона/с · 3 с\nОбновление без стаков; Страж: ×0.5",
-      "en": "% damage/s · 3 s\nRefreshes without stacking; Guardian: ×0.5"
+      "ru": "% урона/с · 3 с\nОбновление без стаков; Финальный босс: ×0.5",
+      "en": "% damage/s · 3 s\nRefreshes without stacking; Final boss: ×0.5"
     },
     {
       "id": "workshoptree.499",
@@ -2577,8 +2577,8 @@
     },
     {
       "id": "workshoptree.500",
-      "ru": "% · 2 с\nНа Стража вдвое слабее",
-      "en": "% · 2 s\nHalf as effective against the Guardian"
+      "ru": "% · 2 с\nНа финального босса вдвое слабее",
+      "en": "% · 2 s\nHalf as effective against the final boss"
     },
     {
       "id": "workshoptree.501",
@@ -2597,8 +2597,8 @@
     },
     {
       "id": "workshoptree.504",
-      "ru": "% урона/с · 4 с\nДо 3 стаков; Страж: ×0.5",
-      "en": "% damage/s · 4 s\nUp to 3 stacks; Guardian: ×0.5"
+      "ru": "% урона/с · 4 с\nДо 3 стаков; Финальный босс: ×0.5",
+      "en": "% damage/s · 4 s\nUp to 3 stacks; Final boss: ×0.5"
     },
     {
       "id": "serialized.505",
@@ -3502,8 +3502,8 @@
     },
     {
       "id": "projects.relic.2",
-      "ru": "Реликвия Стража",
-      "en": "Guardian relic"
+      "ru": "Реликвия финального босса",
+      "en": "Final boss relic"
     },
     {
       "id": "projects.relic.3",

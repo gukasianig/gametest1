@@ -106,6 +106,7 @@ public class CombatHud : MonoBehaviour
         UiArtwork.Round(dash.GetComponent<Image>());
         dashFill = GameUi.Box(dash, "Dash Fill", Vector2.zero, Vector2.one, new Color(GameUi.Accent.r, GameUi.Accent.g, GameUi.Accent.b, 0.35f)).GetComponent<Image>();
         dashText = GameUi.Readable(GameUi.Label(dash, "", Vector2.zero, Vector2.one, 18), 1f);
+        FitDashText();
         canvas.enabled = false;
     }
 
@@ -186,6 +187,14 @@ public class CombatHud : MonoBehaviour
     private const string ArtPath = "UI/Hud/";
     private static readonly Vector2 PanelSize = new Vector2(340f, 92f);   // было 442x119: панель уменьшена
 
+    // «Рывок  [Пробел]» не обрезается: при нехватке места шрифт сжимается.
+    private void FitDashText()
+    {
+        dashText.resizeTextForBestFit = true;
+        dashText.resizeTextMinSize = 9;
+        dashText.resizeTextMaxSize = dashText.fontSize;
+    }
+
     [System.Serializable]
     private class ArtLayout { public float[] heart, shield, dash, fill; }
 
@@ -263,7 +272,8 @@ public class CombatHud : MonoBehaviour
         dashFill.rectTransform.anchorMin = new Vector2(0.505f, 0.13f);
         dashFill.rectTransform.anchorMax = new Vector2(0.965f, 0.39f);
         Place("Dash Icon", dashArt, layout.dash);
-        dashText = GameUi.Readable(GameUi.Label(panel, "", new Vector2(0.59f, 0.1f), new Vector2(0.97f, 0.42f), 14), 1f);
+        dashText = GameUi.Readable(GameUi.Label(panel, "", new Vector2(0.56f, 0.1f), new Vector2(0.985f, 0.42f), 14), 1f);
+        FitDashText();
         canvas.enabled = false;
         return true;
     }

@@ -90,7 +90,7 @@ public sealed class HeroStats
     public float TargetMultiplier(Health target)
     {
         if (EliteDamage <= 0f || target == null) return 1f;
-        bool strong = target.name.StartsWith("Elite") || target.GetComponent<BossController>() != null || target.GetComponent<MiniBoss>() != null;
+        bool strong = target.IsElite || target.GetComponent<BossController>() != null || target.GetComponent<MiniBoss>() != null;
         return strong ? 1f + EliteDamage : 1f;
     }
 }

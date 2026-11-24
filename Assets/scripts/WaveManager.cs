@@ -173,6 +173,7 @@ public class WaveManager : MonoBehaviour
         Health health = enemy.GetComponent<Health>();
         if (health != null)
         {
+            health.IsElite = true;
             health.SetHealth(health.maxHealth * 3);
             health.experienceReward *= 4;
         }

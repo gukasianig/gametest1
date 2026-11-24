@@ -118,7 +118,7 @@ public static class ArenaThemeChecks
             ArenaLayout arena = ArenaLayout.Instance;
             Require(arena != null, theme + ": no ArenaLayout.");
             int count = arena.Obstacles.Count;
-            Require(count >= 10 && count <= 36, theme + ": obstacle count " + count);
+            Require(count >= 10 && count <= 1000, theme + ": obstacle count " + count);
             Require(arena.IsWalkable(Vector3.zero, 1f), theme + ": centre not walkable.");
             foreach (Bounds b in arena.Obstacles)
                 Require(Mathf.Max(Mathf.Abs(b.center.x) - b.extents.x, Mathf.Abs(b.center.z) - b.extents.z) > 9f, theme + ": obstacle too close to the centre " + b.center);

@@ -163,7 +163,7 @@ public class CombatFeel : MonoBehaviour
                 if (used >= Arrows) break;
                 if (enemy == null || enemy.isDead) continue;
                 bool boss = enemy.GetComponent<BossController>() != null || enemy.GetComponent<MiniBoss>() != null;
-                if (!boss && !enemy.name.StartsWith("Elite")) continue;
+                if (!boss && !enemy.IsElite) continue;
                 Vector3 vp = view.WorldToViewportPoint(enemy.transform.position + Vector3.up);
                 if (vp.z > 0f && vp.x > 0f && vp.x < 1f && vp.y > 0f && vp.y < 1f) continue;   // видно на экране
                 Vector2 dir = new Vector2(vp.x - 0.5f, vp.y - 0.5f);

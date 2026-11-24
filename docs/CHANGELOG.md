@@ -1,5 +1,17 @@
 # Журнал изменений (новые сверху; держать ≤ ~20 КБ, старое переносить в `docs/archive/`)
 
+## 2026-11-24 — чистка багов (B4/C1/C2/A3/D2/E1) и UI карточек/подготовка к плейтесту (B1/B3)
+- `Health.IsElite` (ставит `WaveManager.SpawnElite`) вместо `name.StartsWith("Elite")` в `Health`, `HeroAbilities.TryPulse`, `HeroCardEffects.Push`, `CombatFeel`, `CombatStats`, `EnemyHealthDisplay` (C2). `CombatMechanicsChecks` ставит флаг вручную.
+- B4: `PlayerProgression.Available` уже считал кап ×5 по `RawDamageMultiplier()` (с `cursedDamage` и мастерством) — правки не потребовались.
+- C1: в `game-text.json` (RU+EN) «Страж» → «финальный босс» там, где речь о любом финальном боссе (награда, тест-победа, реликвия, замедление статусов, чип испытания «БОСС», «ДО ФИНАЛА»); имена самого Стража арены (`bosscontroller.*`, тест-арена) оставлены. `localization.cjs --generate` + проверка: 0 ошибок.
+- A3: `MetaUnlock.retired` — `weapon:5/11/12` (мины, турель, дроны не выбираются как оружие) сняты с продажи (`TryUnlock` отказывает); записи и ключи `meta.json` сохранены.
+- D2: `HeroCombatChecks` пропускает невыбираемые оружия; `ArenaThemeChecks` — предел препятствий 36 → 1000 (на Factory 612). Не перезапускались (D2 ждёт прогона).
+- E1: из `PROJECT_CONTEXT.md` убраны `playershoting`/`enemyspawner`.
+- UI: на карточках «★ ЭВОЛЮЦИЯ» шрифты на 1–2 px меньше, чтобы строка точек рангов не уходила за низ; кнопки `[R]`/`[B]` подняты (y 0.04–0.105); `CombatHud.FitDashText` — «Рывок [Пробел]» сжимается по ширине, блок шире (0.56–0.985).
+- `MetaProgress.DevUnlockAllWeapons` — теперь dev-переключатель: по умолчанию выключен, включён сам только при `GameSession.TestMode`; `UseMemory` сбрасывает. **Обычный забег: оружия снова закрыты и покупаются.**
+- B1: кривая ранних уровней уже сглажена 22.11 (6/10/16/28/46/74/115) — без изменений.
+- B3: `DropPickup.TryDrop` — элита гарантированно роняет малый сундук, пока эволюция готова (`ReadyEvolution`) и на арене нет другого сундука.
+
 ## 2026-11-23 — имя босса в сжатой `BossHealthBar`
 - `BossHealthBar.cs`: плашка 42→50 px (`Height`), имя (шрифт до 22, мин. 16) в верхних ~56% высоты, полоса HP — нижние 30%; «ЯРОСТЬ» справа в той же строке (имя ≤70% ширины), не перекрывает имя. Мировые полоски боссов, фазы, HP и урон не тронуты. `ArenaEvents` берёт `BossHealthBar.Height`, анонс сдвигается сам.
 - Проверки (batch, 23.11): `MiniBossChecks`, `BossShowcaseChecks` — 0 падений, 0 ошибок; кадры `Logs/mini-boss.png`, `Logs/boss-showcase.png` (Страж, Королева, Снайпер, Громила) — имя и цифры HP читаются, «ЯРОСТЬ» без наложения. `CombatHudChecks`, `WorkshopProjectsChecks.RunEquipmentBatch` PASS.

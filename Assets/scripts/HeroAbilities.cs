@@ -113,7 +113,7 @@ public sealed class HeroAbilities : MonoBehaviour
             Vector3 away = Vector3.ProjectOnPlane(enemy.transform.position - transform.position, Vector3.up);
             if (away.sqrMagnitude > PulseRadius * PulseRadius) continue;
             if (away.sqrMagnitude < .001f) away = transform.forward;
-            float resistance = enemy.name.StartsWith("Elite") ? .5f : 1f;
+            float resistance = enemy.Health.IsElite ? .5f : 1f;
             enemy.ApplyHeroImpulse(away.normalized * (14f * resistance), .32f);
         }
         EnemyFx.Ring(transform.position, PulseRadius, GameUi.Accent, .45f, .16f);

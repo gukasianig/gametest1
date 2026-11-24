@@ -17,6 +17,8 @@ public class Health : MonoBehaviour, IDamagable
     // Громкость звука попадания для частого урона (огнемёт, горение): оружие ставит её вокруг своих TakeDamage.
     public static float HitSoundScale = 1f;
     public bool isDead = false;
+    // Явный признак элиты (ставит WaveManager.SpawnElite); не зависит от имени объекта.
+    public bool IsElite;
     // Armored enemies set this below 1 to take reduced damage.
     public float DamageTakenFactor = 1f;
     public int CurrentHealth => currentHealth;
@@ -95,7 +97,7 @@ public class Health : MonoBehaviour, IDamagable
         isDead = true;
         if (CompareTag("Enemy")) GameAudio.Play(Sfx.Kill, 0.5f);
         // Убийство элиты ощущается: стоп-кадр, золотая вспышка, кольцо (CombatFeel).
-        if (CompareTag("Enemy") && name.StartsWith("Elite")) CombatFeel.EliteKilled(transform.position);
+        if (CompareTag("Enemy") && IsElite) CombatFeel.EliteKilled(transform.position);
         if (CompareTag("Enemy") && RunStatistics.Instance != null)
             RunStatistics.Instance.RecordKill();
         // Вампиризм: в кооперативе лечится ближайший к убитому живой герой (если у него есть эта карточка).
@@ -106,9 +108,9 @@ public class Health : MonoBehaviour, IDamagable
             PlayerHealth hero = killer.GetComponent<PlayerHealth>();
             if (hero != null) hero.OnEnemyKilled();
             // Карточка «Трофей»: Детали за элиту прибавляются к награде забега.
-            if (name.StartsWith("Elite")) CombatStats.RunTrophyParts += CombatStats.Of(killer).TrophyParts;
+            if (IsElite) CombatStats.RunTrophyParts += CombatStats.Of(killer).TrophyParts;
         }
-        if (CompareTag("Enemy") && experienceReward > 0) DropPickup.TryDrop(transform.position, name.StartsWith("Elite"));
+        if (CompareTag("Enemy") && experienceReward > 0) DropPickup.TryDrop(transform.position, IsElite);
         if (CompareTag("Enemy")) ExperiencePickup.Spawn(transform.position, Mathf.RoundToInt(experienceReward * ArenaEvents.ExperienceFactor));
         Died?.Invoke(this);
         if (CompareTag("Enemy")) EnemyCorpse.Spawn(this);   // модель отцепляется и доигрывает смерть

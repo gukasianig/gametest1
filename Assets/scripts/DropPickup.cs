@@ -27,7 +27,10 @@ public class DropPickup : MonoBehaviour
         float luck = Mathf.Max(0f, CombatStats.DropLuck);
         float kitChance = (elite ? EliteHealthChance : HealthChance) * (1f + 0.5f * luck);
         float magnetChance = (elite ? EliteMagnetChance : MagnetChance) * (1f + luck);
-        if (elite && Random.value < Mathf.Min(0.6f, SmallChest.DropChance * (1f + luck))) SmallChest.Spawn(position);
+        // B3: пока эволюция готова, но не взята, элита гарантированно роняет сундук (если такого сундука ещё нет на арене).
+        bool evolutionReady = elite && PlayerProgression.Instance != null && PlayerProgression.Instance.ReadyEvolution() != null &&
+            FindObjectOfType<SmallChest>() == null;
+        if (evolutionReady || (elite && Random.value < Mathf.Min(0.6f, SmallChest.DropChance * (1f + luck)))) SmallChest.Spawn(position);
         float roll = Random.value;
         if (roll < kitChance) Spawn(position, noKits ? PickupKind.Magnet : PickupKind.Health);
         else if (roll < kitChance + magnetChance) Spawn(position, PickupKind.Magnet);

@@ -85,6 +85,8 @@ public class MetaUnlock
 {
     public string id, title;
     public int cost;
+    // Снято с продажи: оружие не выбирается как основное (мины, турель, дроны — только карточки/проекты). Запись и ключ в meta.json сохраняются.
+    public bool retired;
 }
 
 public struct RunReward
@@ -126,14 +128,14 @@ public static class MetaProgress
         new MetaUnlock { id = "weapon:2", title = GameText.Source("metaprogress.179"), cost = 150 },
         new MetaUnlock { id = "weapon:3", title = GameText.Source("metaprogress.180"), cost = 300 },
         new MetaUnlock { id = "weapon:4", title = GameText.Source("metaprogress.181"), cost = 300 },
-        new MetaUnlock { id = "weapon:5", title = GameText.Source("metaprogress.182"), cost = 250 },
+        new MetaUnlock { id = "weapon:5", title = GameText.Source("metaprogress.182"), cost = 250, retired = true },
         new MetaUnlock { id = "weapon:6", title = GameText.Source("metaprogress.183"), cost = 400 },
         new MetaUnlock { id = "weapon:7", title = GameText.Source("metaprogress.184"), cost = 350 },
         new MetaUnlock { id = "weapon:8", title = GameText.Source("metaprogress.185"), cost = 450 },
         new MetaUnlock { id = "weapon:9", title = GameText.Source("metaprogress.186"), cost = 400 },
         new MetaUnlock { id = "weapon:10", title = GameText.Source("metaprogress.187"), cost = 500 },
-        new MetaUnlock { id = "weapon:11", title = GameText.Source("metaprogress.188"), cost = 500 },
-        new MetaUnlock { id = "weapon:12", title = GameText.Source("metaprogress.189"), cost = 550 },
+        new MetaUnlock { id = "weapon:11", title = GameText.Source("metaprogress.188"), cost = 500, retired = true },
+        new MetaUnlock { id = "weapon:12", title = GameText.Source("metaprogress.189"), cost = 550, retired = true },
     };
 
     private static MetaSave data;
@@ -153,11 +155,16 @@ public static class MetaProgress
     }
 
     // Test hooks.
-    // На время разработки (07.11.2026, по просьбе владельца) все оружия открыты. Вернуть закрытие: поставить false.
-    // Автопроверки (UseMemory) всегда видят обычные закрытые оружия.
-    public static bool DevUnlockAllWeapons = true;
+    // Dev-переключатель (23.11.2026): по умолчанию выключен, оружия открываются за валюту. Включён сам только в тест-арене
+    // (GameSession.TestMode); для ручной проверки можно поставить true из кода или автопроверки. UseMemory всегда сбрасывает его.
+    private static bool devUnlockAllWeapons;
+    public static bool DevUnlockAllWeapons
+    {
+        get { return devUnlockAllWeapons || GameSession.TestMode; }
+        set { devUnlockAllWeapons = value; }
+    }
 
-    public static void UseMemory() { persist = false; data = new MetaSave(); DevUnlockAllWeapons = false; }
+    public static void UseMemory() { persist = false; data = new MetaSave(); devUnlockAllWeapons = false; }
     public static void UseFile(string file) { persist = true; path = file; data = Load(file); }
 
     public static MetaSave Load(string file)
@@ -282,7 +289,7 @@ public static class MetaProgress
     public static bool TryUnlock(string id)
     {
         MetaUnlock unlock = FindUnlock(id);
-        if (unlock == null || IsUnlocked(id) || Currency < unlock.cost) return false;
+        if (unlock == null || unlock.retired || IsUnlocked(id) || Currency < unlock.cost) return false;
         Data.currency -= unlock.cost;
         Unlock(id);
         return true;

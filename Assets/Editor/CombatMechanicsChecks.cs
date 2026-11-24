@@ -409,7 +409,7 @@ public static class CombatMechanicsChecks
 
         // Elite hunter and explosive bullets.
         GameObject elite = UnityEngine.Object.Instantiate(weak.prefab, origin + forward * 14f + Vector3.left * 12f, Quaternion.identity);
-        elite.name = "Elite Weak";
+        elite.name = "Elite Weak"; elite.GetComponent<Health>().IsElite = true;
         elite.GetComponent<EnemyAI>().MovementLocked = true;
         Health eliteHealth = elite.GetComponent<Health>();
         eliteHealth.SetHealth(1000);

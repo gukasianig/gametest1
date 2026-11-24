@@ -951,7 +951,10 @@ public class PlayerProgression : MonoBehaviour
             // Компактное окно кооператива — мельче шрифт, чтобы строки не переносились за край карточки.
             int titleSize = coopWindow ? 19 : 22, previewSize = coopWindow ? 15 : 17, rankSize = coopWindow ? 12 : 13;
             // Карточка из рецепта эволюции текущего оружия — золотая пометка над названием.
-            string evoTag = FeedsEvolution(definition)
+            bool feedsEvolution = FeedsEvolution(definition);
+            // Золотая строка добавляет высоту: чтобы строка точек рангов не уходила за низ карточки, шрифты чуть меньше.
+            if (feedsEvolution) { titleSize -= 2; previewSize -= 1; rankSize = Mathf.Max(11, rankSize - 1); }
+            string evoTag = feedsEvolution
                 ? "<size=" + rankSize + "><color=#FFC740><b>★ " + GameText.Source("playerprogression.207") +
                   AutoShoter.Evolutions[shooter.EvolutionSlot].title + "</b></color></size>\n"
                 : "";
@@ -1094,8 +1097,8 @@ public class PlayerProgression : MonoBehaviour
             cardFx[i] = buttons[i].gameObject.AddComponent<UpgradeCardFx>();
             cardFx[i].icon = icons[i].transform;
         }
-        rerollButton = GameUi.Button(choices, GameText.Source("playerprogression.257"), new Vector2(0.24f, 0.02f), new Vector2(0.495f, 0.085f), () => Reroll());
-        banishButton = GameUi.Button(choices, GameText.Source("playerprogression.banish.title"), new Vector2(0.505f, 0.02f), new Vector2(0.76f, 0.085f), () => ToggleBanishMode());
+        rerollButton = GameUi.Button(choices, GameText.Source("playerprogression.257"), new Vector2(0.24f, 0.04f), new Vector2(0.495f, 0.105f), () => Reroll());
+        banishButton = GameUi.Button(choices, GameText.Source("playerprogression.banish.title"), new Vector2(0.505f, 0.04f), new Vector2(0.76f, 0.105f), () => ToggleBanishMode());
         banishButton.gameObject.SetActive(false);
         choices.gameObject.SetActive(false);
         // Уведомление о полученном улучшении: значок, название с рангом и что изменилось.

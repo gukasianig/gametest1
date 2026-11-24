@@ -57,7 +57,7 @@ public class EnemyHealthDisplay : MonoBehaviour
         if (bars.ContainsKey(health)) return;
         // У боссов своя полоса под таймером (BossHealthBar): мировую над моделью не рисуем.
         if (health.GetComponent<BossController>() != null || health.GetComponent<MiniBoss>() != null) return;
-        bool elite = health.name.StartsWith("Elite");
+        bool elite = health.IsElite;
         bool heavy = health.name.Contains("Enemy_tank") || health.name.Contains("Enemy_Armored");
         bool withNumbers = elite || heavy;
         RectTransform root = Rect("Enemy HP", canvasRect, withNumbers ? new Vector2(56, 19) : new Vector2(40, 5));

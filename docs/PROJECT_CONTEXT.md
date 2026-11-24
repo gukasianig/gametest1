@@ -32,12 +32,13 @@
 - **Языки:** RU/EN, `GameText`/`LocalizedUiText`, JSON-каталог и генератор `tools/localization.cjs`. Правила — AGENTS.md; K05: остальные экраны/разрешения ещё ждут приёмки.
 - **Мета:** MetaProgress/meta.json, WorkshopTree, WeaponElements. Ветки пистолета (Револьвер/Двойные/Липкий) и автомата (Штурмовой/Роторный/Тяжёлый) — RIFLE_BRANCHES.md; баланс веток не проверен.
 - **Звук:** `GameAudio`, музыка босса, `UiSound`; `docs/AUDIO.md`.
+- **Dev (24.11):** `DevUnlockAllWeapons` по умолчанию выключен (включается в тест-арене), оружия открываются за валюту; элита с готовой эволюцией гарантированно роняет сундук; элита определяется `Health.IsElite`.
 - **Билд:** `BuildTools.BuildWindows` → `Builds/Windows` (сейчас 0.1.6), только по просьбе владельца.
 - **Git:** ветка `event-guard-chest`; много прежних изменений кода/арта. Сохранять их, перед коммитом смотреть status.
 
 ## Ждёт проверки (кратко; детали в DEVELOPMENT.md)
 
-Пул пуль/FxPiece, H08, цели AutoShoter (20.11) — NewCardsChecks OK. ArenaTheme/HeroCombat падают на устаревших ожиданиях; CombatMechanics/VerticalSlice/CombatHud/Weapon/Coop PASS.
+Пул пуль/FxPiece, H08, цели AutoShoter (20.11) — NewCardsChecks OK. ArenaTheme/HeroCombat: ожидания обновлены 24.11, прогон не делали; CombatMechanics/VerticalSlice/CombatHud/Weapon/Coop PASS.
 
 Иконки E: 37 PNG + 18 временных новых карточек; приёмка — A08.
 
@@ -46,11 +47,11 @@
 | Механика | Файлы |
 | --- | --- |
 | Движение и камера | `PlayMovement`, `TopDownCamera` |
-| Оружие игрока | `AutoShoter`, `WeaponData`, `WeaponTargets`, `SpecialWeapons`, `bullet`, `Grenade`, `OrbitManager`/`OrbitWeapon`, `WeaponFireAnimation`; `playershoting` (ручная, не основной путь) |
+| Оружие игрока | `AutoShoter`, `WeaponData`, `WeaponTargets`, `SpecialWeapons`, `bullet`, `Grenade`, `OrbitManager`/`OrbitWeapon`, `WeaponFireAnimation` |
 | Меню и забег | `StartMenu`, `WeaponSelectScreen`, `ChallengeScreen`, `WorkshopTree`, `MetaProgress`, `WeaponElements`, `ElementStatus`, `GameSession`, `GameUi`, `CombatHud`, `GameSettings`, `TestArena`, `RunStatistics` (Tab) |
 | Враги | `EnemyAI`, `EnemyAbility`, `EnemyProjectile` (+`MortarShell`), `ModelWalkAnimator`, `EnemyCorpse`, `EnemyFx`, `Health`, `PlayerHealth`, `EnemyHealthDisplay`, `HealthBarFx` |
 | Босс | `BossController` |
-| Волны и спавн | `WaveManager`, `WaveSettings`, `OffscreenSpawn`; старый `enemyspawner` не используется |
+| Волны и спавн | `WaveManager`, `WaveSettings`, `OffscreenSpawn` |
 | Арена и события | `ArenaLayout`, `ArenaEvents`, `GroundFireZone`, `GridDrawer` |
 | Опыт и улучшения | `PlayerProgression`, `ExperiencePickup`, `ProgressionSettings`, `UpgradeCatalog`, `UpgradeIcon`, `UpgradeCardFx`, `UiArtwork`, `DropPickup` |
 | Модели | `ModelSkinSet`/`ModelSkins`; Editor-проверки и сборщики — `Assets/Editor/` |

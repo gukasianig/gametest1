@@ -107,7 +107,7 @@ public class HeroCardEffects : MonoBehaviour
         if (enemy == null) return;
         Vector3 away = Vector3.ProjectOnPlane(target.transform.position - from, Vector3.up);
         if (away.sqrMagnitude < 0.001f) away = Vector3.forward;
-        float resistance = target.name.StartsWith("Elite") ? 0.5f : 1f;
+        float resistance = target.IsElite ? 0.5f : 1f;
         enemy.ApplyHeroImpulse(away.normalized * (force * resistance), 0.3f);
     }
 

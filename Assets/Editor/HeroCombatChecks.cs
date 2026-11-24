@@ -149,7 +149,7 @@ public static class HeroCombatChecks
         int weaponCount = 0;
         for (int i = 0; i < shooter.weapons.Length; i++)
         {
-            if (shooter.weapons[i] == null || !shooter.weapons[i].IsUsable) continue;
+            if (shooter.weapons[i] == null || !shooter.weapons[i].IsUsable || !shooter.weapons[i].IsSelectable) continue;   // мины, турель и дроны не берутся в руку
             Require(shooter.SelectWeapon(i), "Weapon selection failed " + i);
             yield return null;
             Transform model = socket.Find("SkinModel");
